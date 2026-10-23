@@ -14,7 +14,7 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case sensitiveInformationDetected = "sensitive_information_detected"
     case previewUpdated = "preview_updated"
     case clipboardPrepared = "clipboard_prepared"
-    case undoStateUpdated = "undo_state_updated"
+    case documentUpdated = "document_updated"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -69,8 +69,8 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("preview_updated count=\(entry.count)")
         case .clipboardPrepared:
             logger.info("clipboard_prepared count=\(entry.count)")
-        case .undoStateUpdated:
-            logger.info("undo_state_updated count=\(entry.count)")
+        case .documentUpdated:
+            logger.info("document_updated count=\(entry.count)")
         }
     }
 }

@@ -1,68 +1,53 @@
 import Foundation
 
-/// Opaque in-memory image data passed between pipeline stages.
+/// Opaque, immutable image data with explicit reference ownership.
 ///
-/// The core module deliberately does not interpret or log these bytes.
-public struct ScreenshotImage: Equatable, Sendable {
+/// `SecureImageSession` owns these buffers. The core module deliberately does not interpret,
+/// serialize, or include their bytes in descriptions.
+public final class ScreenshotImage: Equatable, Sendable, CustomStringConvertible,
+    CustomDebugStringConvertible {
     public let data: Data
 
     public init(data: Data) {
         self.data = data
     }
-}
 
-public struct RecognizedText: Equatable, Sendable {
-    public let value: String
-
-    public init(value: String) {
-        self.value = value
+    public static func == (lhs: ScreenshotImage, rhs: ScreenshotImage) -> Bool {
+        lhs.data == rhs.data
     }
+
+    public var description: String { "ScreenshotImage(<redacted>)" }
+    public var debugDescription: String { description }
 }
 
 /// Decoded image pixels retained only for the lifetime of an active session.
 ///
 /// The bytes are intentionally represented without an AppKit dependency so a later image decoder
 /// can choose its native pixel format while the lifecycle remains testable in RedScreenCore.
-public struct DecodedPixels: Equatable, Sendable {
+public final class DecodedPixels: Equatable, Sendable, CustomStringConvertible,
+    CustomDebugStringConvertible {
     public let bytes: Data
 
     public init(bytes: Data) {
         self.bytes = bytes
     }
-}
 
-public struct SensitiveRegion: Equatable, Sendable {
-    public let identifier: UUID
-
-    public init(identifier: UUID = UUID()) {
-        self.identifier = identifier
+    public static func == (lhs: DecodedPixels, rhs: DecodedPixels) -> Bool {
+        lhs.bytes == rhs.bytes
     }
+
+    public var description: String { "DecodedPixels(<redacted>)" }
+    public var debugDescription: String { description }
 }
 
-/// A detection result whose candidate value must be treated as secret material.
-public struct DetectedSensitiveInformation: Equatable, Sendable {
-    public let region: SensitiveRegion
-    public let candidateValue: String
-
-    public init(region: SensitiveRegion, candidateValue: String) {
-        self.region = region
-        self.candidateValue = candidateValue
-    }
-}
-
-/// One in-memory undo step. Undo history is session-owned and is never autosaved.
-public struct RedactionUndoState: Equatable, Sendable {
-    public let redactedRegions: [SensitiveRegion]
-
-    public init(redactedRegions: [SensitiveRegion]) {
-        self.redactedRegions = redactedRegions
-    }
-}
-
-public struct ExportDestination: Equatable, Sendable {
+public struct ExportDestination: Equatable, Sendable, CustomStringConvertible,
+    CustomDebugStringConvertible {
     public let url: URL
 
     public init(url: URL) {
         self.url = url
     }
+
+    public var description: String { "ExportDestination(<redacted>)" }
+    public var debugDescription: String { description }
 }

@@ -1,52 +1,87 @@
 import Foundation
 
-/// Loads image data chosen through an explicit user interaction.
-public protocol ImageImporting: Sendable {
-    func loadImage(from url: URL) async throws -> ScreenshotImage
+/// Result of an explicit user-selected import. It remains in memory and is not serializable.
+public struct ImportedImage: Sendable, CustomStringConvertible, CustomDebugStringConvertible {
+    public let sourceIdentity: SourceImageIdentity
+    public let pixelDimensions: PixelDimensions
+    public let image: ScreenshotImage
+
+    public init(
+        sourceIdentity: SourceImageIdentity,
+        pixelDimensions: PixelDimensions,
+        image: ScreenshotImage
+    ) {
+        self.sourceIdentity = sourceIdentity
+        self.pixelDimensions = pixelDimensions
+        self.image = image
+    }
+
+    public var description: String {
+        "ImportedImage(source: \(sourceIdentity.rawValue), image: <redacted>)"
+    }
+    public var debugDescription: String { description }
 }
 
-/// Recognizes text locally from an in-memory screenshot.
-public protocol TextRecognizing: Sendable {
-    func recognizeText(in image: ScreenshotImage) async throws -> [RecognizedText]
+/// Reads an explicitly user-selected image and normalizes its orientation in memory.
+public protocol ImageImporter: Sendable {
+    func importImage(from url: URL) async throws -> ImportedImage
 }
 
-/// Finds sensitive values in recognized text without external services.
-public protocol SensitiveInformationDetecting: Sendable {
-    func detectSensitiveInformation(in text: [RecognizedText]) async throws -> [SensitiveRegion]
+/// Produces sensitive OCR observations locally from an in-memory image.
+public protocol TextRecognizer: Sendable {
+    func recognizeText(
+        in image: ScreenshotImage,
+        dimensions: PixelDimensions
+    ) async throws -> [OCRObservation]
 }
 
-/// Permanently applies redactions to an image in memory.
-public protocol RedactionRendering: Sendable {
-    func renderRedactions(
-        on image: ScreenshotImage,
-        regions: [SensitiveRegion]
-    ) async throws -> ScreenshotImage
+/// Identifies rule evidence by OCR identity without copying matched secret strings.
+public protocol SecretDetector: Sendable {
+    func detectSecrets(in observations: [OCRObservation]) async throws -> [SecretDetection]
 }
 
-/// Writes an already-redacted image to a user-selected destination.
-public protocol ImageExporting: Sendable {
-    func export(_ image: ScreenshotImage, to destination: ExportDestination) async throws
+/// Converts detector evidence into the shared review/render candidate model.
+public protocol CandidateComposer: Sendable {
+    func composeCandidates(
+        from detections: [SecretDetection],
+        observations: [OCRObservation],
+        dimensions: PixelDimensions
+    ) throws -> [RedactionCandidate]
+}
+
+/// Permanently applies included and manual regions to a new in-memory image.
+public protocol RedactionRenderer: Sendable {
+    func render(document: RedactionDocument, sourceImage: ScreenshotImage) async throws
+        -> ScreenshotImage
+}
+
+/// Writes only an already-rendered image to an explicitly selected destination.
+public protocol ImageExporter: Sendable {
+    func export(_ redactedImage: ScreenshotImage, to destination: ExportDestination) async throws
 }
 
 /// Explicit dependency container for the future local processing pipeline.
 public struct ProcessingDependencies: Sendable {
-    public let imageImporter: any ImageImporting
-    public let textRecognizer: any TextRecognizing
-    public let detector: any SensitiveInformationDetecting
-    public let renderer: any RedactionRendering
-    public let exporter: any ImageExporting
+    public let imageImporter: any ImageImporter
+    public let textRecognizer: any TextRecognizer
+    public let secretDetector: any SecretDetector
+    public let candidateComposer: any CandidateComposer
+    public let redactionRenderer: any RedactionRenderer
+    public let imageExporter: any ImageExporter
 
     public init(
-        imageImporter: any ImageImporting,
-        textRecognizer: any TextRecognizing,
-        detector: any SensitiveInformationDetecting,
-        renderer: any RedactionRendering,
-        exporter: any ImageExporting
+        imageImporter: any ImageImporter,
+        textRecognizer: any TextRecognizer,
+        secretDetector: any SecretDetector,
+        candidateComposer: any CandidateComposer,
+        redactionRenderer: any RedactionRenderer,
+        imageExporter: any ImageExporter
     ) {
         self.imageImporter = imageImporter
         self.textRecognizer = textRecognizer
-        self.detector = detector
-        self.renderer = renderer
-        self.exporter = exporter
+        self.secretDetector = secretDetector
+        self.candidateComposer = candidateComposer
+        self.redactionRenderer = redactionRenderer
+        self.imageExporter = imageExporter
     }
 }

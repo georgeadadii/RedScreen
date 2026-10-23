@@ -101,7 +101,7 @@ RedScreen/
 ├── App/                    # MenuBarExtra entry point and application actions
 └── UI/                     # Compact menu bar popover presentation
 RedScreenCore/
-├── Domain/                 # Framework-independent pipeline value types
+├── Domain/                 # Documents, geometry, and framework-independent value types
 └── Services/               # Replaceable capabilities and security boundaries
     ├── ImageImporting
     ├── TextRecognizing
@@ -126,6 +126,10 @@ pipeline or introducing a permanent main window.
 the open document. See [Privacy boundaries and secure image lifecycle](docs/PRIVACY_AND_SECURITY.md)
 for the threat model, invariants, and operating-system limitations that later pipeline work must
 preserve.
+
+The immutable document model, canonical top-left pixel coordinate space, OCR origin conversion,
+aspect-fit presentation mapping, raster rounding policy, and Phase 1 service contracts are defined
+in [Redaction document and coordinate architecture](docs/DOCUMENT_AND_GEOMETRY.md).
 
 ## Privacy and security
 

@@ -18,28 +18,32 @@ public enum ImageLifecyclePolicy {
 @MainActor
 public final class SecureImageSession {
     public let id: UUID
+    public let sourceIdentity: SourceImageIdentity
 
     public fileprivate(set) var sourceImage: ScreenshotImage?
     public fileprivate(set) var decodedPixels: DecodedPixels?
-    public fileprivate(set) var recognizedText: [RecognizedText] = []
-    public fileprivate(set) var detectedInformation: [DetectedSensitiveInformation] = []
+    public fileprivate(set) var redactionDocument: RedactionDocument?
     public fileprivate(set) var previewImage: ScreenshotImage?
     public fileprivate(set) var clipboardImage: ScreenshotImage?
-    public fileprivate(set) var undoHistory: [RedactionUndoState] = []
 
-    fileprivate init(id: UUID = UUID(), sourceImage: ScreenshotImage) {
+    fileprivate init(
+        id: UUID = UUID(),
+        sourceIdentity: SourceImageIdentity,
+        sourceImage: ScreenshotImage,
+        redactionDocument: RedactionDocument? = nil
+    ) {
         self.id = id
+        self.sourceIdentity = sourceIdentity
         self.sourceImage = sourceImage
+        self.redactionDocument = redactionDocument
     }
 
     fileprivate func clearSensitiveState() {
         sourceImage = nil
         decodedPixels = nil
-        recognizedText.removeAll(keepingCapacity: false)
-        detectedInformation.removeAll(keepingCapacity: false)
+        redactionDocument = nil
         previewImage = nil
         clipboardImage = nil
-        undoHistory.removeAll(keepingCapacity: false)
     }
 }
 
@@ -58,7 +62,10 @@ public final class SecureImageSessionLifecycle {
     }
 
     @discardableResult
-    public func createSession(sourceImage: ScreenshotImage) -> SecureImageSession {
+    public func createSession(
+        sourceImage: ScreenshotImage,
+        sourceIdentity: SourceImageIdentity = SourceImageIdentity()
+    ) -> SecureImageSession {
         let event: PrivacyLogEvent
         if let activeSession {
             activeSession.clearSensitiveState()
@@ -67,7 +74,33 @@ public final class SecureImageSessionLifecycle {
             event = .sessionCreated
         }
 
-        let session = SecureImageSession(sourceImage: sourceImage)
+        let session = SecureImageSession(
+            sourceIdentity: sourceIdentity,
+            sourceImage: sourceImage
+        )
+        activeSession = session
+        logger.record(event)
+        return session
+    }
+
+    @discardableResult
+    public func createSession(importedImage: ImportedImage) throws -> SecureImageSession {
+        let document = try RedactionDocument(
+            sourceIdentity: importedImage.sourceIdentity,
+            pixelDimensions: importedImage.pixelDimensions
+        )
+        let event: PrivacyLogEvent
+        if let activeSession {
+            activeSession.clearSensitiveState()
+            event = .sessionReplaced
+        } else {
+            event = .sessionCreated
+        }
+        let session = SecureImageSession(
+            sourceIdentity: importedImage.sourceIdentity,
+            sourceImage: importedImage.image,
+            redactionDocument: document
+        )
         activeSession = session
         logger.record(event)
         return session
@@ -93,21 +126,11 @@ public final class SecureImageSessionLifecycle {
     }
 
     @discardableResult
-    public func storeRecognizedText(_ text: [RecognizedText], for sessionID: UUID) -> Bool {
+    public func storeDocument(_ document: RedactionDocument, for sessionID: UUID) -> Bool {
         guard let session = session(matching: sessionID) else { return false }
-        session.recognizedText = text
-        logger.record(.textRecognized, count: UInt(text.count))
-        return true
-    }
-
-    @discardableResult
-    public func storeDetectedInformation(
-        _ information: [DetectedSensitiveInformation],
-        for sessionID: UUID
-    ) -> Bool {
-        guard let session = session(matching: sessionID) else { return false }
-        session.detectedInformation = information
-        logger.record(.sensitiveInformationDetected, count: UInt(information.count))
+        guard document.sourceIdentity == session.sourceIdentity else { return false }
+        session.redactionDocument = document
+        logger.record(.documentUpdated)
         return true
     }
 
@@ -124,14 +147,6 @@ public final class SecureImageSessionLifecycle {
         guard let session = session(matching: sessionID) else { return false }
         session.clipboardImage = image
         logger.record(.clipboardPrepared)
-        return true
-    }
-
-    @discardableResult
-    public func appendUndoState(_ state: RedactionUndoState, for sessionID: UUID) -> Bool {
-        guard let session = session(matching: sessionID) else { return false }
-        session.undoHistory.append(state)
-        logger.record(.undoStateUpdated, count: UInt(session.undoHistory.count))
         return true
     }
 

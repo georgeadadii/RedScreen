@@ -18,6 +18,11 @@
 		B1000000000000000000000A /* PrivacySafeLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000D /* PrivacySafeLogger.swift */; };
 		B1000000000000000000000B /* SecureImageSessionLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000E /* SecureImageSessionLifecycle.swift */; };
 		B1000000000000000000000C /* SecureImageSessionLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */; };
+		B1000000000000000000000D /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000010 /* Geometry.swift */; };
+		B1000000000000000000000E /* RedactionDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000011 /* RedactionDocument.swift */; };
+		B1000000000000000000000F /* GeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000012 /* GeometryTests.swift */; };
+		B10000000000000000000010 /* RedactionDocumentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000013 /* RedactionDocumentTests.swift */; };
+		B10000000000000000000011 /* ProcessingServiceContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000014 /* ProcessingServiceContractTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +51,11 @@
 		C1000000000000000000000D /* PrivacySafeLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySafeLogger.swift; sourceTree = "<group>"; };
 		C1000000000000000000000E /* SecureImageSessionLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureImageSessionLifecycle.swift; sourceTree = "<group>"; };
 		C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureImageSessionLifecycleTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000010 /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
+		C10000000000000000000011 /* RedactionDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedactionDocument.swift; sourceTree = "<group>"; };
+		C10000000000000000000012 /* GeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000013 /* RedactionDocumentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedactionDocumentTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000014 /* ProcessingServiceContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingServiceContractTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,9 +72,9 @@
 		G10000000000000000000004 /* UI */ = {isa = PBXGroup; children = (C10000000000000000000002 /* ContentView.swift */, ); path = UI; sourceTree = "<group>"; };
 		G10000000000000000000005 /* Resources */ = {isa = PBXGroup; children = (C1000000000000000000000B /* RedScreen.entitlements */, ); path = Resources; sourceTree = "<group>"; };
 		G10000000000000000000006 /* RedScreenCore */ = {isa = PBXGroup; children = (G10000000000000000000007 /* Domain */, G10000000000000000000008 /* Services */, ); path = RedScreenCore; sourceTree = "<group>"; };
-		G10000000000000000000007 /* Domain */ = {isa = PBXGroup; children = (C10000000000000000000003 /* ProcessingTypes.swift */, ); path = Domain; sourceTree = "<group>"; };
+		G10000000000000000000007 /* Domain */ = {isa = PBXGroup; children = (C10000000000000000000003 /* ProcessingTypes.swift */, C10000000000000000000010 /* Geometry.swift */, C10000000000000000000011 /* RedactionDocument.swift */, ); path = Domain; sourceTree = "<group>"; };
 		G10000000000000000000008 /* Services */ = {isa = PBXGroup; children = (C10000000000000000000004 /* ProcessingServices.swift */, C1000000000000000000000D /* PrivacySafeLogger.swift */, C1000000000000000000000E /* SecureImageSessionLifecycle.swift */, ); path = Services; sourceTree = "<group>"; };
-		G10000000000000000000009 /* RedScreenCoreTests */ = {isa = PBXGroup; children = (C10000000000000000000005 /* RedScreenCoreSmokeTests.swift */, C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */, ); path = RedScreenCoreTests; sourceTree = "<group>"; };
+		G10000000000000000000009 /* RedScreenCoreTests */ = {isa = PBXGroup; children = (C10000000000000000000005 /* RedScreenCoreSmokeTests.swift */, C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */, C10000000000000000000012 /* GeometryTests.swift */, C10000000000000000000013 /* RedactionDocumentTests.swift */, C10000000000000000000014 /* ProcessingServiceContractTests.swift */, ); path = RedScreenCoreTests; sourceTree = "<group>"; };
 		G1000000000000000000000A /* RedScreenUITests */ = {isa = PBXGroup; children = (C10000000000000000000006 /* RedScreenUITests.swift */, ); path = RedScreenUITests; sourceTree = "<group>"; };
 		G1000000000000000000000B /* Products */ = {isa = PBXGroup; children = (C10000000000000000000007 /* RedScreen.app */, C10000000000000000000008 /* RedScreenCore.framework */, C10000000000000000000009 /* RedScreenCoreTests.xctest */, C1000000000000000000000A /* RedScreenUITests.xctest */, ); name = Products; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -89,8 +99,8 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		F30000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001 /* RedScreenApp.swift in Sources */, B10000000000000000000002 /* ContentView.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000003 /* ProcessingTypes.swift in Sources */, B10000000000000000000004 /* ProcessingServices.swift in Sources */, B1000000000000000000000A /* PrivacySafeLogger.swift in Sources */, B1000000000000000000000B /* SecureImageSessionLifecycle.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000007 /* RedScreenCoreSmokeTests.swift in Sources */, B1000000000000000000000C /* SecureImageSessionLifecycleTests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F30000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000003 /* ProcessingTypes.swift in Sources */, B1000000000000000000000D /* Geometry.swift in Sources */, B1000000000000000000000E /* RedactionDocument.swift in Sources */, B10000000000000000000004 /* ProcessingServices.swift in Sources */, B1000000000000000000000A /* PrivacySafeLogger.swift in Sources */, B1000000000000000000000B /* SecureImageSessionLifecycle.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F30000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000007 /* RedScreenCoreSmokeTests.swift in Sources */, B1000000000000000000000C /* SecureImageSessionLifecycleTests.swift in Sources */, B1000000000000000000000F /* GeometryTests.swift in Sources */, B10000000000000000000010 /* RedactionDocumentTests.swift in Sources */, B10000000000000000000011 /* ProcessingServiceContractTests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
 		F30000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000009 /* RedScreenUITests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 

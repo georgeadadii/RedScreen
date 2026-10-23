@@ -35,9 +35,10 @@ application-managed temporary source copies.
 
 Later import, OCR, detection, rendering, clipboard, and export work must preserve these rules:
 
-1. Source images, decoded pixels, OCR text, detected candidate values, previews, clipboard-ready
-   images, and undo history live only in the active `SecureImageSession` unless the user performs an
-   explicit export or copy action.
+1. Source, decoded, preview, and clipboard image buffers live only in the active
+   `SecureImageSession`. OCR text, candidate evidence, user edits, and processing state live in the
+   session's single current `RedactionDocument` snapshot unless the user performs an explicit
+   export or copy action.
 2. Creating a replacement session clears the old session before publishing the new one. Closing a
    document clears the active session and releases the lifecycle's reference to it. Results tagged
    with an inactive session ID are rejected.
@@ -55,6 +56,9 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.
+
+See [Redaction document and coordinate architecture](DOCUMENT_AND_GEOMETRY.md) for the canonical
+geometry, immutable document, provenance, and service-boundary rules.
 
 ## Operating-system limitations
 
