@@ -3,10 +3,10 @@
 RedScreen is a privacy-first native macOS menu bar utility for permanently redacting sensitive
 information from screenshots. Processing is designed to remain entirely on the Mac.
 
-This repository currently contains the Phase 1 foundation: a compact SwiftUI menu bar interface,
-a testable core module, dependency-injection interfaces for the future processing pipeline, and
-automated unit and UI smoke tests. Screenshot capture, importing, and processing are intentionally
-not implemented yet.
+This repository contains the Phase 1 foundation: a compact SwiftUI menu bar interface, a testable
+core module, dependency-injection interfaces for the future processing pipeline, an in-memory
+secure image-session lifecycle, privacy-safe logging, and automated unit and UI tests. Screenshot
+capture, importing, and processing are intentionally not implemented yet.
 
 ## Technology stack
 
@@ -102,7 +102,7 @@ RedScreen/
 └── UI/                     # Compact menu bar popover presentation
 RedScreenCore/
 ├── Domain/                 # Framework-independent pipeline value types
-└── Services/               # Replaceable capability protocols
+└── Services/               # Replaceable capabilities and security boundaries
     ├── ImageImporting
     ├── TextRecognizing
     ├── SensitiveInformationDetecting
@@ -122,6 +122,11 @@ content is isolated in `MenuBarContentView`. A later issue can expand this popov
 composition layer present a temporary floating review panel without coupling that UI to the core
 pipeline or introducing a permanent main window.
 
+`SecureImageSessionLifecycle` is the single owner of source bytes and derived sensitive state for
+the open document. See [Privacy boundaries and secure image lifecycle](docs/PRIVACY_AND_SECURITY.md)
+for the threat model, invariants, and operating-system limitations that later pipeline work must
+preserve.
+
 ## Privacy and security
 
 - All future screenshot processing is intended to happen locally.
@@ -130,12 +135,16 @@ pipeline or introducing a permanent main window.
   present.
 - Sensitive image bytes, OCR text, file paths, detected values, and clipboard contents must never
   be logged.
+- Production logging accepts predefined event identifiers and non-sensitive counts only.
+- No source image, OCR result, detection result, preview, or undo state is autosaved.
+- Import-to-export processing must not create an application-managed plaintext temporary image.
 - File access will be granted only through explicit user interaction in a later phase.
 
 ## Current status
 
-Issue #1 establishes the application and architecture. The menu bar popover includes disabled
-Capture Screenshot and Import Screenshot actions, a disabled Settings placeholder, About, and Quit
-RedScreen. Image import, OCR, sensitive-information detection, redaction rendering, screenshot
-capture, settings, and image export remain out of scope until later issues.
+Issues #1 and #2 establish the application architecture and executable privacy boundaries. The
+menu bar popover includes disabled Capture Screenshot and Import Screenshot actions, a disabled
+Settings placeholder, About, and Quit RedScreen. Image import, OCR, sensitive-information
+detection, redaction rendering, screenshot capture, settings, and image export remain out of scope
+until later issues.
 
