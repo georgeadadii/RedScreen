@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# Pinned toolchain. Change both together and record the change in docs/PHASE1_READINESS.md.
+# This workflow uploads no artifacts: test logs contain fixture IDs, counts, and timings only,
+# and the .xcresult bundle stays on the ephemeral runner.
+env:
+  XCODE_VERSION: "26.6"
+
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -32,8 +38,22 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Select pinned Xcode
+        run: |
+          app="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ ! -d "$app" ]; then
+            echo "::error::Pinned Xcode ${XCODE_VERSION} is not installed on this runner image."
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select --switch "$app/Contents/Developer"
+          xcodebuild -version
+      - name: Reject artifact uploads
+        run: |
+          if grep -nE 'uses:[[:space:]]*actions/(upload-artifact|cache)' .github/workflows/*.yml; then
+            echo '::error::CI must not upload or cache test artifacts.'
+            exit 1
+          fi
       - name: Validate project
         run: plutil -lint RedScreen.xcodeproj/project.pbxproj
       - name: Build application

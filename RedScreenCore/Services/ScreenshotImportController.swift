@@ -12,6 +12,38 @@ public enum ReviewRenderError: Error, Equatable, Sendable {
     case reviewRequired
 }
 
+/// Why the workflow stopped. Non-sensitive: no paths, text, or system error descriptions.
+public enum WorkflowFailure: Equatable, Sendable {
+    /// Import failed and no document is open. With a document open, the failure is shown as
+    /// `lastError` and the document keeps its own state.
+    case importFailed(ImageImportError)
+    case recognitionFailed(TextRecognitionError)
+    case detectionFailed
+}
+
+/// The single, explicit state of the import-to-export workflow, derived from the controller's
+/// stage tokens so it can never disagree with them.
+///
+/// Transitions:
+/// - `idle` → `loading` on import. `loading` → `recognizing` once the image decodes, `failed`
+///   if it does not (or back to the open document's state), `canceled` on cancel.
+/// - `recognizing` covers OCR, detection, and candidate composition. It ends in `reviewing`,
+///   `failed`, or `canceled`; `retryRecognition()` restarts it from `failed` or `canceled`.
+/// - `reviewing` → `rendering` while a reviewed render is in flight, and → `exporting` while a
+///   save is in flight. Both return to `reviewing`.
+/// - Any state → `idle` on close. A new import from any state → `loading`; results of the
+///   superseded work are discarded.
+public enum WorkflowState: Equatable, Sendable {
+    case idle
+    case loading
+    case recognizing
+    case reviewing
+    case rendering
+    case exporting
+    case failed(WorkflowFailure)
+    case canceled
+}
+
 /// Coordinates user-initiated imports with the secure image lifecycle.
 ///
 /// - The current document is replaced only after the new image decodes successfully. Failures
@@ -41,6 +73,11 @@ public final class ScreenshotImportController {
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
     @ObservationIgnored private let secretDetector: (any SecretDetector)?
     @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
+    public private(set) var processingCanceled = false
+    private var activeRenders = 0
+    private var activeExports = 0
+
+    @ObservationIgnored private let renderer: any RedactionRenderer
     @ObservationIgnored private let imageExporter: (any ImageExporter)?
     @ObservationIgnored private let clipboard: (any RedactedImageClipboard)?
     @ObservationIgnored private var detectionTask: Task<Void, Never>?
@@ -56,11 +93,13 @@ public final class ScreenshotImportController {
         textRecognizer: (any TextRecognizer)? = nil,
         secretDetector: (any SecretDetector)? = nil,
         candidateComposer: (any CandidateComposer)? = nil,
+        renderer: any RedactionRenderer = SolidFillRedactionRenderer(),
         imageExporter: (any ImageExporter)? = nil,
         clipboard: (any RedactedImageClipboard)? = nil,
         logger: PrivacySafeLogger = PrivacySafeLogger()
     ) {
         self.candidateComposer = candidateComposer
+        self.renderer = renderer
         self.imageExporter = imageExporter
         self.clipboard = clipboard
         self.lifecycle = lifecycle
@@ -68,6 +107,50 @@ public final class ScreenshotImportController {
         self.textRecognizer = textRecognizer
         self.secretDetector = secretDetector
         self.logger = logger
+    }
+
+    public var workflowState: WorkflowState {
+        if isImporting { return .loading }
+        guard document != nil else {
+            if let lastError { return .failed(.importFailed(lastError)) }
+            return processingCanceled ? .canceled : .idle
+        }
+        if activeExports > 0 { return .exporting }
+        if activeRenders > 0 { return .rendering }
+        if processingCanceled { return .canceled }
+        if case .failed(let error) = recognitionStatus { return .failed(.recognitionFailed(error)) }
+        if detectionStatus == .failed { return .failed(.detectionFailed) }
+        return canReview ? .reviewing : .recognizing
+    }
+
+    /// Whether `cancelProcessing()` has anything to stop.
+    public var canCancelProcessing: Bool {
+        workflowState == .loading || workflowState == .recognizing
+    }
+
+    /// Stops an in-flight import or recognition/detection pass.
+    ///
+    /// Cancelling an import keeps the open document, if any, untouched. Cancelling recognition
+    /// leaves the document open with no findings, in `canceled`, until `retryRecognition()`.
+    /// Late results from the cancelled work are discarded.
+    public func cancelProcessing() {
+        if isImporting {
+            importTask?.cancel()
+            importTask = nil
+            generation &+= 1
+            isImporting = false
+            if document == nil { processingCanceled = true }
+            logger.record(.processingCanceled)
+            return
+        }
+        guard workflowState == .recognizing, let id = document?.sessionID else { return }
+        cancelRecognition()
+        if let current = activeDocument,
+           let cleared = try? current.replacingObservations([], processingState: .imported) {
+            lifecycle.storeDocument(cleared, for: id)
+        }
+        processingCanceled = true
+        logger.record(.processingCanceled)
     }
 
     /// The open document snapshot, including OCR observations once recognized.
@@ -134,7 +217,9 @@ public final class ScreenshotImportController {
               let sessionID = document?.sessionID else { throw ReviewRenderError.reviewRequired }
         let revision = reviewRevision
         let importGeneration = generation
-        let result = try await SolidFillRedactionRenderer().render(document: current, sourceImage: pixels)
+        activeRenders += 1
+        defer { activeRenders -= 1 }
+        let result = try await renderer.render(document: current, sourceImage: pixels)
         try Task.checkCancellation()
         guard document?.sessionID == sessionID, revision == reviewRevision,
               importGeneration == generation, canRenderReviewedImage else { throw CancellationError() }
@@ -160,6 +245,8 @@ public final class ScreenshotImportController {
     ) async throws {
         guard let imageExporter else { throw ImageExportError.unavailable }
         guard isCurrentReviewedImage(image) else { throw ImageExportError.reviewChanged }
+        activeExports += 1
+        defer { activeExports -= 1 }
         do {
             try await imageExporter.export(image, to: destination)
         } catch is CancellationError {
@@ -227,6 +314,7 @@ public final class ScreenshotImportController {
         let token = generation
         isImporting = true
         lastError = nil
+        if document == nil { processingCanceled = false }
 
         let importer = importer
         let task = Task { [weak self] in
@@ -264,6 +352,7 @@ public final class ScreenshotImportController {
         cancelRecognition()
         isImporting = false
         lastError = nil
+        processingCanceled = false
         document = nil
         lifecycle.closeDocument()
     }
@@ -348,6 +437,7 @@ public final class ScreenshotImportController {
     }
 
     private func cancelRecognition() {
+        processingCanceled = false
         resetReviewHistory()
         recognitionTask?.cancel()
         recognitionTask = nil
