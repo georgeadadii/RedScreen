@@ -475,7 +475,6 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         guard let index = candidates.firstIndex(where: { $0.id == candidateID }) else {
             throw DomainModelError.candidateNotFound
         }
-        guard candidates[index].disposition != disposition else { return self }
         var updatedCandidates = candidates
         updatedCandidates[index] = try updatedCandidates[index].settingDisposition(disposition)
         let edit = RedactionEdit(

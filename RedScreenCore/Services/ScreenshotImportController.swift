@@ -82,7 +82,12 @@ public final class ScreenshotImportController {
     @discardableResult
     public func setReviewDisposition(_ disposition: RedactionDisposition, for id: UUID) -> Bool {
         guard disposition == .included || disposition == .excluded else { return false }
-        return applyReviewEdit { try $0.settingDisposition(disposition, for: id) }
+        return applyReviewEdit { snapshot in
+            guard snapshot.candidates.first(where: { $0.id == id })?.disposition != disposition else {
+                return snapshot
+            }
+            return try snapshot.settingDisposition(disposition, for: id)
+        }
     }
 
     @discardableResult
