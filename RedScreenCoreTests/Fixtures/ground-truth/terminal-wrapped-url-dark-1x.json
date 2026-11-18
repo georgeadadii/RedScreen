@@ -1,0 +1,141 @@
+{
+  "category" : "terminal",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "wrappedValue",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "terminal-wrapped-url-dark-1x",
+  "pixelHeight" : 172,
+  "pixelWidth" : 400,
+  "scale" : 1,
+  "scenario" : "A narrow dark terminal where a database URL's password and a benign localhost URL both wrap onto the following line.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "connectionString",
+      "id" : "wrapped-db-password",
+      "note" : "Connection password wrapped across two terminal lines",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.087981,
+            "width" : 0.136967,
+            "x" : 0.695699,
+            "y" : 0.264149
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 7,
+          "utf16Offset" : 33
+        },
+        {
+          "rect" : {
+            "height" : 0.087981,
+            "width" : 0.1761,
+            "x" : 0.05,
+            "y" : 0.392056
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 9,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "connectionString",
+      "id" : "wrapped-replica-url",
+      "note" : "Credential-free localhost URL wrapped across two lines",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.087981,
+            "width" : 0.508733,
+            "x" : 0.382633,
+            "y" : 0.519963
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 26,
+          "utf16Offset" : 17
+        },
+        {
+          "rect" : {
+            "height" : 0.087981,
+            "width" : 0.273933,
+            "x" : 0.05,
+            "y" : 0.64787
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 14,
+          "utf16Offset" : 0
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.645699,
+        "x" : 0.05,
+        "y" : 0.136242
+      },
+      "text" : "demo % grep URL .env  # synthetic"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.782666,
+        "x" : 0.05,
+        "y" : 0.264149
+      },
+      "text" : "DATABASE_URL=postgres://app_user:RSFAKE-"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.743533,
+        "x" : 0.05,
+        "y" : 0.392056
+      },
+      "text" : "Pg-9f8e7d@db.internal.test:5432/orders"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.841366,
+        "x" : 0.05,
+        "y" : 0.519963
+      },
+      "text" : "READ_REPLICA_URL=postgres://localhost:5432/"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.273933,
+        "x" : 0.05,
+        "y" : 0.64787
+      },
+      "text" : "orders_replica"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.087981,
+        "width" : 0.802233,
+        "x" : 0.05,
+        "y" : 0.775777
+      },
+      "text" : "demo % psql \"$DATABASE_URL\" -c 'select 1'"
+    }
+  ],
+  "theme" : "dark"
+}

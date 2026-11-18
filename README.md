@@ -94,6 +94,16 @@ make test
 Neither test suite reads user files, uses real screenshots, requests screen-recording permission,
 or accesses the network.
 
+Core tests use a generated corpus of synthetic developer screenshots with machine-readable ground
+truth. To regenerate it after changing a scenario, run the sandboxed generator:
+
+```sh
+make fixtures
+```
+
+See [Synthetic screenshot fixtures](docs/TEST_FIXTURES.md) for the corpus layout, ground-truth
+schema, comparison helpers, and synthetic-value policy.
+
 ## Architecture
 
 ```text
@@ -109,7 +119,10 @@ RedScreenCore/
     ├── RedactionRendering
     └── ImageExporting
 RedScreenCoreTests/         # Core tests without launching SwiftUI
+├── Fixtures/               # Generated synthetic screenshots and ground truth
+└── FixtureSupport/         # Fixture schema, scenarios, renderer, loaders, and matchers
 RedScreenUITests/           # Launch and empty-state UI tests
+Tools/FixtureGenerator/     # Sandboxed generator for the synthetic fixture corpus
 ```
 
 The app target depends on `RedScreenCore`; the core module does not depend on SwiftUI. Future
@@ -146,7 +159,9 @@ in [Redaction document and coordinate architecture](docs/DOCUMENT_AND_GEOMETRY.m
 
 ## Current status
 
-Issues #1 and #2 establish the application architecture and executable privacy boundaries. The
+Issues #1 and #2 establish the application architecture and executable privacy boundaries.
+Issue #3 defines the shared document, geometry, and service contracts, and issue #4 adds the
+synthetic screenshot corpus and test utilities that later pipeline work is measured against. The
 menu bar popover includes disabled Capture Screenshot and Import Screenshot actions, a disabled
 Settings placeholder, About, and Quit RedScreen. Image import, OCR, sensitive-information
 detection, redaction rendering, screenshot capture, settings, and image export remain out of scope

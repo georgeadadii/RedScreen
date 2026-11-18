@@ -1,0 +1,246 @@
+{
+  "category" : "jsonConfig",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "quotedValue",
+    "nearbyBenign",
+    "punctuation"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "json-config-light-2x",
+  "pixelHeight" : 564,
+  "pixelWidth" : 1200,
+  "scale" : 2,
+  "scenario" : "A JSON config in a light editor with quoted API key and client secret, a token TTL, a public client ID, a password hint, and a package checksum.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "json-api-key",
+      "note" : "Quoted API key value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.273933,
+            "x" : 0.202911,
+            "y" : 0.395155
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 21,
+          "utf16Offset" : 13
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "token-ttl",
+      "note" : "Numeric TTL beside a token keyword",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.052178,
+            "x" : 0.215955,
+            "y" : 0.473169
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 4,
+          "utf16Offset" : 14
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "client-id",
+      "note" : "Public client identifier",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.260889,
+            "x" : 0.229,
+            "y" : 0.551183
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 20,
+          "utf16Offset" : 15
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "client-secret",
+      "note" : "Quoted client secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.260889,
+            "x" : 0.281178,
+            "y" : 0.629197
+          },
+          "textBoxID" : "t07",
+          "utf16Length" : 20,
+          "utf16Offset" : 19
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "credentialKeyword",
+      "id" : "password-hint",
+      "note" : "Hint that may reveal a password",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.2348,
+            "x" : 0.281178,
+            "y" : 0.707211
+          },
+          "textBoxID" : "t08",
+          "utf16Length" : 18,
+          "utf16Offset" : 19
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "checksum",
+      "note" : "Package checksum",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.053662,
+            "width" : 0.508733,
+            "x" : 0.229,
+            "y" : 0.785226
+          },
+          "textBoxID" : "t09",
+          "utf16Length" : 39,
+          "utf16Offset" : 15
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.743533,
+        "x" : 0.033333,
+        "y" : 0.083098
+      },
+      "text" : "// RedScreen synthetic fixture: config.json (fake values)"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.013044,
+        "x" : 0.033333,
+        "y" : 0.161112
+      },
+      "text" : "{"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.365244,
+        "x" : 0.033333,
+        "y" : 0.239126
+      },
+      "text" : "  \"service\": \"billing-demo\","
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.495688,
+        "x" : 0.033333,
+        "y" : 0.31714
+      },
+      "text" : "  \"endpoint\": \"http://localhost:8080\","
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.4696,
+        "x" : 0.033333,
+        "y" : 0.395155
+      },
+      "text" : "  \"apiKey\": \"RSFAKE-api-3e7b91c4d2\","
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.247844,
+        "x" : 0.033333,
+        "y" : 0.473169
+      },
+      "text" : "  \"tokenTTL\": 3600,"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.482644,
+        "x" : 0.033333,
+        "y" : 0.551183
+      },
+      "text" : "  \"clientId\": \"web-dashboard-client\","
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.534822,
+        "x" : 0.033333,
+        "y" : 0.629197
+      },
+      "text" : "  \"clientSecret\": \"RSFAKE-cs-81fa22b0e9\","
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.508733,
+        "x" : 0.033333,
+        "y" : 0.707211
+      },
+      "text" : "  \"passwordHint\": \"RSFAKE-hint-blue42\","
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.717444,
+        "x" : 0.033333,
+        "y" : 0.785226
+      },
+      "text" : "  \"checksum\": \"sha256-9b74c9897bac770ffc029102a200c5de\""
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.053662,
+        "width" : 0.013044,
+        "x" : 0.033333,
+        "y" : 0.86324
+      },
+      "text" : "}"
+    }
+  ],
+  "theme" : "light"
+}

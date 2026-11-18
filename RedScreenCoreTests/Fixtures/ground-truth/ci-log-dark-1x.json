@@ -1,0 +1,273 @@
+{
+  "category" : "ciLog",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "punctuation",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "ci-log-dark-1x",
+  "pixelHeight" : 260,
+  "pixelWidth" : 640,
+  "scale" : 1,
+  "scenario" : "A dark CI log with an abbreviated commit SHA, an already-masked token, an integrity hash, a leaked signing secret and bearer token, a truncated bearer value, and a bearer variable reference.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "ci-commit",
+      "note" : "Abbreviated commit SHA",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.14675,
+            "x" : 0.495958,
+            "y" : 0.174745
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 12,
+          "utf16Offset" : 38
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "ci-masked",
+      "note" : "CI-masked value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.036687,
+            "x" : 0.398125,
+            "y" : 0.25936
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 3,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "ci-integrity",
+      "note" : "Package integrity hash",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.379104,
+            "x" : 0.263604,
+            "y" : 0.343975
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 31,
+          "utf16Offset" : 19
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "highEntropyContextual",
+      "id" : "ci-signing-secret",
+      "note" : "High-entropy value with secret context",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.391333,
+            "x" : 0.495958,
+            "y" : 0.428591
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 32,
+          "utf16Offset" : 38
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "bearerToken",
+      "id" : "ci-bearer",
+      "note" : "JWT-shaped bearer credential",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.452479,
+            "x" : 0.483729,
+            "y" : 0.513206
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 37,
+          "utf16Offset" : 37
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "highEntropyContextual",
+      "id" : "ci-nonce",
+      "note" : "Nonce with weak secret context",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.244583,
+            "x" : 0.300291,
+            "y" : 0.597822
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 20,
+          "utf16Offset" : 22
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "bearerToken",
+      "id" : "ci-truncated-bearer",
+      "note" : "Truncated bearer value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.14675,
+            "x" : 0.398125,
+            "y" : 0.682437
+          },
+          "textBoxID" : "t07",
+          "utf16Length" : 12,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "bearerToken",
+      "id" : "ci-bearer-variable",
+      "note" : "Variable reference, not a value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.058203,
+            "width" : 0.158979,
+            "x" : 0.410354,
+            "y" : 0.767052
+          },
+          "textBoxID" : "t08",
+          "utf16Length" : 13,
+          "utf16Offset" : 31
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.611458,
+        "x" : 0.03125,
+        "y" : 0.090129
+      },
+      "text" : "[ci] RedScreen synthetic CI log - fake values only"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.623687,
+        "x" : 0.03125,
+        "y" : 0.174745
+      },
+      "text" : "12:00:01 Run actions/checkout@v4 (ref 63c2d54687ed)"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.403562,
+        "x" : 0.03125,
+        "y" : 0.25936
+      },
+      "text" : "12:00:04 Using registry token ***"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.611458,
+        "x" : 0.03125,
+        "y" : 0.343975
+      },
+      "text" : "12:00:09 integrity sha512-Zm9vYmFyYmF6cXV4cXV1eA=="
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.856041,
+        "x" : 0.03125,
+        "y" : 0.428591
+      },
+      "text" : "12:00:12 DEBUG webhook signing secret=7Hq2RSFAKEz9Lp4Wm8Xc3Vb6Nf1Kd5Tg"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.904958,
+        "x" : 0.03125,
+        "y" : 0.513206
+      },
+      "text" : "12:00:15 DEBUG Authorization: Bearer RSFAKE.eyJhbGciOiJIUzI1NiJ9.RSFAKEsig"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.513625,
+        "x" : 0.03125,
+        "y" : 0.597822
+      },
+      "text" : "12:00:18 deploy nonce rsfake9c1f2e7a4b8d6c"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.513625,
+        "x" : 0.03125,
+        "y" : 0.682437
+      },
+      "text" : "12:00:20 Retrying with Bearer RSFAKE-tr..."
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.538083,
+        "x" : 0.03125,
+        "y" : 0.767052
+      },
+      "text" : "12:00:22 Authorization: Bearer $DEPLOY_TOKEN"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.058203,
+        "width" : 0.269041,
+        "x" : 0.03125,
+        "y" : 0.851668
+      },
+      "text" : "12:00:25 Job succeeded"
+    }
+  ],
+  "theme" : "dark"
+}
