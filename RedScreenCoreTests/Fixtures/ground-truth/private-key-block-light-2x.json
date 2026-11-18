@@ -1,0 +1,286 @@
+{
+  "category" : "terminal",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "multilineBlock",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "private-key-block-light-2x",
+  "pixelHeight" : 608,
+  "pixelWidth" : 1120,
+  "scale" : 2,
+  "scenario" : "A light terminal printing a synthetic RSA private key block, a public certificate block, and an encrypted private key block.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "privateKeyHeader",
+      "id" : "rsa-private-key",
+      "note" : "Complete private key block including armor lines",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.433262,
+            "x" : 0.035714,
+            "y" : 0.149453
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 31,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.628928,
+            "x" : 0.035714,
+            "y" : 0.221821
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 45,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.628928,
+            "x" : 0.035714,
+            "y" : 0.294189
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 45,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.628928,
+            "x" : 0.035714,
+            "y" : 0.366558
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 45,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.405309,
+            "x" : 0.035714,
+            "y" : 0.438926
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 29,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "privateKeyHeader",
+      "id" : "certificate",
+      "note" : "Public certificate block",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.377357,
+            "x" : 0.035714,
+            "y" : 0.511295
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 27,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.587,
+            "x" : 0.035714,
+            "y" : 0.583663
+          },
+          "textBoxID" : "t07",
+          "utf16Length" : 42,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.349404,
+            "x" : 0.035714,
+            "y" : 0.656032
+          },
+          "textBoxID" : "t08",
+          "utf16Length" : 25,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "privateKeyHeader",
+      "id" : "encrypted-private-key",
+      "note" : "Passphrase-encrypted private key block",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.517119,
+            "x" : 0.035714,
+            "y" : 0.7284
+          },
+          "textBoxID" : "t09",
+          "utf16Length" : 37,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.600976,
+            "x" : 0.035714,
+            "y" : 0.800768
+          },
+          "textBoxID" : "t10",
+          "utf16Length" : 43,
+          "utf16Offset" : 0
+        },
+        {
+          "rect" : {
+            "height" : 0.049779,
+            "width" : 0.489166,
+            "x" : 0.035714,
+            "y" : 0.873137
+          },
+          "textBoxID" : "t11",
+          "utf16Length" : 35,
+          "utf16Offset" : 0
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.76869,
+        "x" : 0.035714,
+        "y" : 0.077084
+      },
+      "text" : "demo % cat synthetic-keys.pem  # fake, not a usable key"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.433262,
+        "x" : 0.035714,
+        "y" : 0.149453
+      },
+      "text" : "-----BEGIN RSA PRIVATE KEY-----"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.628928,
+        "x" : 0.035714,
+        "y" : 0.221821
+      },
+      "text" : "RSFAKEsyntheticKeyBodyLine0001NotARealKeyAAAA"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.628928,
+        "x" : 0.035714,
+        "y" : 0.294189
+      },
+      "text" : "RSFAKEsyntheticKeyBodyLine0002NotARealKeyBBBB"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.628928,
+        "x" : 0.035714,
+        "y" : 0.366558
+      },
+      "text" : "RSFAKEsyntheticKeyBodyLine0003NotARealKeyCC=="
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.405309,
+        "x" : 0.035714,
+        "y" : 0.438926
+      },
+      "text" : "-----END RSA PRIVATE KEY-----"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.377357,
+        "x" : 0.035714,
+        "y" : 0.511295
+      },
+      "text" : "-----BEGIN CERTIFICATE-----"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.587,
+        "x" : 0.035714,
+        "y" : 0.583663
+      },
+      "text" : "MIIBsyntheticPublicCertificateBodyLine0001"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.349404,
+        "x" : 0.035714,
+        "y" : 0.656032
+      },
+      "text" : "-----END CERTIFICATE-----"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.517119,
+        "x" : 0.035714,
+        "y" : 0.7284
+      },
+      "text" : "-----BEGIN ENCRYPTED PRIVATE KEY-----"
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.600976,
+        "x" : 0.035714,
+        "y" : 0.800768
+      },
+      "text" : "RSFAKEsyntheticEncryptedKeyBodyLine0001DDDD"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.049779,
+        "width" : 0.489166,
+        "x" : 0.035714,
+        "y" : 0.873137
+      },
+      "text" : "-----END ENCRYPTED PRIVATE KEY-----"
+    }
+  ],
+  "theme" : "light"
+}

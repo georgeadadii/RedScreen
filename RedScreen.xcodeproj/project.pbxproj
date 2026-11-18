@@ -15,6 +15,24 @@
 		B10000000000000000000007 /* RedScreenCoreSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000005 /* RedScreenCoreSmokeTests.swift */; };
 		B10000000000000000000008 /* RedScreenCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C10000000000000000000008 /* RedScreenCore.framework */; };
 		B10000000000000000000009 /* RedScreenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000006 /* RedScreenUITests.swift */; };
+		B1000000000000000000000A /* PrivacySafeLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000D /* PrivacySafeLogger.swift */; };
+		B1000000000000000000000B /* SecureImageSessionLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000E /* SecureImageSessionLifecycle.swift */; };
+		B1000000000000000000000C /* SecureImageSessionLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */; };
+		B1000000000000000000000D /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000010 /* Geometry.swift */; };
+		B1000000000000000000000E /* RedactionDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000011 /* RedactionDocument.swift */; };
+		B1000000000000000000000F /* GeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000012 /* GeometryTests.swift */; };
+		B10000000000000000000010 /* RedactionDocumentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000013 /* RedactionDocumentTests.swift */; };
+		B10000000000000000000011 /* ProcessingServiceContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000014 /* ProcessingServiceContractTests.swift */; };
+		B10000000000000000000012 /* FixtureSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000015 /* FixtureSchema.swift */; };
+		B10000000000000000000013 /* FixtureScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000016 /* FixtureScenarios.swift */; };
+		B10000000000000000000014 /* FixtureRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000017 /* FixtureRenderer.swift */; };
+		B10000000000000000000015 /* FixtureLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000018 /* FixtureLibrary.swift */; };
+		B10000000000000000000016 /* FixtureGeometryMatching.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000019 /* FixtureGeometryMatching.swift */; };
+		B10000000000000000000017 /* SyntheticValuePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000001A /* SyntheticValuePolicy.swift */; };
+		B10000000000000000000018 /* FixtureCorpusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000001B /* FixtureCorpusTests.swift */; };
+		B10000000000000000000019 /* FixtureGeometryMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000001C /* FixtureGeometryMatchingTests.swift */; };
+		B1000000000000000000001A /* SyntheticValuePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000001D /* SyntheticValuePolicyTests.swift */; };
+		B1000000000000000000001B /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = C1000000000000000000001E /* Fixtures */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +58,24 @@
 		C1000000000000000000000A /* RedScreenUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RedScreenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1000000000000000000000B /* RedScreen.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RedScreen.entitlements; sourceTree = "<group>"; };
 		C1000000000000000000000C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		C1000000000000000000000D /* PrivacySafeLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySafeLogger.swift; sourceTree = "<group>"; };
+		C1000000000000000000000E /* SecureImageSessionLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureImageSessionLifecycle.swift; sourceTree = "<group>"; };
+		C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureImageSessionLifecycleTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000010 /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
+		C10000000000000000000011 /* RedactionDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedactionDocument.swift; sourceTree = "<group>"; };
+		C10000000000000000000012 /* GeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeometryTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000013 /* RedactionDocumentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedactionDocumentTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000014 /* ProcessingServiceContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingServiceContractTests.swift; sourceTree = "<group>"; };
+		C10000000000000000000015 /* FixtureSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureSchema.swift; sourceTree = "<group>"; };
+		C10000000000000000000016 /* FixtureScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureScenarios.swift; sourceTree = "<group>"; };
+		C10000000000000000000017 /* FixtureRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureRenderer.swift; sourceTree = "<group>"; };
+		C10000000000000000000018 /* FixtureLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureLibrary.swift; sourceTree = "<group>"; };
+		C10000000000000000000019 /* FixtureGeometryMatching.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureGeometryMatching.swift; sourceTree = "<group>"; };
+		C1000000000000000000001A /* SyntheticValuePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticValuePolicy.swift; sourceTree = "<group>"; };
+		C1000000000000000000001B /* FixtureCorpusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureCorpusTests.swift; sourceTree = "<group>"; };
+		C1000000000000000000001C /* FixtureGeometryMatchingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureGeometryMatchingTests.swift; sourceTree = "<group>"; };
+		C1000000000000000000001D /* SyntheticValuePolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticValuePolicyTests.swift; sourceTree = "<group>"; };
+		C1000000000000000000001E /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,11 +92,12 @@
 		G10000000000000000000004 /* UI */ = {isa = PBXGroup; children = (C10000000000000000000002 /* ContentView.swift */, ); path = UI; sourceTree = "<group>"; };
 		G10000000000000000000005 /* Resources */ = {isa = PBXGroup; children = (C1000000000000000000000B /* RedScreen.entitlements */, ); path = Resources; sourceTree = "<group>"; };
 		G10000000000000000000006 /* RedScreenCore */ = {isa = PBXGroup; children = (G10000000000000000000007 /* Domain */, G10000000000000000000008 /* Services */, ); path = RedScreenCore; sourceTree = "<group>"; };
-		G10000000000000000000007 /* Domain */ = {isa = PBXGroup; children = (C10000000000000000000003 /* ProcessingTypes.swift */, ); path = Domain; sourceTree = "<group>"; };
-		G10000000000000000000008 /* Services */ = {isa = PBXGroup; children = (C10000000000000000000004 /* ProcessingServices.swift */, ); path = Services; sourceTree = "<group>"; };
-		G10000000000000000000009 /* RedScreenCoreTests */ = {isa = PBXGroup; children = (C10000000000000000000005 /* RedScreenCoreSmokeTests.swift */, ); path = RedScreenCoreTests; sourceTree = "<group>"; };
+		G10000000000000000000007 /* Domain */ = {isa = PBXGroup; children = (C10000000000000000000003 /* ProcessingTypes.swift */, C10000000000000000000010 /* Geometry.swift */, C10000000000000000000011 /* RedactionDocument.swift */, ); path = Domain; sourceTree = "<group>"; };
+		G10000000000000000000008 /* Services */ = {isa = PBXGroup; children = (C10000000000000000000004 /* ProcessingServices.swift */, C1000000000000000000000D /* PrivacySafeLogger.swift */, C1000000000000000000000E /* SecureImageSessionLifecycle.swift */, ); path = Services; sourceTree = "<group>"; };
+		G10000000000000000000009 /* RedScreenCoreTests */ = {isa = PBXGroup; children = (C10000000000000000000005 /* RedScreenCoreSmokeTests.swift */, C1000000000000000000000F /* SecureImageSessionLifecycleTests.swift */, C10000000000000000000012 /* GeometryTests.swift */, C10000000000000000000013 /* RedactionDocumentTests.swift */, C10000000000000000000014 /* ProcessingServiceContractTests.swift */, C1000000000000000000001B /* FixtureCorpusTests.swift */, C1000000000000000000001C /* FixtureGeometryMatchingTests.swift */, C1000000000000000000001D /* SyntheticValuePolicyTests.swift */, G1000000000000000000000C /* FixtureSupport */, C1000000000000000000001E /* Fixtures */, ); path = RedScreenCoreTests; sourceTree = "<group>"; };
 		G1000000000000000000000A /* RedScreenUITests */ = {isa = PBXGroup; children = (C10000000000000000000006 /* RedScreenUITests.swift */, ); path = RedScreenUITests; sourceTree = "<group>"; };
 		G1000000000000000000000B /* Products */ = {isa = PBXGroup; children = (C10000000000000000000007 /* RedScreen.app */, C10000000000000000000008 /* RedScreenCore.framework */, C10000000000000000000009 /* RedScreenCoreTests.xctest */, C1000000000000000000000A /* RedScreenUITests.xctest */, ); name = Products; sourceTree = "<group>"; };
+		G1000000000000000000000C /* FixtureSupport */ = {isa = PBXGroup; children = (C10000000000000000000015 /* FixtureSchema.swift */, C10000000000000000000016 /* FixtureScenarios.swift */, C10000000000000000000017 /* FixtureRenderer.swift */, C10000000000000000000018 /* FixtureLibrary.swift */, C10000000000000000000019 /* FixtureGeometryMatching.swift */, C1000000000000000000001A /* SyntheticValuePolicy.swift */, ); path = FixtureSupport; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -77,14 +114,14 @@
 /* Begin PBXResourcesBuildPhase section */
 		F40000000000000000000001 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		F40000000000000000000002 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		F40000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F40000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B1000000000000000000001B /* Fixtures in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
 		F40000000000000000000004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F30000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001 /* RedScreenApp.swift in Sources */, B10000000000000000000002 /* ContentView.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000003 /* ProcessingTypes.swift in Sources */, B10000000000000000000004 /* ProcessingServices.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000007 /* RedScreenCoreSmokeTests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F30000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000003 /* ProcessingTypes.swift in Sources */, B1000000000000000000000D /* Geometry.swift in Sources */, B1000000000000000000000E /* RedactionDocument.swift in Sources */, B10000000000000000000004 /* ProcessingServices.swift in Sources */, B1000000000000000000000A /* PrivacySafeLogger.swift in Sources */, B1000000000000000000000B /* SecureImageSessionLifecycle.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F30000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000007 /* RedScreenCoreSmokeTests.swift in Sources */, B1000000000000000000000C /* SecureImageSessionLifecycleTests.swift in Sources */, B1000000000000000000000F /* GeometryTests.swift in Sources */, B10000000000000000000010 /* RedactionDocumentTests.swift in Sources */, B10000000000000000000011 /* ProcessingServiceContractTests.swift in Sources */, B10000000000000000000012 /* FixtureSchema.swift in Sources */, B10000000000000000000013 /* FixtureScenarios.swift in Sources */, B10000000000000000000014 /* FixtureRenderer.swift in Sources */, B10000000000000000000015 /* FixtureLibrary.swift in Sources */, B10000000000000000000016 /* FixtureGeometryMatching.swift in Sources */, B10000000000000000000017 /* SyntheticValuePolicy.swift in Sources */, B10000000000000000000018 /* FixtureCorpusTests.swift in Sources */, B10000000000000000000019 /* FixtureGeometryMatchingTests.swift in Sources */, B1000000000000000000001A /* SyntheticValuePolicyTests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
 		F30000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000009 /* RedScreenUITests.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
@@ -101,8 +138,8 @@
 		I10000000000000000000004 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = RedScreen/Resources/RedScreen.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = RedScreen; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design"; INFOPLIST_KEY_LSUIElement = YES; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", ); MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreen; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Release; };
 		I10000000000000000000005 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; DEFINES_MODULE = YES; DYLIB_COMPATIBILITY_VERSION = 1; DYLIB_CURRENT_VERSION = 1; DYLIB_INSTALL_NAME_BASE = "@rpath"; GENERATE_INFOPLIST_FILE = YES; INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCore; PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)"; SKIP_INSTALL = YES; }; name = Debug; };
 		I10000000000000000000006 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; DEFINES_MODULE = YES; DYLIB_COMPATIBILITY_VERSION = 1; DYLIB_CURRENT_VERSION = 1; DYLIB_INSTALL_NAME_BASE = "@rpath"; GENERATE_INFOPLIST_FILE = YES; INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCore; PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)"; SKIP_INSTALL = YES; }; name = Release; };
-		I10000000000000000000007 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks", "@executable_path/../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCoreTests; PRODUCT_NAME = "$(TARGET_NAME)"; }; name = Debug; };
-		I10000000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks", "@executable_path/../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCoreTests; PRODUCT_NAME = "$(TARGET_NAME)"; }; name = Release; };
+		I10000000000000000000007 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; CODE_SIGN_STYLE = Automatic; COMPRESS_PNG_FILES = NO; STRIP_PNG_TEXT = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks", "@executable_path/../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCoreTests; PRODUCT_NAME = "$(TARGET_NAME)"; }; name = Debug; };
+		I10000000000000000000008 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; CODE_SIGN_STYLE = Automatic; COMPRESS_PNG_FILES = NO; STRIP_PNG_TEXT = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks", "@executable_path/../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenCoreTests; PRODUCT_NAME = "$(TARGET_NAME)"; }; name = Release; };
 		I10000000000000000000009 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenUITests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = RedScreen; }; name = Debug; };
 		I1000000000000000000000A = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.georgeadadii.RedScreenUITests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = RedScreen; }; name = Release; };
 /* End XCBuildConfiguration section */

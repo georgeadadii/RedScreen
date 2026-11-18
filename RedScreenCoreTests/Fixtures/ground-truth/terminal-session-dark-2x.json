@@ -1,0 +1,177 @@
+{
+  "category" : "terminal",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "punctuation",
+    "quotedValue"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "terminal-session-dark-2x",
+  "pixelHeight" : 432,
+  "pixelWidth" : 1240,
+  "scale" : 2,
+  "scenario" : "A dark terminal session exporting a GitHub-style token, sending a bearer header with curl, printing a UUID request ID, and showing a masked token.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "providerKeyShape",
+      "id" : "github-token",
+      "note" : "GitHub-style token shape",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.504946,
+            "x" : 0.373096,
+            "y" : 0.210341
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 40,
+          "utf16Offset" : 27
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "bearerToken",
+      "id" : "curl-bearer",
+      "note" : "Bearer credential in a header",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.265097,
+            "x" : 0.511957,
+            "y" : 0.312193
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 21,
+          "utf16Offset" : 38
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "request-uuid",
+      "note" : "Request UUID",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.454451,
+            "x" : 0.398344,
+            "y" : 0.515896
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 36,
+          "utf16Offset" : 29
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "providerKeyShape",
+      "id" : "masked-token",
+      "note" : "Already-masked token",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.504946,
+            "x" : 0.145871,
+            "y" : 0.7196
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 40,
+          "utf16Offset" : 9
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.631182,
+        "x" : 0.032258,
+        "y" : 0.108489
+      },
+      "text" : "demo % # RedScreen synthetic fixture - fake tokens"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.845784,
+        "x" : 0.032258,
+        "y" : 0.210341
+      },
+      "text" : "demo % export GITHUB_TOKEN=ghp_RSFAKE0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.782666,
+        "x" : 0.032258,
+        "y" : 0.312193
+      },
+      "text" : "demo % curl -H \"Authorization: Bearer RSFAKE-tok-9Qw2Ex7Rt5\" \\"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.504946,
+        "x" : 0.032258,
+        "y" : 0.414044
+      },
+      "text" : ">   https://api.example.test/v1/projects"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.845784,
+        "x" : 0.032258,
+        "y" : 0.515896
+      },
+      "text" : "{\"projects\":[],\"request_id\":\"c0ffee00-1234-4abc-8def-000000000001\"}"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.265097,
+        "x" : 0.032258,
+        "y" : 0.617748
+      },
+      "text" : "demo % gh auth status"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.618559,
+        "x" : 0.032258,
+        "y" : 0.7196
+      },
+      "text" : "  Token: ghp_************************************"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.429204,
+        "x" : 0.032258,
+        "y" : 0.821452
+      },
+      "text" : "  Token scopes: 'repo', 'read:org'"
+    }
+  ],
+  "theme" : "dark"
+}

@@ -1,0 +1,234 @@
+{
+  "category" : "envFile",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "quotedValue",
+    "punctuation"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "env-file-dark-2x",
+  "pixelHeight" : 432,
+  "pixelWidth" : 1280,
+  "scale" : 2,
+  "scenario" : "A shell profile in a dark theme exporting AWS documentation example keys, a quoted secret, a Redis URL with a password, a commit SHA, and a placeholder.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "providerKeyShape",
+      "id" : "aws-access-key-id",
+      "note" : "Access key ID exported beside its secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.244583,
+            "x" : 0.336979,
+            "y" : 0.210341
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 20,
+          "utf16Offset" : 25
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "aws-secret-access-key",
+      "note" : "Quoted secret key; quotes are not part of the value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.489166,
+            "x" : 0.398125,
+            "y" : 0.312193
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 40,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "envAssignment",
+      "id" : "aws-region",
+      "note" : "Region name",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.110062,
+            "x" : 0.251375,
+            "y" : 0.414044
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 9,
+          "utf16Offset" : 18
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "connectionString",
+      "id" : "redis-password",
+      "note" : "Password component of a connection URL",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.183437,
+            "x" : 0.275833,
+            "y" : 0.515896
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 15,
+          "utf16Offset" : 20
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "git-sha",
+      "note" : "Commit SHA",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.489166,
+            "x" : 0.129083,
+            "y" : 0.617748
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 40,
+          "utf16Offset" : 8
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "jwt-placeholder",
+      "note" : "Placeholder value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.097833,
+            "x" : 0.165771,
+            "y" : 0.7196
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 8,
+          "utf16Offset" : 11
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "highEntropyContextual",
+      "id" : "internal-id",
+      "note" : "Random-looking identifier without secret context",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.220125,
+            "x" : 0.178,
+            "y" : 0.821452
+          },
+          "textBoxID" : "t07",
+          "utf16Length" : 18,
+          "utf16Offset" : 12
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.587,
+        "x" : 0.03125,
+        "y" : 0.108489
+      },
+      "text" : "# RedScreen synthetic fixture (fake values only)"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.550312,
+        "x" : 0.03125,
+        "y" : 0.210341
+      },
+      "text" : "export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.86827,
+        "x" : 0.03125,
+        "y" : 0.312193
+      },
+      "text" : "export AWS_SECRET_ACCESS_KEY=\"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\""
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.330187,
+        "x" : 0.03125,
+        "y" : 0.414044
+      },
+      "text" : "export AWS_REGION=us-east-1"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.770437,
+        "x" : 0.03125,
+        "y" : 0.515896
+      },
+      "text" : "REDIS_URL='redis://:RSFAKE-redis-77@cache.internal.test:6379/0'"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.587,
+        "x" : 0.03125,
+        "y" : 0.617748
+      },
+      "text" : "GIT_SHA=3f869f9c2b7e4d1a0f5e6c8b9a7d3e2f1c0b4a59"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.232354,
+        "x" : 0.03125,
+        "y" : 0.7196
+      },
+      "text" : "JWT_SECRET=changeme"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.366875,
+        "x" : 0.03125,
+        "y" : 0.821452
+      },
+      "text" : "INTERNAL_ID=RSFAKE7f3a9c2e1b5d"
+    }
+  ],
+  "theme" : "dark"
+}

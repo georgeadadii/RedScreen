@@ -1,0 +1,257 @@
+{
+  "category" : "dashboard",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "multiColumn",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "proportional",
+  "id" : "dashboard-api-keys-dark-1x",
+  "pixelHeight" : 184,
+  "pixelWidth" : 620,
+  "scale" : 1,
+  "scenario" : "A dark, proportional-font API key dashboard with a full secret key, a partially masked key, a publishable key, a webhook secret, and usage counts.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "dashboard-live-key",
+      "note" : "Full secret key in a key column",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.076087,
+            "width" : 0.325126,
+            "x" : 0.290323,
+            "y" : 0.396739
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 27,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "providerKeyShape",
+      "id" : "dashboard-masked-key",
+      "note" : "Partially masked key",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.076087,
+            "width" : 0.26508,
+            "x" : 0.290323,
+            "y" : 0.527174
+          },
+          "textBoxID" : "t08",
+          "utf16Length" : 23,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "providerKeyShape",
+      "id" : "dashboard-publishable-key",
+      "note" : "Publishable client-side key",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.076087,
+            "width" : 0.274948,
+            "x" : 0.290323,
+            "y" : 0.657609
+          },
+          "textBoxID" : "t11",
+          "utf16Length" : 21,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "highEntropyContextual",
+      "id" : "dashboard-webhook-secret",
+      "note" : "High-entropy value labelled as a secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.076087,
+            "width" : 0.333814,
+            "x" : 0.290323,
+            "y" : 0.788043
+          },
+          "textBoxID" : "t14",
+          "utf16Length" : 24,
+          "utf16Offset" : 0
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.385282,
+        "x" : 0.032258,
+        "y" : 0.13587
+      },
+      "text" : "API keys - RedScreen synthetic fixture"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.060233,
+        "x" : 0.032258,
+        "y" : 0.266304
+      },
+      "text" : "Name"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.03891,
+        "x" : 0.290323,
+        "y" : 0.266304
+      },
+      "text" : "Key"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.154382,
+        "x" : 0.774194,
+        "y" : 0.266304
+      },
+      "text" : "Requests (24h)"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.175717,
+        "x" : 0.032258,
+        "y" : 0.396739
+      },
+      "text" : "Production secret"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.325126,
+        "x" : 0.290323,
+        "y" : 0.396739
+      },
+      "text" : "svc_live_RSFAKE4f8a2c9e7b1d"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.069065,
+        "x" : 0.774194,
+        "y" : 0.396739
+      },
+      "text" : "48,213"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.144349,
+        "x" : 0.032258,
+        "y" : 0.527174
+      },
+      "text" : "Staging secret"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.26508,
+        "x" : 0.290323,
+        "y" : 0.527174
+      },
+      "text" : "svc_test_RSFAKE••••3c1d"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.056507,
+        "x" : 0.774194,
+        "y" : 0.527174
+      },
+      "text" : "1,024"
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.116751,
+        "x" : 0.032258,
+        "y" : 0.657609
+      },
+      "text" : "Publishable"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.274948,
+        "x" : 0.290323,
+        "y" : 0.657609
+      },
+      "text" : "pk_pub_RSFAKE9a8b7c6d"
+    },
+    {
+      "id" : "t12",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.081623,
+        "x" : 0.774194,
+        "y" : 0.657609
+      },
+      "text" : "310,577"
+    },
+    {
+      "id" : "t13",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.162761,
+        "x" : 0.032258,
+        "y" : 0.788043
+      },
+      "text" : "Webhook secret"
+    },
+    {
+      "id" : "t14",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.333814,
+        "x" : 0.290323,
+        "y" : 0.788043
+      },
+      "text" : "whsec_RSFAKE2Lm8Qx4Tz6Wv"
+    },
+    {
+      "id" : "t15",
+      "rect" : {
+        "height" : 0.076087,
+        "width" : 0.012558,
+        "x" : 0.774194,
+        "y" : 0.788043
+      },
+      "text" : "0"
+    }
+  ],
+  "theme" : "dark"
+}

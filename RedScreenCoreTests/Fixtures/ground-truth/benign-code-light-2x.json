@@ -1,0 +1,196 @@
+{
+  "category" : "benignCode",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "nearbyBenign",
+    "punctuation"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "benign-code-light-2x",
+  "pixelHeight" : 432,
+  "pixelWidth" : 1280,
+  "scale" : 2,
+  "scenario" : "Light-theme Swift source with credential keywords, a UUID literal, a reserved test URL, a commit SHA, and an interpolated bearer header but no secrets.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "keychain-read",
+      "note" : "Keyword without a literal value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.391333,
+            "x" : 0.214687,
+            "y" : 0.210341
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 32,
+          "utf16Offset" : 15
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "uuid-literal",
+      "note" : "UUID literal",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.44025,
+            "x" : 0.447041,
+            "y" : 0.312193
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 36,
+          "utf16Offset" : 34
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "connectionString",
+      "id" : "endpoint-url",
+      "note" : "Credential-free URL",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.330187,
+            "x" : 0.373666,
+            "y" : 0.515896
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 27,
+          "utf16Offset" : 28
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "commit-literal",
+      "note" : "Commit SHA literal",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.489166,
+            "x" : 0.202458,
+            "y" : 0.7196
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 40,
+          "utf16Offset" : 14
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "bearerToken",
+      "id" : "bearer-interpolation",
+      "note" : "String interpolation",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.070059,
+            "width" : 0.097833,
+            "x" : 0.4715,
+            "y" : 0.821452
+          },
+          "textBoxID" : "t07",
+          "utf16Length" : 8,
+          "utf16Offset" : 36
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.611458,
+        "x" : 0.03125,
+        "y" : 0.108489
+      },
+      "text" : "// RedScreen synthetic fixture: benign source code"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.57477,
+        "x" : 0.03125,
+        "y" : 0.210341
+      },
+      "text" : "let password = try keychain.read(account: user)"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.880499,
+        "x" : 0.03125,
+        "y" : 0.312193
+      },
+      "text" : "let requestID = UUID(uuidString: \"123e4567-e89b-12d3-a456-426614174000\")"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.183437,
+        "x" : 0.03125,
+        "y" : 0.414044
+      },
+      "text" : "let port = 8080"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.709291,
+        "x" : 0.03125,
+        "y" : 0.515896
+      },
+      "text" : "let endpoint = URL(string: \"https://api.example.test/v1\")!"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.489166,
+        "x" : 0.03125,
+        "y" : 0.617748
+      },
+      "text" : "// TODO: rotate the token before release"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.672604,
+        "x" : 0.03125,
+        "y" : 0.7196
+      },
+      "text" : "let commit = \"d7ff0b2693f9daac91b2338d2eb5dd02568a19a9\""
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.070059,
+        "width" : 0.550312,
+        "x" : 0.03125,
+        "y" : 0.821452
+      },
+      "text" : "let header = \"Authorization: Bearer \\(token)\""
+    }
+  ],
+  "theme" : "light"
+}

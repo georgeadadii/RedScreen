@@ -1,0 +1,24 @@
+;; Sandbox profile for the synthetic fixture generator (see `make fixtures`).
+;;
+;; The generator must not observe the developer environment. Beyond the empty process environment
+;; supplied by `env -i`, this profile denies network access, denies reading file contents anywhere
+;; beneath the user's home directory (including user-installed fonts and the repository itself),
+;; denies spawning other processes, and restricts writes to the output directory and the
+;; per-user system cache area used by Core Text.
+
+(version 1)
+(allow default)
+
+(deny network*)
+
+(deny process-exec)
+(allow process-exec (literal (param "GENERATOR")))
+
+(deny file-read-data (subpath (param "HOME_DIR")))
+(allow file-read-data (literal (param "GENERATOR")))
+(allow file-read-data (subpath (param "OUTPUT_DIR")))
+
+(deny file-write*)
+(allow file-write* (subpath (param "OUTPUT_DIR")))
+(allow file-write* (subpath "/private/var/folders"))
+(allow file-write* (literal "/dev/null"))
