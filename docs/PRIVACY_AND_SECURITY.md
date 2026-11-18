@@ -56,7 +56,10 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    security-scoped access before decoding, enforces byte and pixel budgets before allocating, and
    keeps only the normalized pixels and their colour space. The encoded file and its metadata are
    discarded. A failed import never replaces the open document.
-8. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
+8. Text recognition runs on device with Apple Vision, language correction off and no custom
+   words. Recognized text lives only in the session's `RedactionDocument`, is never logged or
+   written, and results for a replaced or closed document are discarded.
+9. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
    pasteboard. Do not retain export destinations after the operation ends.
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a

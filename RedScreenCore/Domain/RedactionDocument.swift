@@ -33,6 +33,20 @@ public struct Confidence: Equatable, Hashable, Sendable {
     }
 }
 
+/// Location of part of an observation's text, such as one whitespace-delimited word.
+///
+/// `utf16Range` indexes the owning observation's `text`; the box uses the observation's origin.
+/// It carries no text of its own.
+public struct OCRTextSegment: Equatable, Sendable {
+    public let utf16Range: Range<Int>
+    public let boundingBox: NormalizedRect
+
+    public init(utf16Range: Range<Int>, boundingBox: NormalizedRect) {
+        self.utf16Range = utf16Range
+        self.boundingBox = boundingBox
+    }
+}
+
 /// Sensitive OCR text plus its source bounding box.
 ///
 /// This type intentionally does not conform to `Codable`. Its descriptions always redact text.
@@ -43,24 +57,39 @@ public struct OCRObservation: Identifiable, Equatable, Sendable, CustomStringCon
     public let boundingBox: NormalizedRect
     public let boundingBoxOrigin: NormalizedCoordinateOrigin
     public let confidence: Confidence
+    /// Finer-grained boxes, when the recognizer provides them. Empty means line-level only.
+    public let segments: [OCRTextSegment]
 
     public init(
         id: UUID = UUID(),
         text: String,
         boundingBox: NormalizedRect,
         boundingBoxOrigin: NormalizedCoordinateOrigin,
-        confidence: Confidence
+        confidence: Confidence,
+        segments: [OCRTextSegment] = []
     ) {
         self.id = id
         self.text = text
         self.boundingBox = boundingBox
         self.boundingBoxOrigin = boundingBoxOrigin
         self.confidence = confidence
+        self.segments = segments
     }
 
     public func imageRect(in dimensions: PixelDimensions) throws -> ImageRect {
         try ImageRect(
             normalized: boundingBox,
+            dimensions: dimensions,
+            sourceOrigin: boundingBoxOrigin
+        )
+    }
+
+    public func imageRect(
+        for segment: OCRTextSegment,
+        in dimensions: PixelDimensions
+    ) throws -> ImageRect {
+        try ImageRect(
+            normalized: segment.boundingBox,
             dimensions: dimensions,
             sourceOrigin: boundingBoxOrigin
         )

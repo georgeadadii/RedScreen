@@ -30,10 +30,13 @@ public protocol ImageImporter: Sendable {
     func importImage(from url: URL) async throws -> ImportedImage
 }
 
-/// Produces sensitive OCR observations locally from an in-memory image.
+/// Produces sensitive OCR observations locally from the session's normalized pixels.
+///
+/// Implementations must run on device, honour task cancellation, write nothing to disk, and
+/// return boxes in in-bounds normalized coordinates with their producer origin stated.
 public protocol TextRecognizer: Sendable {
     func recognizeText(
-        in image: ScreenshotImage,
+        in pixels: DecodedPixels,
         dimensions: PixelDimensions
     ) async throws -> [OCRObservation]
 }

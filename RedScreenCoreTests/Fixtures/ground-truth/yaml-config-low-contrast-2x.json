@@ -135,8 +135,8 @@
       "id" : "t02",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.075742,
-        "x" : 0.032258,
+        "width" : 0.050495,
+        "x" : 0.057505,
         "y" : 0.239126
       },
       "text" : "  api:"
@@ -145,8 +145,8 @@
       "id" : "t03",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.290344,
-        "x" : 0.032258,
+        "width" : 0.239849,
+        "x" : 0.082753,
         "y" : 0.31714
       },
       "text" : "    image: demo/api:1.4"
@@ -155,8 +155,8 @@
       "id" : "t04",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.302967,
-        "x" : 0.032258,
+        "width" : 0.252473,
+        "x" : 0.082753,
         "y" : 0.395155
       },
       "text" : "    ports: [\"8080:8080\"]"
@@ -165,8 +165,8 @@
       "id" : "t05",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.201978,
-        "x" : 0.032258,
+        "width" : 0.151484,
+        "x" : 0.082753,
         "y" : 0.473169
       },
       "text" : "    environment:"
@@ -175,8 +175,8 @@
       "id" : "t06",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.568064,
-        "x" : 0.032258,
+        "width" : 0.492322,
+        "x" : 0.108,
         "y" : 0.551183
       },
       "text" : "      POSTGRES_PASSWORD: RSFAKE-compose-pw-55"
@@ -185,8 +185,8 @@
       "id" : "t07",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.858408,
-        "x" : 0.032258,
+        "width" : 0.782666,
+        "x" : 0.108,
         "y" : 0.629197
       },
       "text" : "      DATABASE_URL: mysql://svc:RSFAKE-my-31@mysql.internal.test/app"
@@ -195,8 +195,8 @@
       "id" : "t08",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.492322,
-        "x" : 0.032258,
+        "width" : 0.41658,
+        "x" : 0.108,
         "y" : 0.707211
       },
       "text" : "      CACHE_URL: redis://127.0.0.1:6379"
@@ -205,8 +205,8 @@
       "id" : "t09",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.820537,
-        "x" : 0.032258,
+        "width" : 0.744795,
+        "x" : 0.108,
         "y" : 0.785226
       },
       "text" : "      MONGO_URL: mongodb://rsfake_reporter@mongo.internal.test/db"
@@ -215,8 +215,8 @@
       "id" : "t10",
       "rect" : {
         "height" : 0.053662,
-        "width" : 0.391333,
-        "x" : 0.032258,
+        "width" : 0.315591,
+        "x" : 0.108,
         "y" : 0.86324
       },
       "text" : "      PASSWORD_MIN_LENGTH: \"12\""
