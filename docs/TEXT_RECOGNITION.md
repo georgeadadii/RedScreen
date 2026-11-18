@@ -12,21 +12,45 @@ and offers **Retry**. The image stays open either way.
 
 ## Settings and rationale
 
-`VisionTextRecognizer` (`RedScreenCore/Platform`) runs one `VNRecognizeTextRequest`:
+`VisionTextRecognizer` (`RedScreenCore/Platform`) runs an accurate native-size `VNRecognizeTextRequest`:
 
 | Setting | Value | Why |
 | --- | --- | --- |
 | `recognitionLevel` | `.accurate` | Better on small monospace terminal and code text. |
 | `usesLanguageCorrection` | `false` | Correction can rewrite secret-like strings into dictionary words, hiding them from detection. |
 | `customWords` | `[]` | Nothing from screenshots is given to the recognizer, so there is no vocabulary to persist. |
-| `recognitionLanguages` | `["en-US"]` | Deterministic results. |
-| `automaticallyDetectsLanguage` | `false` | Deterministic results. |
+| `recognitionLanguages` | `["en-US"]` | Fixed recognition language. |
+| `automaticallyDetectsLanguage` | `false` | Avoid switching languages automatically. |
 | `minimumTextHeight` | `0` | Vision chooses; small UI text is kept. |
 
 The request runs on the session's normalized pixels, wrapped as a `CGImage` with no copy to disk,
 with orientation `.up`, because the importer has already made the pixels upright. Vision text
 recognition runs on device; the recognizer has no networking, logging, or file access, and a test
 checks its source for those APIs. Cancelling the calling task cancels the Vision request.
+
+## Large-text punctuation refinement
+
+Vision models can differ between macOS releases and virtual/physical Macs. On the hosted macOS
+26 runner, the 2x PEM fixture lost dash glyphs in two headers, missing the unchanged 85% per-fixture
+accuracy gate. CPU-only processing and request revisions 2/3 reproduced the same failure.
+
+When the native pass's median recognized glyph height is at least 20 physical pixels, the
+recognizer makes a second pass on a half-size in-memory bitmap. It matches lines one-to-one by
+normalized geometry. A secondary result is eligible only when its letters, digits, and syntax
+agree with the native line after collapsing dash runs and ignoring whitespace. It must retain
+more visible glyphs at equal or higher confidence. This recovers collapsed dash punctuation;
+it does not replace a secret value with a different reading, drop native lines, or add duplicate
+observations. Small text and unmatched lines keep their native results.
+
+Both passes use normalized coordinates in the same upright image grid, so returned boxes still
+map directly to the original pixels. The source image is unchanged. The temporary smaller bitmap
+and unused observations are released after recognition; no files or diagnostic text are written.
+Cancellation applies to each pass. CPU-only processing is not forced in production.
+
+The original corpus thresholds and the 100% secret-ink coverage gate are retained. Regression
+tests cover PEM header accuracy, source immutability, line/column matching, confidence rejection,
+and preservation of letters and assignment syntax. The local corpus result with refinement is
+339/342 lines (99.1%), including all 12 lines of the 2x PEM fixture.
 
 ## Output and coordinates
 
@@ -81,7 +105,7 @@ glyphs such as `{` and `}`.
 
 **Thresholds:** at least 85% of lines per fixture and at least 95% overall.
 
-**Measured (2026-11-18, macOS 26, Apple Silicon): 338 of 342 lines (98.8%)** across 34 fixtures. The remaining misses
+**Measured before punctuation refinement (2026-11-18, macOS 26, Apple Silicon): 338 of 342 lines (98.8%)** across 34 fixtures. The remaining misses
 are genuine OCR errors:
 - dash runs in PEM armor read as em-dashes;
 - asterisk masks with the wrong count;

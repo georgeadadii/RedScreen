@@ -29,24 +29,6 @@ final class VisionTextRecognizerTests: XCTestCase {
         XCTAssertFalse(request.automaticallyDetectsLanguage)
     }
 
-    // Temporary diagnostic: counts/IDs only, never recognized fixture text.
-    func testDiagnosesHostedOCRBackends() async throws {
-        let fixture = try FixtureLibrary.bundled().fixture(id: "private-key-block-light-2x")
-        let imported = try await ImageIOImageImporter().importImage(from: fixture.imageURL)
-        let image = try XCTUnwrap(imported.pixels.makeCGImage())
-        for revision in [VNRecognizeTextRequestRevision2, VNRecognizeTextRequestRevision3] {
-            for cpuOnly in [false, true] {
-                let request = VisionTextRecognizer().makeRequest()
-                request.revision = revision
-                request.usesCPUOnly = cpuOnly
-                try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
-                let observations = (request.results ?? []).compactMap(VisionTextRecognizer.observation(from:))
-                let score = try Self.score(observations, against: fixture.groundTruth)
-                print("OCR backend diagnostic revision=\(revision) cpuOnly=\(cpuOnly) found=\(score.found)/\(score.total) missedIDs=\(score.missedBoxIDs)")
-            }
-        }
-    }
-
     // MARK: - Corpus accuracy
 
     func testRecognizesTheSyntheticCorpusWithinTolerances() async throws {
@@ -134,6 +116,39 @@ final class VisionTextRecognizerTests: XCTestCase {
                 XCTAssertGreaterThan(coverage, Self.minimumBoxCoverage, span.id)
             }
         }
+    }
+
+    func testRefinementRetainsSmallTextAndDoesNotConfuseColumnsOrDuplicateLines() throws {
+        func line(_ text: String, x: Double, width: Double, confidence: Double = 1) throws -> OCRObservation {
+            OCRObservation(text: text, boundingBox: try NormalizedRect(x: x, y: 0.2, width: width, height: 0.05),
+                           boundingBoxOrigin: .bottomLeft, confidence: try Confidence(confidence))
+        }
+        let left = try line("---BEGIN SYNTHETIC---", x: 0.05, width: 0.35)
+        let right = try line("small synthetic text", x: 0.6, width: 0.3)
+        let corrected = try line("-----BEGIN SYNTHETIC-----", x: 0.05, width: 0.35)
+        let unrelated = try line("longer unrelated text in another column", x: 0.45, width: 0.1)
+        let refined = VisionTextRecognizer.refining([left, right], with: [corrected, unrelated])
+        XCTAssertEqual(refined, [corrected, right])
+        let duplicates = VisionTextRecognizer.refining([left, left], with: [corrected])
+        XCTAssertEqual(duplicates, [corrected, left])
+        let lowConfidence = try line("-----BEGIN SYNTHETIC-----", x: 0.05, width: 0.35, confidence: 0.5)
+        XCTAssertEqual(VisionTextRecognizer.refining([left], with: [lowConfidence]), [left])
+        let wrongLetters = try line("-----BEGIN DIFFERENT SYNTHETIC-----", x: 0.05, width: 0.35)
+        XCTAssertEqual(VisionTextRecognizer.refining([left], with: [wrongLetters]), [left])
+        let assignment = try line("DEMO_KEY=RSFAKE123", x: 0.05, width: 0.35)
+        let wrongSyntax = try line("DEMO_KEY---RSFAKE123", x: 0.05, width: 0.35)
+        XCTAssertEqual(VisionTextRecognizer.refining([assignment], with: [wrongSyntax]), [assignment])
+    }
+
+    func testLargeTextRefinementRecognizesPEMHeadersWithoutChangingSourcePixels() async throws {
+        let fixture = try FixtureLibrary.bundled().fixture(id: "private-key-block-light-2x")
+        let imported = try await ImageIOImageImporter().importImage(from: fixture.imageURL)
+        let original = imported.pixels.bytes
+        let observations = try await VisionTextRecognizer().recognizeText(in: imported.pixels, dimensions: imported.pixelDimensions)
+        let score = try Self.score(observations, against: fixture.groundTruth)
+        XCTAssertEqual(score.found, score.total)
+        try assertWellFormed(observations, dimensions: imported.pixelDimensions, id: fixture.id)
+        XCTAssertEqual(imported.pixels.bytes, original)
     }
 
     // MARK: - Behaviour

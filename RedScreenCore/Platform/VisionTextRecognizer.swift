@@ -10,7 +10,7 @@ import Vision
 ///   words, which would misplace or hide them from detection.
 /// - No custom words: nothing derived from screenshots is handed to the recognizer, so there is
 ///   no vocabulary to persist.
-/// - Fixed `en-US` language with automatic detection off, for deterministic results.
+/// - Fixed `en-US` language with automatic detection off, to avoid automatic model changes.
 ///
 /// Vision runs locally; this type opens no network connection and writes nothing to disk. The
 /// request is cancelled when the calling task is cancelled.
@@ -48,6 +48,22 @@ public struct VisionTextRecognizer: TextRecognizer {
         }
         try Task.checkCancellation()
 
+        let native = try await performRecognition(in: image)
+        let heights = native.map { $0.boundingBox.height * Double(image.height) }.sorted()
+        // Large glyphs can cause Vision to collapse punctuation (notably PEM dash runs).
+        // Keep the native pass for small text and use a half-size pass only to refine matching
+        // large-text lines. Normalized coordinates remain in the original image's unit grid.
+        guard !heights.isEmpty, heights[heights.count / 2] >= 20,
+              let smaller = Self.halfSizeImage(image) else { return native }
+        try Task.checkCancellation()
+        let secondary = try await performRecognition(in: smaller)
+        let refined = Self.refining(native, with: secondary)
+        try Task.checkCancellation()
+        return refined
+    }
+
+    private func performRecognition(in image: CGImage) async throws -> [OCRObservation] {
+        try Task.checkCancellation()
         let request = RequestBox(makeRequest())
         let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
         try await withTaskCancellationHandler {
@@ -63,6 +79,64 @@ public struct VisionTextRecognizer: TextRecognizer {
         try Task.checkCancellation()
 
         return (request.value.results ?? []).compactMap(Self.observation(from:))
+    }
+
+    private static func halfSizeImage(_ image: CGImage) -> CGImage? {
+        let width = max(1, image.width / 2)
+        let height = max(1, image.height / 2)
+        guard let space = image.colorSpace,
+              let context = CGContext(data: nil, width: width, height: height,
+                  bitsPerComponent: 8, bytesPerRow: width * 4, space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
+    }
+
+    /// Match lines one-to-one so a secondary line cannot duplicate or reorder observations.
+    /// Only expand collapsed dash runs when all other content agrees and confidence does not
+    /// decrease. Never substitute different letters, digits, or syntax from the smaller pass.
+    /// Native lines with no counterpart are retained, including small text in mixed-size images.
+    static func refining(_ native: [OCRObservation], with secondary: [OCRObservation]) -> [OCRObservation] {
+        var used: Set<UUID> = []
+        return native.map { original in
+            let box = original.boundingBox
+            let matches = secondary.filter { other in
+                guard !used.contains(other.id), other.boundingBoxOrigin == original.boundingBoxOrigin else { return false }
+                let candidate = other.boundingBox
+                let vertical = min(box.y + box.height, candidate.y + candidate.height) - max(box.y, candidate.y)
+                let horizontal = min(box.x + box.width, candidate.x + candidate.width) - max(box.x, candidate.x)
+                return vertical >= 0.5 * min(box.height, candidate.height)
+                    && horizontal >= 0.7 * max(box.width, candidate.width)
+            }
+            matches.forEach { used.insert($0.id) }
+            var best = original
+            for candidate in matches {
+                if candidate.confidence.value >= best.confidence.value,
+                   Self.dashSkeleton(candidate.text) == Self.dashSkeleton(original.text),
+                   candidate.text.filter({ !$0.isWhitespace }).count > best.text.filter({ !$0.isWhitespace }).count {
+                    best = candidate
+                }
+            }
+            return best
+        }
+    }
+
+    private static func dashSkeleton(_ text: String) -> String {
+        var result = ""
+        var inDashRun = false
+        for scalar in text.unicodeScalars {
+            if CharacterSet.whitespacesAndNewlines.contains(scalar) { continue }
+            switch scalar.value {
+            case 0x2D, 0x2010...0x2015, 0x2212, 0xFE58, 0xFE63, 0xFF0D:
+                if !inDashRun { result.append("-") }
+                inDashRun = true
+            default:
+                result.unicodeScalars.append(scalar)
+                inDashRun = false
+            }
+        }
+        return result
     }
 
     /// The configured Vision request. Internal so tests can verify its privacy settings.
