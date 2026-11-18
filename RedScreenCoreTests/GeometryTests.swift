@@ -57,6 +57,45 @@ final class GeometryTests: XCTestCase {
         }
     }
 
+    func testBottomLeftConversionAcceptsRectanglesTouchingTheFarEdge() throws {
+        // Regression: 1 - 0.8 - 0.2 evaluates to about -5.55e-17 and was rejected as negative.
+        for height in [3, 5, 7, 10, 1_080, 2_234] {
+            let dimensions = try PixelDimensions(width: 10, height: height)
+            let edge = try ImageRect(x: 0, y: Double(height - 1), width: 10, height: 1)
+
+            let bottomLeft = try edge.normalized(in: dimensions, targetOrigin: .bottomLeft)
+            XCTAssertEqual(bottomLeft.y, 0, accuracy: 1e-12)
+
+            let roundTrip = try ImageRect(
+                normalized: bottomLeft, dimensions: dimensions, sourceOrigin: .bottomLeft
+            )
+            assertEqual(roundTrip, edge, accuracy: 1e-9)
+        }
+    }
+
+    func testBottomLeftConversionAcceptsNormalizedRectanglesAtTheTopEdge() throws {
+        let dimensions = try PixelDimensions(width: 10, height: 5)
+        let normalized = try NormalizedRect(x: 0, y: 0.8, width: 1, height: 0.2)
+
+        let image = try ImageRect(
+            normalized: normalized, dimensions: dimensions, sourceOrigin: .bottomLeft
+        )
+
+        XCTAssertEqual(image.y, 0)
+        XCTAssertEqual(image.height, 1, accuracy: 1e-9)
+    }
+
+    func testBottomLeftConversionStillRejectsGenuinelyNegativeResults() throws {
+        let dimensions = try PixelDimensions(width: 10, height: 10)
+        let overflowing = try ImageRect(x: 0, y: 9.5, width: 1, height: 1)
+
+        XCTAssertThrowsError(
+            try overflowing.normalized(in: dimensions, targetOrigin: .bottomLeft)
+        ) {
+            XCTAssertEqual($0 as? GeometryError, .imageRectOutOfBounds)
+        }
+    }
+
     func testEnclosingPixelRectRoundsOutward() throws {
         let dimensions = try PixelDimensions(width: 100, height: 80)
         let imageRect = try ImageRect(x: 10.9, y: 20.1, width: 30.2, height: 10.01)

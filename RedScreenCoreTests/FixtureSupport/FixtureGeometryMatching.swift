@@ -130,8 +130,11 @@ struct FixtureComparisonReport: Equatable, Sendable, CustomStringConvertible {
         }
     }
 
+    /// True only when every sensitive segment is localised with the expected family, and nothing
+    /// else is flagged. Detections without a family label are not penalised for family.
     var isClean: Bool {
         falsePositives.isEmpty && falseNegatives.isEmpty && geometryMismatches.isEmpty
+            && familyMismatches.isEmpty
     }
 
     var description: String {

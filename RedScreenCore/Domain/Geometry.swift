@@ -9,6 +9,13 @@ public enum GeometryError: Error, Equatable, Sendable {
     case presentationRectOutOfBounds
 }
 
+/// Flipping between top-left and bottom-left origins computes `1 - y - height`, which can land a
+/// few ULPs below zero for rectangles touching the far edge. Snap that roundoff to the edge; real
+/// negative values are still rejected by the rectangle initializers.
+private func clampingBoundaryRoundoff(_ value: Double) -> Double {
+    value < 0 && value > -1e-9 ? 0 : value
+}
+
 /// Upright image dimensions in physical pixels after orientation normalization.
 public struct PixelDimensions: Equatable, Hashable, Sendable {
     public let width: Int
@@ -94,7 +101,7 @@ public struct ImageRect: Equatable, Hashable, Sendable {
         case .topLeft:
             topLeftY = rect.y
         case .bottomLeft:
-            topLeftY = 1 - rect.y - rect.height
+            topLeftY = clampingBoundaryRoundoff(1 - rect.y - rect.height)
         }
 
         try self.init(
@@ -117,7 +124,7 @@ public struct ImageRect: Equatable, Hashable, Sendable {
         case .topLeft:
             targetY = topLeftY
         case .bottomLeft:
-            targetY = 1 - topLeftY - normalizedHeight
+            targetY = clampingBoundaryRoundoff(1 - topLeftY - normalizedHeight)
         }
         return try NormalizedRect(
             x: x / Double(dimensions.width),

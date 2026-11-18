@@ -104,6 +104,25 @@ final class FixtureGeometryMatchingTests: XCTestCase {
         XCTAssertTrue(description.contains("overlaps no labelled span"))
     }
 
+    func testFamilyMismatchesMakeAReportUnclean() throws {
+        // Regression: exact rectangles with the wrong family previously reported clean.
+        let truth = try fixture("env-file-light-1x")
+        let mislabelled = try exactDetections(for: truth, expectations: [.sensitive]).map {
+            FixtureDetection(rect: $0.rect, family: .privateKeyHeader)
+        }
+
+        let report = try FixtureGroundTruthComparator().compare(mislabelled, against: truth)
+
+        XCTAssertEqual(report.truePositives.count, 2)
+        XCTAssertEqual(report.familyMismatches.count, 2)
+        XCTAssertFalse(report.isClean, report.description)
+
+        let unlabelled = mislabelled.map { FixtureDetection(rect: $0.rect) }
+        XCTAssertTrue(
+            try FixtureGroundTruthComparator().compare(unlabelled, against: truth).isClean
+        )
+    }
+
     func testMissingDetectionsAreReportedAsFalseNegatives() throws {
         let truth = try fixture("ci-log-dark-1x")
         let report = try FixtureGroundTruthComparator().compare([], against: truth)

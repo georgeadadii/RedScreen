@@ -82,7 +82,8 @@ index, then segment order). The report lists:
 - **false positives**: detections on benign spans, duplicate detections, or stray regions;
 - **false negatives**: sensitive segments with no detection;
 - **geometry mismatches**: sensitive segments found below the IoU tolerance;
-- **family mismatches**: correct localisations with a different detector family;
+- **family mismatches**: correct localisations with a different detector family (these make
+  `isClean` false; detections without a family are not penalised);
 - **ambiguous matches**: reported, never scored.
 
 `FixtureGeometry.coverageFraction(of:by:)` measures exact pixel coverage of a target by a set of
