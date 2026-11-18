@@ -59,10 +59,11 @@ public protocol CandidateComposer: Sendable {
     ) throws -> [RedactionCandidate]
 }
 
-/// Permanently applies included and manual regions to a new in-memory image.
+/// Permanently applies included and manual regions to a new orientation-normalized raster.
+/// The result contains only flattened pixels and layout metadata, with no source or annotations.
 public protocol RedactionRenderer: Sendable {
-    func render(document: RedactionDocument, sourceImage: ScreenshotImage) async throws
-        -> ScreenshotImage
+    func render(document: RedactionDocument, sourceImage: DecodedPixels) async throws
+        -> DecodedPixels
 }
 
 /// Writes only an already-rendered image to an explicitly selected destination.
