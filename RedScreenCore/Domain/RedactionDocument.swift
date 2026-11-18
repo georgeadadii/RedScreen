@@ -192,15 +192,15 @@ public enum RedactionDisposition: Equatable, Sendable {
     case manual
 }
 
-/// How a candidate's rectangles were derived. Review UIs should flag anything but `wordAligned`
-/// and `manual`.
+/// How a candidate's rectangles were derived. Review UIs should flag `lineFallback`.
 public enum CandidateGeometry: Int, Comparable, Equatable, Sendable {
     /// The value starts and ends on OCR word boundaries; rectangles are word boxes.
     case wordAligned = 0
-    /// The value is part of an OCR word or line; its extent was estimated from character
-    /// positions and widened by a safety margin.
-    case estimated = 1
-    /// No usable sub-line geometry: the whole OCR line is covered. Needs review.
+    /// An edge falls inside an OCR word; it was placed on a character cell measured from the
+    /// image pixels.
+    case measured = 1
+    /// Sub-word geometry could not be measured, so the whole OCR word (or line) is covered,
+    /// including any key or label. Needs review.
     case lineFallback = 2
     /// Drawn by the user.
     case manual = 3
@@ -279,8 +279,8 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
 
     public var isManual: Bool { disposition == .manual }
 
-    /// True when the rectangles are an estimate or a whole-line fallback.
-    public var needsGeometryReview: Bool { geometry == .estimated || geometry == .lineFallback }
+    /// True when exact sub-word geometry was unavailable and a whole word or line is covered.
+    public var needsGeometryReview: Bool { geometry == .lineFallback }
 
     public func settingDisposition(_ disposition: RedactionDisposition) throws -> RedactionCandidate {
         guard !isManual, disposition != .manual,

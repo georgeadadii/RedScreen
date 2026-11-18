@@ -15,9 +15,19 @@ struct FixtureSpanMark: Equatable, Sendable {
     let note: String
 }
 
+/// Syntax-highlighting role for a run; the theme maps it to a colour.
+enum FixtureColorRole: Sendable {
+    case plain
+    case key
+    case string
+    case comment
+    case lineNumber
+}
+
 struct FixtureRun: Sendable {
     let text: String
     let mark: FixtureSpanMark?
+    var role: FixtureColorRole = .plain
 }
 
 /// One text box: a full line, or a table cell when `x` is non-zero.
@@ -40,6 +50,11 @@ struct FixtureScenario: Sendable {
     let blocks: [FixtureBlock]
     /// Rows drawn with a subtle background band, for table and dashboard realism.
     let stripedRows: [Int]
+    /// Font override (PostScript name and size); nil uses the style's default.
+    let fontName: String?
+    let fontSize: Double?
+    /// Line height as a multiple of the font size. Code editors use about 1.35–1.5.
+    let lineHeightFactor: Double
 
     init(
         name: String,
@@ -50,7 +65,10 @@ struct FixtureScenario: Sendable {
         canvasWidth: Double,
         difficulties: [FixtureDifficulty],
         blocks: [FixtureBlock],
-        stripedRows: [Int] = []
+        stripedRows: [Int] = [],
+        fontName: String? = nil,
+        fontSize: Double? = nil,
+        lineHeightFactor: Double = 1.7
     ) {
         self.name = name
         self.description = description
@@ -61,6 +79,9 @@ struct FixtureScenario: Sendable {
         self.difficulties = difficulties
         self.blocks = blocks
         self.stripedRows = stripedRows
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.lineHeightFactor = lineHeightFactor
     }
 
     var rowCount: Int { (blocks.map(\.row).max() ?? -1) + 1 }
@@ -99,6 +120,40 @@ private func cell(_ row: Int, _ x: Double, _ runs: FixtureRun...) -> FixtureBloc
     FixtureBlock(row: row, x: x, runs: runs)
 }
 
+// Code-editor helpers: a right-aligned line-number gutter cell plus a syntax-coloured code cell.
+private func key(_ text: String) -> FixtureRun { FixtureRun(text: text, mark: nil, role: .key) }
+private func string(_ text: String) -> FixtureRun { FixtureRun(text: text, mark: nil, role: .string) }
+private func comment(_ text: String) -> FixtureRun { FixtureRun(text: text, mark: nil, role: .comment) }
+private func secret(_ text: String, _ mark: FixtureSpanMark) -> FixtureRun {
+    FixtureRun(text: text, mark: mark, role: .string)
+}
+
+/// One editor row: the line number (gutter) and optional code.
+private func editorRow(
+    _ number: Int,
+    _ runs: [FixtureRun],
+    gutterWidth: Double,
+    digitWidth: Double
+) -> [FixtureBlock] {
+    let label = String(number)
+    let numberX = gutterWidth - Double(label.count) * digitWidth - digitWidth
+    var blocks = [FixtureBlock(
+        row: number - 1, x: numberX, runs: [FixtureRun(text: label, mark: nil, role: .lineNumber)]
+    )]
+    if !runs.isEmpty { blocks.append(FixtureBlock(row: number - 1, x: gutterWidth, runs: runs)) }
+    return blocks
+}
+
+private func editor(
+    _ rows: [[FixtureRun]],
+    gutterWidth: Double,
+    digitWidth: Double
+) -> [FixtureBlock] {
+    rows.enumerated().flatMap { index, runs in
+        editorRow(index + 1, runs, gutterWidth: gutterWidth, digitWidth: digitWidth)
+    }
+}
+
 // MARK: - Corpus
 
 enum FixtureScenarios {
@@ -119,6 +174,9 @@ enum FixtureScenarios {
         benignTerminalDark,
         envDiffColumnsLight,
         supportTicketLowContrast,
+        editorEnvVSCodeDark,
+        editorEnvMonacoLight,
+        terminalCourierNewDark,
     ]
 
     static let envFileLight: FixtureScenario = {
@@ -595,5 +653,125 @@ enum FixtureScenarios {
                 span("0x7F3A-22", mark(
                     "ticket-ref", .highEntropyContextual, .benign, "Ticket reference ID"))],
         ])
+    )
+
+    // MARK: - Code-editor renderings
+
+    /// Mirrors the layout of a `.env.production` file in a dark code editor: line numbers,
+    /// syntax colours, tight spacing, quoted values containing spaces, and adjacent secrets.
+    static let editorEnvVSCodeDark: FixtureScenario = {
+        func env(_ name: String, _ value: String, _ mark: FixtureSpanMark? = nil) -> [FixtureRun] {
+            if let mark {
+                return [key(name), FixtureRun(text: "=\"", mark: nil), secret(value, mark),
+                        FixtureRun(text: "\"", mark: nil)]
+            }
+            return [key(name), FixtureRun(text: "=", mark: nil), string("\"\(value)\"")]
+        }
+        return FixtureScenario(
+            name: "editor-env-vscode-dark",
+            description: "A .env.production file in a dark code editor with a line-number gutter, "
+                + "syntax colours, and tight line spacing: quoted values containing spaces, a "
+                + "pooled database URL with a password, and secrets on adjacent lines.",
+            category: .envFile,
+            theme: .dark,
+            fontStyle: .monospace,
+            canvasWidth: 900,
+            difficulties: [.editorChrome, .adjacentSecrets, .quotedValue, .nearbyBenign],
+            blocks: editor([
+                [comment("# RedScreen synthetic fixture: public values are embedded in bundles.")],
+                env("NEXT_PUBLIC_APP_URL", "https://app.example.test"),
+                env("NEXT_PUBLIC_MAPS_API_KEY", "RSFAKE maps key with spaces 01", mark(
+                    "editor-maps-key", .envAssignment, .sensitive, "Quoted key containing spaces")),
+                env("NEXT_PUBLIC_SUPABASE_URL", "https://rsfake-ref.supabase.example.test"),
+                env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "RSFAKEpublishable0a1b2c3d4e", mark(
+                    "editor-publishable-key", .credentialKeyword, .ambiguous,
+                    "Publishable key: public by design")),
+                env("SUPABASE_STORAGE_BUCKET", "institution-gallery"),
+                [],
+                [comment("# Runtime-only secrets. Never pass these as build arguments.")],
+                [key("DATABASE_URL"), FixtureRun(text: "=", mark: nil),
+                 string("\"postgresql://postgres.rsfakeref:"),
+                 secret("RSFAKE-db-pw-77", mark(
+                    "editor-database-password", .connectionString, .sensitive,
+                    "Password inside a quoted connection URL")),
+                 string("@pooler.example.test:6543/postgres?sslmode=require\"")],
+                env("AUTH_SECRET", "fakeRSFAKEc9331e1c8fa93c6abc", mark(
+                    "editor-auth-secret", .envAssignment, .sensitive, "Quoted auth secret")),
+                [],
+                env("AUTH_URL", "https://app.example.test"),
+                env("GOOGLE_MAPS_EMBED_API_KEY", "RSFAKEembed qwoidwnqjd 0042", mark(
+                    "editor-embed-key", .envAssignment, .sensitive,
+                    "Secret directly above another secret")),
+                env("RESEND_API_KEY", "RSFAKEresend uqwkhdbjca 0043", mark(
+                    "editor-resend-key", .envAssignment, .sensitive,
+                    "Secret directly below another secret")),
+                env("EMAIL_FROM", "Example Team <noreply@example.test>"),
+                [key("CRON_SECRET"), FixtureRun(text: "=", mark: nil), string("\"\"")],
+                env("FEATURE_REVIEW_ENABLED", "true"),
+            ], gutterWidth: 44, digitWidth: 7.2),
+            fontName: "Menlo-Regular",
+            fontSize: 12,
+            lineHeightFactor: 1.4
+        )
+    }()
+
+    /// Unquoted and YAML/Python-style secrets in a light editor using Monaco.
+    static let editorEnvMonacoLight = FixtureScenario(
+        name: "editor-env-monaco-light",
+        description: "A light code editor in Monaco with line numbers mixing unquoted .env "
+            + "exports, YAML keys, and a Python assignment, with secrets on adjacent lines.",
+        category: .envFile,
+        theme: .light,
+        fontStyle: .monospace,
+        canvasWidth: 720,
+        difficulties: [.editorChrome, .adjacentSecrets, .nearbyBenign],
+        blocks: editor([
+            [comment("# RedScreen synthetic fixture (fake values)")],
+            [key("export STRIPE_WEBHOOK_SECRET"), FixtureRun(text: "=", mark: nil),
+             secret("RSFAKEwhsec0a1b2c3d4e5f", mark(
+                "monaco-webhook-secret", .envAssignment, .sensitive, "Unquoted exported secret"))],
+            [key("export SIGNING_KEY"), FixtureRun(text: "=", mark: nil),
+             secret("RSFAKEsign9f8e7d6c5b4a", mark(
+                "monaco-signing-key", .envAssignment, .sensitive, "Adjacent unquoted secret"))],
+            [key("export LOG_LEVEL"), FixtureRun(text: "=", mark: nil), string("info")],
+            [],
+            [key("api_token"), FixtureRun(text: ": ", mark: nil),
+             secret("RSFAKE-yaml-token-55", mark(
+                "monaco-yaml-token", .credentialKeyword, .sensitive, "YAML token value"))],
+            [key("timeout_seconds"), FixtureRun(text: ": ", mark: nil), string("30")],
+            [key("db_password"), FixtureRun(text: " = \"", mark: nil),
+             secret("RSFAKE-py-pw-31", mark(
+                "monaco-python-password", .credentialKeyword, .sensitive, "Quoted Python string")),
+             FixtureRun(text: "\"", mark: nil)],
+        ], gutterWidth: 36, digitWidth: 6.6),
+        fontName: "Monaco",
+        fontSize: 11,
+        lineHeightFactor: 1.45
+    )
+
+    /// Shell exports in a dark terminal using Courier New with tight spacing.
+    static let terminalCourierNewDark = FixtureScenario(
+        name: "terminal-couriernew-dark",
+        description: "A dark terminal in Courier New with tight line spacing exporting two "
+            + "adjacent secrets and a bearer token, next to benign settings.",
+        category: .terminal,
+        theme: .dark,
+        fontStyle: .monospace,
+        canvasWidth: 760,
+        difficulties: [.adjacentSecrets, .nearbyBenign],
+        blocks: lines([
+            [plain("demo $ # RedScreen synthetic fixture - fake values")],
+            [plain("demo $ export DEPLOY_PASSWORD="), span("RSFAKE-deploy-pw-88", mark(
+                "courier-deploy-password", .envAssignment, .sensitive, "Exported password"))],
+            [plain("demo $ export SERVICE_API_KEY="), span("RSFAKEsvc0f1e2d3c4b5a6978", mark(
+                "courier-service-key", .envAssignment, .sensitive, "Adjacent exported key"))],
+            [plain("demo $ export REGION=eu-west-1")],
+            [plain("demo $ curl -H 'Authorization: Bearer "), span("RSFAKE-courier-tok-91", mark(
+                "courier-bearer", .bearerToken, .sensitive, "Bearer token in single quotes")),
+             plain("' https://api.example.test")],
+        ]),
+        fontName: "CourierNewPSMT",
+        fontSize: 13,
+        lineHeightFactor: 1.3
     )
 }

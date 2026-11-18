@@ -16,12 +16,17 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
     static let minimumSecretInkCoverage = 1.0
     static let maximumUnrelatedObscuredGroundTruth = 0.05
     static let maximumUnrelatedObscuredVision = 0.08
+    /// Ink of keys and labels on the same line as a secret (`DATABASE_PASSWORD=`) that is hidden.
+    static let maximumKeyInkObscuredVision = 0.02
 
     struct Tally {
         var secretInk = 0
         var secretInkCovered = 0
         var unrelatedInk = 0
         var unrelatedInkCovered = 0
+        var keyInk = 0
+        var keyInkCovered = 0
+        var worstKeys: [(String, Double)] = []
         var uncovered: [String] = []
         var worstUnrelated: [(String, Double)] = []
         var geometry: [CandidateGeometry: Int] = [:]
@@ -30,11 +35,17 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
         var unrelatedObscured: Double {
             unrelatedInk == 0 ? 0 : Double(unrelatedInkCovered) / Double(unrelatedInk)
         }
+        var keyObscured: Double { keyInk == 0 ? 0 : Double(keyInkCovered) / Double(keyInk) }
 
         var summary: String {
             String(format: "secret ink covered %d/%d (%.4f), unrelated ink obscured %d/%d (%.4f)",
                    secretInkCovered, secretInk, secretCoverage, unrelatedInkCovered, unrelatedInk,
                    unrelatedObscured)
+                + String(format: "\n  key/label ink on secret lines obscured %d/%d (%.4f)",
+                         keyInkCovered, keyInk, keyObscured)
+                + "\n  most obscured keys: "
+                + worstKeys.sorted { $0.1 > $1.1 }.prefix(5)
+                    .map { "\($0.0) \(String(format: "%.3f", $0.1))" }.joined(separator: ", ")
                 + "\n  geometry: \(geometry.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" })"
                 + "\n  uncovered secret spans: \(uncovered)"
                 + "\n  most over-redacted fixtures: "
@@ -67,6 +78,7 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
         print("Candidates on Vision OCR: \(tally.summary)")
         XCTAssertGreaterThanOrEqual(tally.secretCoverage, Self.minimumSecretInkCoverage, tally.summary)
         XCTAssertLessThanOrEqual(tally.unrelatedObscured, Self.maximumUnrelatedObscuredVision, tally.summary)
+        XCTAssertLessThanOrEqual(tally.keyObscured, Self.maximumKeyInkObscuredVision, tally.summary)
     }
 
     // MARK: - Evaluation
@@ -81,8 +93,9 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
             let dimensions = imported.pixelDimensions
             let observations = try await makeObservations(fixture, imported)
             let detections = ContextualSecretDetector().detect(in: observations)
-            let candidates = try GeometricCandidateComposer()
-                .composeCandidates(from: detections, observations: observations, dimensions: dimensions)
+            let candidates = try GeometricCandidateComposer().composeCandidates(
+                from: detections, observations: observations, pixels: imported.pixels, dimensions: dimensions
+            )
             for candidate in candidates { tally.geometry[candidate.geometry, default: 0] += 1 }
             let covers = candidates.flatMap { $0.regions.map { try? $0.rect.enclosingPixelRect(in: dimensions) } }
                 .compactMap { $0 }
@@ -117,7 +130,19 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
                 if hit < ink { tally.uncovered.append("\(truth.id)/\(span.id) \(ink - hit)px") }
             }
 
+            let secretBoxIDs = Set(truth.spans.filter { $0.expectation == .sensitive }
+                .flatMap { $0.segments.map(\.textBoxID) })
             for box in truth.textBoxes {
+                let isSecretLine = secretBoxIDs.contains(box.id)
+                var lineKeyInk = 0
+                var lineKeyCovered = 0
+                defer {
+                    if isSecretLine, lineKeyInk > 0 {
+                        tally.keyInk += lineKeyInk
+                        tally.keyInkCovered += lineKeyCovered
+                        tally.worstKeys.append(("\(truth.id)/\(box.id)", Double(lineKeyCovered) / Double(lineKeyInk)))
+                    }
+                }
                 let rect = try box.rect.imageRect(in: dimensions).enclosingPixelRect(in: dimensions)
                 let background = dominantColor(in: rect, pixels: imported.pixels)
                 for y in rect.y..<(rect.y + rect.height) {
@@ -128,7 +153,11 @@ final class CandidateCoverageEvaluationTests: XCTestCase {
                             x >= $0.x - 2 && x < $0.x + $0.width + 2 && y >= $0.y - 2 && y < $0.y + $0.height + 2
                         }) { continue }
                         fixtureUnrelated += 1
-                        if covered(x, y) { fixtureUnrelatedCovered += 1 }
+                        if isSecretLine { lineKeyInk += 1 }
+                        if covered(x, y) {
+                            fixtureUnrelatedCovered += 1
+                            if isSecretLine { lineKeyCovered += 1 }
+                        }
                     }
                 }
             }

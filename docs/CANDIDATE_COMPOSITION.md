@@ -14,14 +14,14 @@ in-bounds image rectangles with provenance. `GeometricCandidateComposer`
 - `evidence` and `detectionIDs`: the combined provenance of every finding merged into it (rule
   IDs, observation IDs, confidences). No matched text is copied.
 - `geometry`, which says how the rectangles were derived:
-  - `.wordAligned`: the value starts and ends on OCR word boundaries, so word boxes are used.
-  - `.estimated`: the value is part of an OCR word or line, for example `KEY=value` without
-    spaces, so its extent is interpolated.
-  - `.lineFallback`: no usable sub-line geometry, so the whole line is covered.
+  - `.wordAligned`: every edge is an OCR word boundary.
+  - `.measured`: an edge falls inside an OCR word (`KEY=value`) and was placed on a character
+    cell measured from the image pixels.
+  - `.lineFallback`: sub-word geometry could not be measured, so the whole OCR word (or line) is
+    covered, key included.
   - `.manual`: drawn by the user.
 
-  `needsGeometryReview` is true for the estimated and fallback kinds; the review UI (#10) should
-  flag them.
+  `needsGeometryReview` is true for `.lineFallback`; the review UI (#10) should flag it.
 - `assessment` and `severity` from the strongest merged finding.
 - `disposition`:
   - likely findings start **`included`**, because over-coverage is the safe default;
@@ -35,36 +35,60 @@ The document validates every candidate:
 
 ## Geometry
 
-For each detected span:
+Vision reports boxes for whole words only. `KEY=value` with no spaces is one word, so where the
+value starts cannot come from OCR. The first version estimated it by counting characters and
+adding a safety margin. On real editor screenshots that estimate covered keys and could leave the
+start or end of a value exposed. Both edges are now placed as follows.
 
-1. **Word boxes.** If the span starts and ends on boundaries of the observation's word
-   segments, the segments' union is used.
-2. **Estimation.** Vision reports word-level boxes only, so values inside a word are
-   interpolated from character positions within the boundary word box. Without word boxes the
-   line box is used instead; it hugs visible text, so indentation is skipped. Each estimated edge
-   is widened by a safety margin:
-   - **0.6 characters**, plus
-   - **0.1 characters per character of distance** from the nearest known edge, capped at
-     **1.2 characters**.
+1. **Word boundary.** If the value starts or ends where an OCR word does, that word box edge is
+   used. It is extended to the word's measured ink, so a slightly narrow OCR box cannot clip
+   glyphs.
+2. **Measured.** If an edge falls inside a word, `GlyphGridLocator` measures the pixels.
+   - **Why it works:** code editors and terminals use fixed-width fonts, so every character
+     occupies one cell of the same width.
+   - **How it fits:**
+     - Ink is classified against the line's dominant colour, using the upper ~78% of the line so
+       underscores and descenders, which join neighbouring cells, are ignored.
+     - The cell grid is anchored on the word's ink: on its left end first, and on its right end
+       if that fails, because OCR boxes sometimes start inside a neighbouring glyph.
+     - The fit searches cell widths for boundaries that fall in the gaps between glyphs. At 1x it
+       scores the emptiest column within half a pixel, because anti-aliasing smears glyph edges.
+   - **When it accepts a grid:**
+     - boundaries must be clearly emptier than the glyphs;
+     - at most 10% of letter cells may be empty;
+     - spaces must be blank, except at the outermost cell where a neighbouring glyph may overlap
+       the box;
+     - `_`, `.` and `,` sit at or below the baseline and are ignored.
+   - **Result:** the edge lands exactly on the cell boundary, padded by 6% of a cell.
+3. **Whole-word fallback.** With no pixels, or when the grid is not accepted (proportional text,
+   wide characters, noise), the whole OCR word is covered, key included, and the candidate is
+   flagged for review. **Partially covering a secret is never an acceptable outcome**, so
+   uncertainty always resolves toward covering more.
 
-   Uniform widths are exact for monospace text but drift in proportional fonts the further they
-   are from an anchor, which is what the growing margin covers.
-3. **Fallback.** When neither works, for example a blank line or a degenerate range, the whole
-   line is used and the candidate is flagged.
+Vision occasionally fails to box one word of a line. Text without a word box gets a synthesized
+unit spanning from the previous word box to the next one, or to the end of the line. Ink is only
+extended past a box edge where the text has a space on that side, so a word such as `PASSWORD`
+that follows `DEPLOY_` cannot absorb the neighbouring word.
 
 Private key blocks are covered as **one rectangle from BEGIN to END**, so a key line OCR missed
 or boxed narrowly inside the block is still covered.
 
-Every rectangle is padded by `max(2 px, 15% of the line height)`, which scales with 1x and 2x
-screenshots. It is then clamped to the image and checked to be finite and positive.
+Padding:
+- **Vertical:** `max(2 px, 8% of the line height)`, small enough not to clip tightly spaced
+  editor lines.
+- **Horizontal:** 2 px at word boundaries and fallbacks, 6% of a cell at measured edges.
+
+Rectangles are then clamped to the image and checked to be finite and positive.
 
 ## Merging and ordering
 
-- Findings whose rectangles overlap become one candidate with combined evidence and detection
-  IDs.
+- Findings whose rectangles overlap **on the same line** (vertical overlap of at least half the
+  shorter height) become one candidate with combined evidence and detection IDs. Rectangles on
+  different lines are never joined: in tightly spaced editors, padded boxes of adjacent lines
+  touch, and joining them once covered the next line's key.
 - The merged candidate takes the worst geometry, the strongest assessment and the highest
   severity.
-- Overlapping rectangles inside a candidate are merged into their union.
+- Same-line overlapping rectangles inside a candidate are merged into their union.
 - Candidates and their regions are sorted in reading order (top, then left), so keyboard
   navigation and tests are stable.
 
@@ -75,39 +99,58 @@ screenshots. It is then clamped to the image and checked to be finite and positi
 | Setting | Value |
 | --- | --- |
 | `minimumPaddingPixels` | 2 |
-| `paddingFractionOfLineHeight` | 0.15 |
-| `estimatedMarginCharacters` | 0.6 |
-| `estimatedMarginGrowthPerCharacter` | 0.1 |
-| `maximumMarginGrowthCharacters` | 1.2 |
+| `paddingFractionOfLineHeight` | 0.08 |
+| `measuredEdgePaddingFraction` | 0.06 |
 
-The growth cap was chosen by measurement: 0.6 left part of a proportional-font password exposed,
-and 1.0 is the smallest cap with full coverage. 1.2 adds headroom.
+The grid locator's acceptance limits are `maximumBoundaryInkRatio` (0.3),
+`maximumEmptyCellFraction` (0.1) and `wordGapCells` (0.75).
 
 ## Coverage on the synthetic corpus
 
-`CandidateCoverageEvaluationTests` measure coverage at **pixel level** on all 28 rendered
+`CandidateCoverageEvaluationTests` measure coverage at **pixel level** on all 34 rendered
 fixtures:
-- **Secret coverage:** every ink pixel inside a sensitive span must be covered by a candidate.
-- **Unrelated obscured:** the share of ink outside sensitive and ambiguous spans (labels, benign
-  values, prose) that candidates cover.
+
+- **Secret coverage:** every ink pixel inside a sensitive span must be covered.
+- **Key/label ink obscured:** the share of ink outside the secret on the same line as a secret
+  (`DATABASE_PASSWORD=`, quotes) that candidates cover. This is the regression gate for the
+  reported bug: at most 2% with Vision OCR.
+- **Unrelated ink obscured:** the share of all non-secret ink covered.
+
+The corpus includes editor-style renderings modelled on a real `.env` screenshot:
+- a line-number gutter and syntax colours;
+- tight line spacing;
+- quoted values containing spaces;
+- adjacent secrets;
+- a pooled database URL;
+- Menlo, Monaco and Courier New fonts.
 
 Measured 2026-11-18:
 
-| Input | Secret ink covered | Unrelated ink obscured | Geometry |
-| --- | --- | --- | --- |
-| Ground-truth text | 106,589 / 106,589 (100%) | 1.3% | all estimated (no word boxes) |
-| Vision OCR, end to end | 106,589 / 106,589 (100%) | 1.4% | 24 word-aligned, 38 estimated |
+| Input | Secret ink covered | Key/label ink obscured | Unrelated ink obscured | Geometry |
+| --- | --- | --- | --- | --- |
+| Ground-truth text | 137,648 / 137,648 (100%) | 5.1% | 1.6% | 14 word, 74 measured, 4 fallback |
+| Vision OCR, end to end | 137,648 / 137,648 (100%) | **1.6%** | 0.7% | 26 word, 62 measured, 4 fallback |
 
-The gates are 100% secret coverage, at most 5% unrelated ink obscured on ground-truth text, and
-at most 8% on Vision OCR. The most over-redacted fixture, `env-file-dark-2x`, hides about 5% of
-its unrelated ink: the estimate's safety margin reaches one or two characters into labels such as
-`…PASSWORD=`.
+**Before this fix**, on the same corpus with Vision OCR:
+- secret coverage was 99.53%: part of one value was exposed;
+- 9.4% of key ink was obscured, up to 49% on adjacent editor lines.
+
+The remaining fallbacks are deliberate:
+- **Proportional prose** in the support-ticket fixture. With ground-truth text it has no word
+  boxes, so the whole line is covered; that accounts for most of the 5.1%.
+- **A Courier New line at 2x** that Vision split mid-token with an overlapping box
+  (`export SERVICE` / `_API_KEY=…`). Part of that key is covered, the value is fully covered,
+  and the candidate is flagged for review.
 
 ## Tests
 
 - **Geometry:**
   - exact word-aligned spans;
-  - sub-word estimation (monospace exactness, indentation);
+  - whole-word coverage when pixels are unavailable;
+  - measured edges on every monospace fixture: within 0.05 of a character of the value start,
+    never more than 0.35 of a character into the key, and covering the end;
+  - proportional text falling back to the whole line;
+  - adjacent-line secrets never merged;
   - whole-line fallback;
   - wrapped values grouped under one candidate;
   - private key block cover;

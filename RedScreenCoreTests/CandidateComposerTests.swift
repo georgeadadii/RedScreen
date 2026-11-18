@@ -8,7 +8,7 @@ final class CandidateComposerTests: XCTestCase {
     private let dimensions = try! PixelDimensions(width: 1_000, height: 500)
     private let composer = GeometricCandidateComposer()
 
-    // MARK: - Exact and estimated spans
+    // MARK: - Edges
 
     func testWordAlignedSpanUsesTheWordBoxPlusPadding() throws {
         // "token RSFAKEvalue0001 here": words at x 100–150, 160–330, 340–380 (pixels).
@@ -19,40 +19,84 @@ final class CandidateComposerTests: XCTestCase {
 
         XCTAssertEqual(candidate.geometry, .wordAligned)
         let rect = try XCTUnwrap(candidate.regions.first?.rect)
-        let padding = 20 * 0.15
-        XCTAssertEqual(rect.x, 160 - padding, accuracy: 1e-6)
-        XCTAssertEqual(rect.maxX, 330 + padding, accuracy: 1e-6)
-        XCTAssertEqual(rect.y, 100 - padding, accuracy: 1e-6)
-        XCTAssertEqual(rect.maxY, 120 + padding, accuracy: 1e-6)
+        XCTAssertEqual(rect.x, 160 - 2, accuracy: 1e-6)
+        XCTAssertEqual(rect.maxX, 330 + 2, accuracy: 1e-6)
+        XCTAssertEqual(rect.y, 100 - 2, accuracy: 1e-6, "Vertical padding: max(2 px, 8% of line height)")
+        XCTAssertEqual(rect.maxY, 120 + 2, accuracy: 1e-6)
     }
 
-    func testValueInsideAWordIsEstimatedFromCharacterPositions() throws {
-        // Monospace 10 px per character; the value starts after "API_KEY=" (8 characters).
-        let text = "API_KEY=RSFAKE-key-6b2d91"
-        let observation = line(text, x: 100, y: 50, width: 250, height: 20, words: [(0..<25, 100, 250)])
+    func testWithoutPixelsAValueInsideAWordCoversTheWholeWord() throws {
+        // Without pixels the boundary inside "API_KEY=value" cannot be measured: cover the whole
+        // word rather than guess, and flag it for review.
+        let observation = line("API_KEY=RSFAKE-key-6b2d91", x: 100, y: 50, width: 250, height: 20,
+                               words: [(0..<25, 100, 250)])
         let candidate = try compose([detect(observation, 8..<25)], [observation]).first!
 
-        XCTAssertEqual(candidate.geometry, .estimated)
+        XCTAssertEqual(candidate.geometry, .lineFallback)
         XCTAssertTrue(candidate.needsGeometryReview)
         let rect = try XCTUnwrap(candidate.regions.first?.rect)
-        // Margin: 0.6 characters plus 0.1 per character of distance from the nearest edge (8),
-        // with the growth capped at 1.2 characters.
-        let margin = 10 * (0.6 + 0.8)
-        XCTAssertEqual(rect.x, 180 - margin - 3, accuracy: 1e-6, "Label stays visible")
-        XCTAssertEqual(rect.maxX, 350 + 3, accuracy: 1e-6, "Clipped to the word, then padded")
+        XCTAssertEqual(rect.x, 100 - 2, accuracy: 1e-6)
+        XCTAssertEqual(rect.maxX, 350 + 2, accuracy: 1e-6)
     }
 
-    func testWithoutWordBoxesTheLineIsUsedIgnoringIndentation() throws {
-        // Leading spaces are not inside the OCR box, which hugs visible text.
-        let text = "    password: RSFAKE-pw"
-        let observation = line(text, x: 200, y: 10, width: 190, height: 20, words: [])
-        let candidate = try compose([detect(observation, 14..<23)], [observation]).first!
+    func testMeasuredEdgesLandOnTheValueInEveryMonospaceFixture() async throws {
+        // Real rendered pixels, ground-truth line boxes (no word boxes), all monospace fonts:
+        // the measured rectangle must start within a fraction of a character of the value and
+        // cover all of it.
+        var checked = 0
+        for fixture in try FixtureLibrary.bundled().fixtures() where fixture.groundTruth.fontStyle == .monospace {
+            let truth = fixture.groundTruth
+            let imported = try await ImageIOImageImporter().importImage(from: fixture.imageURL)
+            let size = imported.pixelDimensions
+            for span in truth.spans where span.expectation == .sensitive && span.segments.count == 1 {
+                let segment = span.segments[0]
+                let box = try XCTUnwrap(truth.textBox(id: segment.textBoxID))
+                guard segment.utf16Offset > 0 || segment.utf16Length < box.text.utf16.count else { continue }
+                let observation = OCRObservation(
+                    text: box.text, boundingBox: try box.rect.normalizedRect(),
+                    boundingBoxOrigin: .topLeft, confidence: try Confidence(1)
+                )
+                let range = segment.utf16Offset..<(segment.utf16Offset + segment.utf16Length)
+                let candidate = try XCTUnwrap(try GeometricCandidateComposer().composeCandidates(
+                    from: [detect(observation, range)], observations: [observation],
+                    pixels: imported.pixels, dimensions: size
+                ).first)
+                let label = "\(truth.id)/\(span.id)"
+                XCTAssertEqual(candidate.geometry, .measured, label)
 
-        XCTAssertEqual(candidate.geometry, .estimated)
-        let rect = try XCTUnwrap(candidate.regions.first?.rect)
-        // 19 visible characters over 190 px: the value starts at character 10, 9 from the end.
-        XCTAssertEqual(rect.x, 200 + 100 - 10 * (0.6 + 0.9) - 3, accuracy: 1e-6)
-        XCTAssertEqual(rect.maxX, 390 + 3, accuracy: 1e-6)
+                let value = try segment.rect.imageRect(in: size)
+                let characterWidth = value.width / Double(max(1, segment.utf16Length))
+                let rect = candidate.regions[0].rect
+                XCTAssertLessThanOrEqual(rect.x, value.x + 0.05 * characterWidth, "\(label) value start exposed")
+                XCTAssertGreaterThanOrEqual(rect.x, value.x - 0.35 * characterWidth, "\(label) covers the key")
+                XCTAssertGreaterThanOrEqual(rect.maxX, value.maxX - 0.1 * characterWidth, "\(label) value end exposed")
+                checked += 1
+            }
+        }
+        XCTAssertGreaterThan(checked, 20)
+    }
+
+    func testProportionalTextThatCannotBeMeasuredCoversTheWholeLine() async throws {
+        let fixture = try FixtureLibrary.bundled().fixture(id: "support-ticket-low-contrast-2x")
+        let truth = fixture.groundTruth
+        let imported = try await ImageIOImageImporter().importImage(from: fixture.imageURL)
+        let span = try XCTUnwrap(truth.spans.first { $0.id == "ticket-new-password" })
+        let segment = span.segments[0]
+        let box = try XCTUnwrap(truth.textBox(id: segment.textBoxID))
+        let observation = OCRObservation(
+            text: box.text, boundingBox: try box.rect.normalizedRect(),
+            boundingBoxOrigin: .topLeft, confidence: try Confidence(1)
+        )
+
+        let candidate = try XCTUnwrap(try GeometricCandidateComposer().composeCandidates(
+            from: [detect(observation, segment.utf16Offset..<(segment.utf16Offset + segment.utf16Length))],
+            observations: [observation], pixels: imported.pixels, dimensions: imported.pixelDimensions
+        ).first)
+
+        XCTAssertEqual(candidate.geometry, .lineFallback, "Proportional text is never guessed")
+        let line = try box.rect.imageRect(in: imported.pixelDimensions)
+        XCTAssertLessThanOrEqual(candidate.regions[0].rect.x, line.x)
+        XCTAssertGreaterThanOrEqual(candidate.regions[0].rect.maxX, line.maxX)
     }
 
     func testUnusableGeometryFallsBackToTheWholeLineAndIsFlagged() throws {
@@ -61,7 +105,7 @@ final class CandidateComposerTests: XCTestCase {
 
         XCTAssertEqual(candidate.geometry, .lineFallback)
         XCTAssertTrue(candidate.needsGeometryReview)
-        XCTAssertEqual(candidate.regions.first?.rect.width ?? 0, 100 + 6, accuracy: 1e-6)
+        XCTAssertEqual(candidate.regions.first?.rect.width ?? 0, 100 + 4, accuracy: 1e-6)
     }
 
     // MARK: - Grouping and provenance
@@ -127,7 +171,23 @@ final class CandidateComposerTests: XCTestCase {
         XCTAssertEqual(candidates[0].regions.count, 1, "Overlapping rectangles are merged")
         XCTAssertEqual(candidates[0].assessment, .likely)
         XCTAssertEqual(candidates[0].disposition, .included)
-        XCTAssertEqual(candidates[0].geometry, .estimated, "Worst geometry wins")
+        XCTAssertEqual(candidates[0].geometry, .lineFallback, "Worst geometry wins")
+    }
+
+    func testSecretsOnAdjacentLinesAreNeverMergedIntoOneBox() throws {
+        // Tight editor spacing: padded rectangles of neighbouring lines touch. They must stay
+        // separate candidates, and neither may borrow the other's left edge.
+        let upper = line("GOOGLE_MAPS_EMBED_API_KEY RSFAKEembed0042", x: 50, y: 100, width: 410, height: 18,
+                         words: [(0..<25, 50, 250), (26..<41, 310, 150)])
+        let lower = line("RESEND_API_KEY RSFAKEresend0043", x: 50, y: 118, width: 310, height: 18,
+                         words: [(0..<14, 50, 140), (15..<31, 200, 160)])
+
+        let candidates = try compose([detect(upper, 26..<41), detect(lower, 15..<31)], [upper, lower])
+
+        XCTAssertEqual(candidates.count, 2)
+        XCTAssertEqual(candidates[0].regions.count, 1)
+        XCTAssertEqual(candidates[0].regions[0].rect.x, 310 - 2, accuracy: 1e-6, "Upper keeps its own edge")
+        XCTAssertEqual(candidates[1].regions[0].rect.x, 200 - 2, accuracy: 1e-6, "Lower keeps its own edge")
     }
 
     func testSeparateFindingsStaySeparateAndAreSortedInReadingOrder() throws {
@@ -158,7 +218,7 @@ final class CandidateComposerTests: XCTestCase {
         let candidates = try compose([detect(tall, 7..<22), detect(atEdge, 7..<22)], [tall, atEdge])
 
         let tallRect = try XCTUnwrap(candidates.first { $0.regions[0].rect.y == 0 }?.regions[0].rect)
-        XCTAssertEqual(tallRect.height, 100 + 15, accuracy: 1e-6, "15% padding, clamped at the top")
+        XCTAssertEqual(tallRect.height, 100 + 8, accuracy: 1e-6, "8% padding, clamped at the top")
         for candidate in candidates {
             for region in candidate.regions {
                 XCTAssertTrue(region.rect.isContained(in: dimensions))
@@ -174,7 +234,7 @@ final class CandidateComposerTests: XCTestCase {
     func testUnknownObservationIsRejected() throws {
         let observation = line("password=RSFAKE-pw", x: 10, y: 10, width: 180, height: 20, words: [])
         XCTAssertThrowsError(try composer.composeCandidates(
-            from: [detect(observation, 9..<18)], observations: [], dimensions: dimensions
+            from: [detect(observation, 9..<18)], observations: [], pixels: nil, dimensions: dimensions
         ))
     }
 
@@ -236,8 +296,10 @@ final class CandidateComposerTests: XCTestCase {
                     assessment: Bool.random(using: &generator) ? .likely : .needsReview))
             }
 
-            let first = try composer.composeCandidates(from: detections, observations: observations, dimensions: dimensions)
-            let second = try composer.composeCandidates(from: detections, observations: observations, dimensions: dimensions)
+            let first = try composer.composeCandidates(
+                from: detections, observations: observations, pixels: nil, dimensions: dimensions)
+            let second = try composer.composeCandidates(
+                from: detections, observations: observations, pixels: nil, dimensions: dimensions)
             XCTAssertEqual(first.map(\.regions.count), second.map(\.regions.count))
             XCTAssertEqual(first.flatMap { $0.regions.map(\.rect) }, second.flatMap { $0.regions.map(\.rect) })
             XCTAssertEqual(Set(first.flatMap(\.detectionIDs)), Set(detections.map(\.id)), "Nothing is lost")
@@ -257,7 +319,7 @@ final class CandidateComposerTests: XCTestCase {
 
     private func compose(_ detections: [SecretDetection], _ observations: [OCRObservation]) throws
         -> [RedactionCandidate] {
-        try composer.composeCandidates(from: detections, observations: observations, dimensions: dimensions)
+        try composer.composeCandidates(from: detections, observations: observations, pixels: nil, dimensions: dimensions)
     }
 
     /// An observation in top-left pixel units, with optional word boxes `(range, x, width)`.

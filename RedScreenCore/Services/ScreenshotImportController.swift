@@ -298,6 +298,7 @@ public final class ScreenshotImportController {
                 guard let candidates = try? candidateComposer.composeCandidates(
                     from: detections,
                     observations: detected.observations,
+                    pixels: session.decodedPixels,
                     dimensions: detected.pixelDimensions
                 ), let composed = try? detected.replacingCandidates(candidates) else {
                     failDetection(current: current, sessionID: sessionID)

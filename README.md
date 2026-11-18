@@ -67,7 +67,7 @@ Choose **Import Screenshot…** (or drop a PNG, JPEG, or HEIC file on it) to ope
 the document window. Text is then recognized on device, checked for developer secrets, and
 turned into redaction rectangles: the footer shows how many likely secrets were found, and
 **Highlight Findings** draws the proposed redactions (filled red: included, orange: to review,
-dashed: estimated geometry). **Show Text Regions** outlines all recognized text. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
+dashed: whole word covered, needs review). **Show Text Regions** outlines all recognized text. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
 
 ## Install into Applications
 

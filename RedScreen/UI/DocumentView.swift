@@ -207,10 +207,11 @@ struct DocumentView: View {
     }
 
     /// Draws composed redaction candidates: filled red for included ones, orange outlines for
-    /// ones awaiting review, dashed where the geometry is estimated or a whole-line fallback.
+    /// ones awaiting review, dashed where sub-word geometry was unavailable and a whole word or
+    /// line is covered.
     private func findingOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
         let scale = fittedSize.width / Double(dimensions.width)
-        let marks: [(rect: ImageRect, included: Bool, estimated: Bool)] =
+        let marks: [(rect: ImageRect, included: Bool, fallback: Bool)] =
             (controller.activeDocument?.candidates ?? []).flatMap { candidate in
                 candidate.regions.map {
                     ($0.rect, candidate.disposition == .included || candidate.isManual,
@@ -225,7 +226,7 @@ struct DocumentView: View {
                     .overlay(
                         Rectangle().strokeBorder(
                             color,
-                            style: StrokeStyle(lineWidth: 2, dash: mark.estimated ? [5, 3] : [])
+                            style: StrokeStyle(lineWidth: 2, dash: mark.fallback ? [5, 3] : [])
                         )
                     )
                     .frame(width: mark.rect.width * scale, height: mark.rect.height * scale)
