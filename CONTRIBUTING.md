@@ -10,10 +10,12 @@ feature branch as the base for another issue. Existing Linear handoffs naming
 ```sh
 git switch main
 git pull --ff-only origin main
-git switch -c codex/RED-123-short-description
+git switch -c feature/red-123-short-description
 ```
 
-Use the actual issue identifier and a concise description. Keep each branch focused on one issue.
+Use a prefix that matches the work: `feature/` for new functionality, `fix/` for bug fixes,
+or `docs/` or `chore/` for documentation or maintenance. Use the issue identifier and a
+concise description. Keep each branch focused on one issue.
 When one issue depends on another, merge the dependency into `main` before starting the next
 branch. A deliberately stacked workflow requires an explicit plan; the default CI policy rejects
 PRs whose base is not `main`.
@@ -48,7 +50,7 @@ GitHub automatically deletes merged PR branches. Refresh your local checkout:
 git switch main
 git pull --ff-only origin main
 git fetch origin --prune
-git branch -d codex/RED-123-short-description
+git branch -d feature/red-123-short-description
 ```
 
 After a squash merge, Git may refuse `branch -d` because commit ancestry differs. First confirm

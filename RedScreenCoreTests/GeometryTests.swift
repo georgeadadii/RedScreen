@@ -96,6 +96,28 @@ final class GeometryTests: XCTestCase {
         }
     }
 
+    func testReviewCanvasKeepsOverlayAndPointerAlignedAtMultipleZoomsAndBackingScales() throws {
+        for backingScale in [1.0, 2.0] {
+            let dimensions = try PixelDimensions(width: Int(800 * backingScale), height: Int(400 * backingScale))
+            let rect = try ImageRect(x: 400 * backingScale, y: 200 * backingScale,
+                                     width: 100 * backingScale, height: 50 * backingScale)
+            for viewport in [CGSize(width: 400, height: 300), CGSize(width: 600, height: 200)] {
+                let size = try PresentationSize(width: viewport.width, height: viewport.height)
+                let fit = AspectFitGeometry(imageDimensions: dimensions, presentationSize: size)
+                for zoom in [1.0, 2.0, 8.0] {
+                    let geometry = ReviewCanvasGeometry(fit: fit, zoom: zoom, pan: CGSize(width: 35, height: -20))
+                    let overlay = geometry.presentationRect(for: rect)
+                    let pointer = geometry.imagePoint(for: overlay.origin)
+                    XCTAssertEqual(pointer.x, rect.x, accuracy: 1e-8)
+                    XCTAssertEqual(pointer.y, rect.y, accuracy: 1e-8)
+                    XCTAssertEqual(overlay.width, min(viewport.width, viewport.height * 2) * zoom / 8,
+                                   accuracy: 1e-8)
+                    XCTAssertGreaterThanOrEqual(geometry.imageFrame.maxX, min(viewport.width, geometry.imageFrame.width))
+                }
+            }
+        }
+    }
+
     func testEnclosingPixelRectRoundsOutward() throws {
         let dimensions = try PixelDimensions(width: 100, height: 80)
         let imageRect = try ImageRect(x: 10.9, y: 20.1, width: 30.2, height: 10.01)

@@ -515,6 +515,39 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         )
     }
 
+    public func updatingManualRegion(_ rect: ImageRect, for candidateID: UUID) throws -> Self {
+        guard let index = candidates.firstIndex(where: { $0.id == candidateID }) else {
+            throw DomainModelError.candidateNotFound
+        }
+        let candidate = candidates[index]
+        guard candidate.isManual, let region = candidate.regions.first else {
+            throw DomainModelError.invalidCandidateTransition
+        }
+        guard region.rect != rect else { return self }
+        var updated = candidates
+        updated[index] = .manual(id: candidateID, region: RedactionRegion(id: region.id, rect: rect))
+        return try applyingManualChange(updated, edits: userEdits + [
+            RedactionEdit(candidateID: candidateID, disposition: .manual)
+        ])
+    }
+
+    public func removingManualCandidate(_ candidateID: UUID) throws -> Self {
+        guard let candidate = candidates.first(where: { $0.id == candidateID }) else {
+            throw DomainModelError.candidateNotFound
+        }
+        guard candidate.isManual else { throw DomainModelError.invalidCandidateTransition }
+        return try applyingManualChange(
+            candidates.filter { $0.id != candidateID },
+            edits: userEdits.filter { $0.candidateID != candidateID }
+        )
+    }
+
+    private func applyingManualChange(_ candidates: [RedactionCandidate], edits: [RedactionEdit]) throws -> Self {
+        try Self(sourceIdentity: sourceIdentity, pixelDimensions: pixelDimensions,
+                 observations: observations, detections: detections, candidates: candidates,
+                 userEdits: edits, processingState: processingState)
+    }
+
     public var description: String {
         "RedactionDocument(source: \(sourceIdentity.rawValue), observations: \(observations.count), "
             + "detections: \(detections.count), candidates: \(candidates.count))"

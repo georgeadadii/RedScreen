@@ -6,11 +6,45 @@ import SwiftUI
 struct DocumentView: View {
     let model: AppModel
 
-    @State private var displayImage: CGImage?
+    @State private var displayImage: (sessionID: UUID, image: CGImage)?
     @State private var isDropTargeted = false
-    @State private var canvasSize: CGSize = .zero
     @State private var showsTextRegions = false
     @State private var highlightsFindings = true
+
+    @State private var selection: UUID?
+    @State private var mode: ReviewMode = .select
+    @State private var zoom = 1.0
+    @State private var pan = CGSize.zero
+    @State private var drag: ReviewDrag?
+    @State private var draft: ImageRect?
+    @State private var preview: CGImage?
+    @State private var previewTask: Task<Void, Never>?
+    @State private var previewFailed = false
+
+    private enum ReviewMode: String, CaseIterable {
+        case select = "Select", draw = "Draw", pan = "Pan"
+    }
+
+    private enum Corner: CaseIterable {
+        case topLeft, topRight, bottomLeft, bottomRight
+
+        var left: Bool { self == .topLeft || self == .bottomLeft }
+        var top: Bool { self == .topLeft || self == .topRight }
+        func point(in rect: CGRect) -> CGPoint {
+            CGPoint(x: left ? rect.minX : rect.maxX, y: top ? rect.minY : rect.maxY)
+        }
+    }
+
+    private enum ReviewDrag {
+        case drawing(CGPoint)
+        case moving(UUID, ImageRect)
+        case resizing(UUID, ImageRect, Corner)
+        case panning(CGSize)
+        case ignored
+    }
+
+    private var candidates: [RedactionCandidate] { controller.activeDocument?.candidates ?? [] }
+    private var selectedCandidate: RedactionCandidate? { candidates.first { $0.id == selection } }
 
     private var controller: ScreenshotImportController { model.importController }
 
@@ -23,81 +57,484 @@ struct DocumentView: View {
                 recognitionBanner(error)
             }
 
-            ZStack {
-                if let displayImage, let document = controller.document {
-                    fittedImage(displayImage, dimensions: document.pixelDimensions)
-                } else {
-                    dropZone
+            if case .failed = controller.detectionStatus {
+                HStack {
+                    Text("Could not check this screenshot for secrets.")
+                    Spacer()
+                    Button("Retry") { controller.retryRecognition() }
                 }
+                .padding(12)
+                .background(.orange.opacity(0.12))
+            }
 
-                if controller.isImporting {
-                    ProgressView("Importing…")
-                        .padding(16)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                        .accessibilityIdentifier("import-progress")
+            if controller.document != nil { reviewToolbar }
+            HStack(spacing: 0) {
+                canvas
+                if controller.canReview {
+                    Divider()
+                    inspector.frame(width: 220)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                GeometryReader { proxy in
-                    Color(nsColor: .underPageBackgroundColor)
-                        .onAppear { canvasSize = proxy.size }
-                        .onChange(of: proxy.size) { _, size in canvasSize = size }
-                }
-            }
-            .overlay {
-                if isDropTargeted {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.accentColor, lineWidth: 3)
-                        .padding(6)
-                }
-            }
-            .dropDestination(for: URL.self) { urls, _ in
-                model.importDroppedItems(urls)
-                return true
-            } isTargeted: { isDropTargeted = $0 }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("document-drop-target")
-
             Divider()
             footer
         }
-        .frame(minWidth: 520, minHeight: 380)
+        .frame(minWidth: 720, minHeight: 420)
         .task(id: controller.document?.sessionID) {
-            displayImage = controller.activePixels?.makeCGImage()
+            if let id = controller.document?.sessionID, let image = controller.activePixels?.makeCGImage() {
+                displayImage = (id, image)
+            } else {
+                displayImage = nil
+            }
+            selection = nil
+            mode = .select
+            resetViewport()
+            cancelInteraction()
+        }
+        .onChange(of: controller.reviewRevision) { _, _ in
+            cancelInteraction()
+        }
+        .onChange(of: controller.isImporting) { _, importing in
+            if importing { cancelInteraction() }
         }
     }
 
-    /// Sizes the image with the core aspect-fit mapping, so its on-screen frame is exactly the
-    /// geometry later review overlays will use to map image pixels to view points.
-    private func fittedImage(_ image: CGImage, dimensions: PixelDimensions) -> some View {
-        let inset = 16.0
-        let fittedSize: CGSize = {
-            guard let size = try? PresentationSize(
-                width: max(1, canvasSize.width - inset * 2),
-                height: max(1, canvasSize.height - inset * 2)
-            ) else { return .zero }
-            let fit = AspectFitGeometry(imageDimensions: dimensions, presentationSize: size)
-            return CGSize(
-                width: Double(dimensions.width) * fit.scale,
-                height: Double(dimensions.height) * fit.scale
-            )
-        }()
-        return Image(image, scale: 1, label: Text("Imported screenshot"))
-            .resizable()
-            .interpolation(.high)
-            .frame(width: fittedSize.width, height: fittedSize.height)
-            .accessibilityIdentifier("document-image")
-            .overlay(alignment: .topLeading) {
-                if showsTextRegions {
-                    textRegionOverlay(dimensions: dimensions, fittedSize: fittedSize)
+    private var canvas: some View {
+        ZStack {
+            Color(nsColor: .underPageBackgroundColor)
+            if let displayImage, let document = controller.document, displayImage.sessionID == document.sessionID {
+                GeometryReader { proxy in
+                    if let size = try? PresentationSize(width: max(1, proxy.size.width - 24),
+                                                        height: max(1, proxy.size.height - 24)) {
+                        let fit = AspectFitGeometry(imageDimensions: document.pixelDimensions, presentationSize: size)
+                        let geometry = ReviewCanvasGeometry(fit: fit, zoom: zoom, pan: pan)
+                        imageCanvas(preview ?? displayImage.image, geometry: geometry, dimensions: document.pixelDimensions, viewport: size)
+                            .frame(width: size.width, height: size.height)
+                            .id(document.sessionID)
+                            .padding(12)
+                    }
+                }
+            } else {
+                dropZone
+            }
+            if controller.isImporting {
+                ProgressView("Importing…")
+                    .padding(16)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .accessibilityIdentifier("import-progress")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+        .overlay {
+            if isDropTargeted {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.accentColor, lineWidth: 3)
+                    .padding(6)
+            }
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            model.importDroppedItems(urls)
+            return true
+        } isTargeted: { isDropTargeted = $0 }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("document-drop-target")
+    }
+
+    private func imageCanvas(_ image: CGImage, geometry: ReviewCanvasGeometry,
+                             dimensions: PixelDimensions, viewport: PresentationSize) -> some View {
+        let frame = geometry.imageFrame
+        return Color.clear.overlay(alignment: .topLeading) {
+            Image(image, scale: 1, label: Text(preview == nil ? "Imported screenshot" : "Redacted preview"))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: frame.width, height: frame.height)
+                .offset(x: frame.minX, y: frame.minY)
+                .accessibilityIdentifier("document-image")
+        }
+        .overlay {
+            if preview == nil {
+                Canvas { context, _ in
+                    drawOverlays(context, geometry: geometry, dimensions: dimensions)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+        .contentShape(Rectangle())
+        .coordinateSpace(name: "review-canvas")
+        .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("review-canvas"))
+            .onChanged { value in
+                guard hypot(value.translation.width, value.translation.height) >= 3 else { return }
+                if drag == nil { beginDrag(value.startLocation, geometry: geometry, viewport: viewport) }
+                updateDrag(value, geometry: geometry, dimensions: dimensions, viewport: viewport)
+            }
+            .onEnded { value in
+                if hypot(value.translation.width, value.translation.height) >= 3 {
+                    if drag == nil { beginDrag(value.startLocation, geometry: geometry, viewport: viewport) }
+                    updateDrag(value, geometry: geometry, dimensions: dimensions, viewport: viewport)
+                } else if drag == nil, controller.canReview, preview == nil, mode == .select {
+                    selection = hitCandidate(at: value.location, geometry: geometry)?.id
+                }
+                finishDrag()
+            })
+        .clipped()
+    }
+
+    private var reviewToolbar: some View {
+        HStack {
+            Picker("Canvas tool", selection: $mode) {
+                ForEach(ReviewMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 210)
+            .disabled(!controller.canReview || preview != nil)
+            Button("Zoom out", systemImage: "minus.magnifyingglass") { changeZoom(by: 1 / 1.5) }
+                .labelStyle(.iconOnly)
+                .disabled(zoom <= 1)
+            Button("Zoom in", systemImage: "plus.magnifyingglass") { changeZoom(by: 1.5) }
+                .labelStyle(.iconOnly)
+                .disabled(zoom >= 8)
+            Button("Fit", action: resetViewport)
+            Text("\(Int((zoom * 100).rounded()))%")
+                .monospacedDigit()
+                .accessibilityLabel("Zoom \(Int((zoom * 100).rounded())) percent")
+            Spacer()
+            Button("Undo", systemImage: "arrow.uturn.backward", action: controller.undoReview)
+                .keyboardShortcut("z")
+                .disabled(!controller.canUndoReview)
+                .accessibilityIdentifier("review-undo")
+            Button("Redo", systemImage: "arrow.uturn.forward", action: controller.redoReview)
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(!controller.canRedoReview)
+                .accessibilityIdentifier("review-redo")
+        }
+        .padding(8)
+        .background(.bar)
+    }
+
+    private var inspector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Redactions").font(.headline)
+                Spacer()
+                Button("Previous redaction", systemImage: "chevron.up") { stepSelection(by: -1) }
+                    .labelStyle(.iconOnly)
+                    .help("Previous redaction (Option-Up Arrow)")
+                    .keyboardShortcut(.upArrow, modifiers: .option)
+                Button("Next redaction", systemImage: "chevron.down") { stepSelection(by: 1) }
+                    .labelStyle(.iconOnly)
+                    .help("Next redaction (Option-Down Arrow)")
+                    .keyboardShortcut(.downArrow, modifiers: .option)
+            }
+            .disabled(candidates.isEmpty)
+            if candidates.isEmpty {
+                Text("No findings. Add a rectangle to redact an area.").font(.caption)
+            }
+            ScrollViewReader { scroll in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(candidates.enumerated()), id: \.element.id) { index, candidate in
+                            let title = candidate.isManual ? "Manual rectangle" : "Finding \(index + 1)"
+                            Button {
+                                selectCandidate(candidate.id)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(title).fontWeight(selection == candidate.id ? .semibold : .regular)
+                                    Text(candidateDetails(candidate)).font(.caption).foregroundStyle(.secondary)
+                                }
+                                .padding(5)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(selection == candidate.id ? Color.accentColor.opacity(0.18) : .clear)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(selection == candidate.id ? .isSelected : [])
+                            .accessibilityIdentifier("review-candidate-\(index)")
+                        }
+                    }
+                }
+                .onChange(of: selection) { _, id in
+                    guard let id else { return }
+                    scroll.scrollTo(id)
                 }
             }
-            .overlay(alignment: .topLeading) {
-                if highlightsFindings {
-                    findingOverlay(dimensions: dimensions, fittedSize: fittedSize)
+
+            if let candidate = selectedCandidate {
+                if candidate.isManual, let rect = candidate.regions.first?.rect,
+                   let dimensions = controller.activeDocument?.pixelDimensions {
+                    manualControls(candidate.id, rect: rect, dimensions: dimensions)
+                } else {
+                    HStack {
+                        Button("Include") { controller.setReviewDisposition(.included, for: candidate.id) }
+                            .disabled(candidate.disposition == .included)
+                            .accessibilityIdentifier("review-include")
+                        Button("Exclude") { controller.setReviewDisposition(.excluded, for: candidate.id) }
+                            .disabled(candidate.disposition == .excluded)
+                            .accessibilityIdentifier("review-exclude")
+                    }
                 }
             }
+
+            Button("Add Rectangle", action: addCenteredRectangle)
+                .accessibilityIdentifier("review-add")
+            Divider()
+            if controller.pendingReviewCount > 0 {
+                Text("Resolve \(controller.pendingReviewCount) pending before previewing output.")
+                    .font(.caption)
+                    .accessibilityIdentifier("review-pending")
+            }
+            if previewFailed {
+                Text("Could not render the preview. Try again.").font(.caption)
+            }
+            Button(preview == nil ? "Preview Redacted Image" : "Back to Review", action: togglePreview)
+                .disabled(!controller.canRenderReviewedImage || previewTask != nil)
+                .accessibilityIdentifier("review-preview")
+            if previewTask != nil {
+                ProgressView("Rendering preview…").controlSize(.small)
+            }
+        }
+        .padding(10)
+    }
+
+    private func selectCandidate(_ id: UUID) {
+        selection = id
+        mode = .select
+        clearPreview()
+    }
+
+    private func stepSelection(by direction: Int) {
+        guard !candidates.isEmpty else { return }
+        let current = candidates.firstIndex { $0.id == selection }
+        let next = current.map { ($0 + direction + candidates.count) % candidates.count }
+            ?? (direction > 0 ? 0 : candidates.count - 1)
+        selectCandidate(candidates[next].id)
+    }
+
+    private func candidateDetails(_ candidate: RedactionCandidate) -> String {
+        let status: String
+        switch candidate.disposition {
+        case .included, .manual: status = "Will redact"
+        case .excluded: status = "Excluded"
+        case .pending: status = "Pending review"
+        }
+        guard let evidence = candidate.evidence.first else { return status }
+        let confidence = Int((evidence.confidence.value * 100).rounded())
+        let rule = evidence.ruleID.rawValue
+        return "\(status) · \(confidence)%\n\(rule)" + (candidate.needsGeometryReview ? " · Check bounds" : "")
+    }
+
+    private func manualControls(_ id: UUID, rect: ImageRect, dimensions: PixelDimensions) -> some View {
+        let width = Double(dimensions.width)
+        let height = Double(dimensions.height)
+        return VStack(alignment: .leading, spacing: 4) {
+            geometryStepper("Horizontal position", value: rect.x, range: 0...max(0, width - rect.width)) {
+                updateManualRect(id, x: $0, y: rect.y, width: rect.width, height: rect.height)
+            }
+            geometryStepper("Vertical position", value: rect.y, range: 0...max(0, height - rect.height)) {
+                updateManualRect(id, x: rect.x, y: $0, width: rect.width, height: rect.height)
+            }
+            geometryStepper("Width", value: rect.width, range: 1...max(1, width - rect.x)) {
+                updateManualRect(id, x: rect.x, y: rect.y, width: $0, height: rect.height)
+            }
+            geometryStepper("Height", value: rect.height, range: 1...max(1, height - rect.y)) {
+                updateManualRect(id, x: rect.x, y: rect.y, width: rect.width, height: $0)
+            }
+            Button("Delete Rectangle", role: .destructive) { controller.deleteManualRedaction(id) }
+                .accessibilityIdentifier("review-delete")
+        }
+    }
+
+    private func geometryStepper(_ label: String, value: Double, range: ClosedRange<Double>,
+                                 apply: @escaping (Double) -> Void) -> some View {
+        HStack {
+            Text("\(label): \(value, format: .number.precision(.fractionLength(0...1))) px")
+                .font(.caption)
+                .accessibilityIdentifier("review-geometry-\(label)")
+            Spacer(minLength: 0)
+            Stepper(label, value: Binding(get: { value }, set: apply), in: range, step: 1)
+                .labelsHidden()
+                .accessibilityLabel(label)
+                .accessibilityValue(Text("\(value, format: .number.precision(.fractionLength(0...1))) pixels"))
+        }
+    }
+
+    private func updateManualRect(_ id: UUID, x: Double, y: Double, width: Double, height: Double) {
+        guard let rect = try? ImageRect(x: x, y: y, width: width, height: height) else { return }
+        controller.updateManualRedaction(id, rect: rect)
+    }
+
+    private func addCenteredRectangle() {
+        guard let dimensions = controller.activeDocument?.pixelDimensions else { return }
+        let width = Double(dimensions.width), height = Double(dimensions.height)
+        let w = max(1, width / 4), h = max(1, height / 4)
+        guard let rect = try? ImageRect(x: (width - w) / 2, y: (height - h) / 2, width: w, height: h),
+              let id = controller.addManualRedaction(rect) else { return }
+        selection = id
+        mode = .select
+    }
+
+    private func hitCandidate(at point: CGPoint, geometry: ReviewCanvasGeometry) -> RedactionCandidate? {
+        candidates.reversed().first { candidate in
+            candidate.regions.contains { geometry.presentationRect(for: $0.rect).contains(point) }
+        }
+    }
+
+    private func beginDrag(_ point: CGPoint, geometry: ReviewCanvasGeometry, viewport: PresentationSize) {
+        guard controller.canReview else { drag = .ignored; return }
+        if mode == .pan {
+            drag = .panning(CGSize(width: geometry.imageFrame.midX - viewport.width / 2,
+                                   height: geometry.imageFrame.midY - viewport.height / 2))
+            return
+        }
+        guard preview == nil else { drag = .ignored; return }
+        if mode == .draw {
+            drag = geometry.imageFrame.contains(point) ? .drawing(geometry.imagePoint(for: point)) : .ignored
+            return
+        }
+        if let candidate = selectedCandidate, candidate.isManual, let rect = candidate.regions.first?.rect {
+            let frame = geometry.presentationRect(for: rect)
+            if let corner = Corner.allCases.first(where: {
+                let handle = $0.point(in: frame)
+                return hypot(handle.x - point.x, handle.y - point.y) <= 9
+            }) {
+                drag = .resizing(candidate.id, rect, corner)
+                return
+            }
+            if frame.contains(point) {
+                drag = .moving(candidate.id, rect)
+                return
+            }
+        }
+        let hit = hitCandidate(at: point, geometry: geometry)
+        selection = hit?.id
+        if let hit, hit.isManual, let rect = hit.regions.first?.rect { drag = .moving(hit.id, rect) }
+        else { drag = .ignored }
+    }
+
+    private func updateDrag(_ value: DragGesture.Value, geometry: ReviewCanvasGeometry,
+                            dimensions: PixelDimensions, viewport: PresentationSize) {
+        let width = Double(dimensions.width), height = Double(dimensions.height)
+        let dx = value.translation.width / geometry.scale, dy = value.translation.height / geometry.scale
+        switch drag {
+        case .drawing(let start):
+            let end = geometry.imagePoint(for: value.location)
+            let x = min(width, max(0, end.x)), y = min(height, max(0, end.y))
+            let w = abs(x - start.x), h = abs(y - start.y)
+            draft = w >= 1 && h >= 1 ? try? ImageRect(x: min(x, start.x), y: min(y, start.y), width: w, height: h) : nil
+        case .moving(_, let rect):
+            draft = try? ImageRect(x: min(width - rect.width, max(0, rect.x + dx)),
+                                  y: min(height - rect.height, max(0, rect.y + dy)),
+                                  width: rect.width, height: rect.height)
+        case .resizing(_, let rect, let corner):
+            let left = corner.left ? max(0, min(rect.maxX - 1, rect.x + dx)) : rect.x
+            let right = corner.left ? rect.maxX : min(width, max(rect.x + 1, rect.maxX + dx))
+            let top = corner.top ? max(0, min(rect.maxY - 1, rect.y + dy)) : rect.y
+            let bottom = corner.top ? rect.maxY : min(height, max(rect.y + 1, rect.maxY + dy))
+            draft = try? ImageRect(x: left, y: top, width: right - left, height: bottom - top)
+        case .panning(let start):
+            let dx = max(0, (geometry.imageFrame.width - viewport.width) / 2)
+            let dy = max(0, (geometry.imageFrame.height - viewport.height) / 2)
+            pan = CGSize(width: min(dx, max(-dx, start.width + value.translation.width)),
+                         height: min(dy, max(-dy, start.height + value.translation.height)))
+        case .ignored, nil: break
+        }
+    }
+
+    private func finishDrag() {
+        defer { drag = nil; draft = nil }
+        guard let draft else { return }
+        switch drag {
+        case .drawing:
+            selection = controller.addManualRedaction(draft)
+            mode = .select
+        case .moving(let id, _), .resizing(let id, _, _):
+            controller.updateManualRedaction(id, rect: draft)
+        default: break
+        }
+    }
+
+    private func resetViewport() { zoom = 1; pan = .zero }
+
+    private func changeZoom(by factor: Double) {
+        zoom = min(8, max(1, zoom * factor))
+        pan = .zero
+    }
+
+    private func clearPreview() {
+        previewTask?.cancel()
+        previewTask = nil
+        preview = nil
+        previewFailed = false
+    }
+
+    private func cancelInteraction() {
+        drag = nil
+        draft = nil
+        clearPreview()
+    }
+
+    private func togglePreview() {
+        if preview != nil {
+            clearPreview()
+            mode = .select
+            return
+        }
+        previewFailed = false
+        previewTask = Task {
+            do {
+                let pixels = try await controller.renderReviewedImage()
+                guard !Task.isCancelled else { return }
+                preview = pixels.makeCGImage()
+                previewFailed = preview == nil
+                mode = .pan
+            } catch is CancellationError {
+                if Task.isCancelled { return }
+            } catch {
+                if Task.isCancelled { return }
+                previewFailed = true
+            }
+            previewTask = nil
+        }
+    }
+
+    private func drawOverlays(_ context: GraphicsContext, geometry: ReviewCanvasGeometry,
+                              dimensions: PixelDimensions) {
+        if showsTextRegions {
+            for observation in controller.activeDocument?.observations ?? [] {
+                guard let rect = try? observation.imageRect(in: dimensions) else { continue }
+                context.stroke(Path(geometry.presentationRect(for: rect)), with: .color(.accentColor), lineWidth: 1.5)
+            }
+        }
+        for candidate in candidates where highlightsFindings || candidate.id == selection || candidate.isManual {
+            let selected = candidate.id == selection
+            let included = candidate.isManual || candidate.disposition == .included
+            let color: Color = selected ? .accentColor : included ? .red : candidate.disposition == .excluded ? .gray : .orange
+            for region in candidate.regions {
+                let rect: ImageRect
+                switch drag {
+                case .moving(let id, _), .resizing(let id, _, _):
+                    rect = id == candidate.id ? draft ?? region.rect : region.rect
+                default:
+                    rect = region.rect
+                }
+                let frame = geometry.presentationRect(for: rect)
+                context.fill(Path(frame), with: .color(color.opacity(included ? 0.32 : 0.09)))
+                context.stroke(Path(frame), with: .color(color),
+                               style: StrokeStyle(lineWidth: selected ? 3 : 2,
+                                                  dash: candidate.needsGeometryReview ? [5, 3] : []))
+                if selected && candidate.isManual && mode == .select {
+                    for corner in Corner.allCases {
+                        let point = corner.point(in: frame)
+                        let handle = CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8)
+                        context.fill(Path(handle), with: .color(color))
+                        context.stroke(Path(handle), with: .color(.white), lineWidth: 1)
+                    }
+                }
+            }
+        }
+        if case .drawing = drag, let draft {
+            context.stroke(Path(geometry.presentationRect(for: draft)), with: .color(.accentColor), lineWidth: 2)
+        }
     }
 
     private var dropZone: some View {
@@ -120,37 +557,41 @@ struct DocumentView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 12) {
-            if let document = controller.document {
-                Text(
-                    "\(document.pixelDimensions.width) × \(document.pixelDimensions.height) px"
-                        + (document.colorSpace == .displayP3 ? " · Display P3" : "")
-                )
-                .font(.callout.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("document-dimensions")
-            } else {
-                Text("No screenshot open")
-                    .font(.callout)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                if let document = controller.document {
+                    Text(
+                        "\(document.pixelDimensions.width) × \(document.pixelDimensions.height) px"
+                            + (document.colorSpace == .displayP3 ? " · Display P3" : "")
+                    )
+                    .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("document-dimensions")
+                } else {
+                    Text("No screenshot open")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                recognitionStatusLabel
+                detectionStatusLabel
             }
-            recognitionStatusLabel
-            detectionStatusLabel
-            Spacer()
-            if controller.document != nil {
-                Toggle("Highlight Findings", isOn: $highlightsFindings)
-                    .toggleStyle(.checkbox)
-                    .accessibilityIdentifier("highlight-findings-toggle")
-                Toggle("Show Text Regions", isOn: $showsTextRegions)
-                    .toggleStyle(.checkbox)
-                    .accessibilityIdentifier("show-text-regions-toggle")
+            HStack(spacing: 12) {
+                if controller.document != nil {
+                    Toggle("Highlight Findings", isOn: $highlightsFindings)
+                        .toggleStyle(.checkbox)
+                        .accessibilityIdentifier("highlight-findings-toggle")
+                    Toggle("Show Text Regions", isOn: $showsTextRegions)
+                        .toggleStyle(.checkbox)
+                        .accessibilityIdentifier("show-text-regions-toggle")
+                }
+                Spacer()
+                Button("Import…", action: model.chooseScreenshot)
+                    .keyboardShortcut("o")
+                    .accessibilityIdentifier("document-import-button")
+                Button("Close") { NSApplication.shared.keyWindow?.performClose(nil) }
+                    .keyboardShortcut("w")
+                    .accessibilityIdentifier("document-close-button")
             }
-            Button("Import…", action: model.chooseScreenshot)
-                .keyboardShortcut("o")
-                .accessibilityIdentifier("document-import-button")
-            Button("Close") { NSApplication.shared.keyWindow?.performClose(nil) }
-                .keyboardShortcut("w")
-                .accessibilityIdentifier("document-close-button")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -193,8 +634,8 @@ struct DocumentView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("detection-status")
-        case .detected(let likely, let review):
-            Text("\(likely) likely \(likely == 1 ? "secret" : "secrets") · \(review) to review")
+        case .detected(let likely, _):
+            Text("\(likely) likely \(likely == 1 ? "secret" : "secrets") · \(controller.pendingReviewCount) to review")
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(likely > 0 ? Color.red : .secondary)
                 .accessibilityIdentifier("detection-status")
@@ -204,58 +645,6 @@ struct DocumentView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("detection-status")
         }
-    }
-
-    /// Draws composed redaction candidates: filled red for included ones, orange outlines for
-    /// ones awaiting review, dashed where sub-word geometry was unavailable and a whole word or
-    /// line is covered.
-    private func findingOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
-        let scale = fittedSize.width / Double(dimensions.width)
-        let marks: [(rect: ImageRect, included: Bool, fallback: Bool)] =
-            (controller.activeDocument?.candidates ?? []).flatMap { candidate in
-                candidate.regions.map {
-                    ($0.rect, candidate.disposition == .included || candidate.isManual,
-                     candidate.needsGeometryReview)
-                }
-            }
-        return ZStack(alignment: .topLeading) {
-            ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
-                let color: Color = mark.included ? .red : .orange
-                Rectangle()
-                    .fill(color.opacity(mark.included ? 0.35 : 0.12))
-                    .overlay(
-                        Rectangle().strokeBorder(
-                            color,
-                            style: StrokeStyle(lineWidth: 2, dash: mark.fallback ? [5, 3] : [])
-                        )
-                    )
-                    .frame(width: mark.rect.width * scale, height: mark.rect.height * scale)
-                    .offset(x: mark.rect.x * scale, y: mark.rect.y * scale)
-            }
-        }
-        .frame(width: fittedSize.width, height: fittedSize.height, alignment: .topLeading)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    /// Outlines recognized text so the user can see what OCR found. Shows geometry only.
-    private func textRegionOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
-        let scale = fittedSize.width / Double(dimensions.width)
-        let rects = (controller.activeDocument?.observations ?? []).compactMap {
-            try? $0.imageRect(in: dimensions)
-        }
-        return ZStack(alignment: .topLeading) {
-            ForEach(Array(rects.enumerated()), id: \.offset) { _, rect in
-                Rectangle()
-                    .strokeBorder(Color.accentColor, lineWidth: 1.5)
-                    .background(Color.accentColor.opacity(0.12))
-                    .frame(width: rect.width * scale, height: rect.height * scale)
-                    .offset(x: rect.x * scale, y: rect.y * scale)
-            }
-        }
-        .frame(width: fittedSize.width, height: fittedSize.height, alignment: .topLeading)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 
     private func recognitionBanner(_ error: TextRecognitionError) -> some View {

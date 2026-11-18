@@ -214,6 +214,73 @@ final class TextRecognitionControllerTests: XCTestCase {
         XCTAssertTrue(controller.activeDocument?.detections.isEmpty ?? false)
     }
 
+    func testReviewEditsUndoRedoAndRenderOnlyResolvedCandidates() async throws {
+        let controller = ScreenshotImportController(
+            lifecycle: SecureImageSessionLifecycle(),
+            importer: SizedImporter(),
+            textRecognizer: FixedRecognizer(count: 1),
+            secretDetector: SlowDetector(),
+            candidateComposer: PendingReviewComposer()
+        )
+        await controller.importImage(from: url(width: 12)).value
+        await controller.currentRecognition?.value
+        await controller.currentDetection?.value
+        let original = try XCTUnwrap(controller.activeDocument)
+        let pending = try XCTUnwrap(original.candidates.first)
+        XCTAssertTrue(controller.canReview)
+        XCTAssertEqual(controller.pendingReviewCount, 1)
+        XCTAssertFalse(controller.canRenderReviewedImage)
+        do {
+            _ = try await controller.renderReviewedImage()
+            XCTFail("Pending candidates must block output")
+        } catch let error as ReviewRenderError {
+            XCTAssertEqual(error, .reviewRequired)
+        }
+
+        XCTAssertFalse(controller.deleteManualRedaction(pending.id))
+        XCTAssertTrue(controller.setReviewDisposition(.excluded, for: pending.id))
+        XCTAssertFalse(controller.setReviewDisposition(.excluded, for: pending.id))
+        XCTAssertTrue(controller.canRenderReviewedImage)
+        controller.undoReview()
+        XCTAssertFalse(controller.canRenderReviewedImage)
+        XCTAssertEqual(controller.activeDocument, original)
+        controller.redoReview()
+        XCTAssertTrue(controller.canRenderReviewedImage)
+
+        let added = try ImageRect(x: 3, y: 0, width: 2, height: 1)
+        let edited = try ImageRect(x: 5, y: 0, width: 3, height: 2)
+        let id = try XCTUnwrap(controller.addManualRedaction(added))
+        XCTAssertTrue(controller.updateManualRedaction(id, rect: edited))
+        XCTAssertFalse(controller.updateManualRedaction(id, rect: try ImageRect(x: 11, y: 0, width: 2, height: 1)))
+        controller.undoReview()
+        XCTAssertEqual(controller.activeDocument?.candidates.last?.regions.first?.rect, added)
+        controller.redoReview()
+        XCTAssertEqual(controller.activeDocument?.candidates.last?.regions.first?.rect, edited)
+        XCTAssertTrue(controller.deleteManualRedaction(id))
+        XCTAssertEqual(controller.activeDocument?.candidates.count, 1)
+        controller.undoReview()
+        XCTAssertEqual(controller.activeDocument?.candidates.last?.id, id)
+
+        let output = try await controller.renderReviewedImage()
+        let alpha = stride(from: 3, to: output.bytes.count, by: 4).map { output.bytes[$0] }
+        for i in alpha.indices {
+            XCTAssertEqual(alpha[i], (5..<8).contains(i % 12) ? 255 : 0)
+        }
+        XCTAssertTrue(controller.deleteManualRedaction(id))
+        XCTAssertFalse(controller.canRedoReview)
+
+        await controller.importImage(from: url(width: 16)).value
+        await controller.currentRecognition?.value
+        await controller.currentDetection?.value
+        XCTAssertFalse(controller.canUndoReview)
+        XCTAssertFalse(controller.canRedoReview)
+        XCTAssertEqual(controller.pendingReviewCount, 1)
+        XCTAssertFalse(controller.updateManualRedaction(id, rect: edited))
+        controller.closeDocument()
+        XCTAssertFalse(controller.canReview)
+        XCTAssertFalse(controller.canRenderReviewedImage)
+    }
+
     // MARK: - Helpers
 
     private func url(width: Int) -> URL {
@@ -326,6 +393,20 @@ private actor GatedRecognizer: TextRecognizer {
 }
 
 /// Returns findings only after a delay, so a newer document can replace this one first.
+private struct PendingReviewComposer: CandidateComposer {
+    func composeCandidates(
+        from detections: [SecretDetection], observations: [OCRObservation],
+        pixels: DecodedPixels?, dimensions: PixelDimensions
+    ) throws -> [RedactionCandidate] {
+        let observation = observations[0]
+        return [try RedactionCandidate(
+            region: RedactionRegion(rect: ImageRect(x: 0, y: 0, width: 2, height: 2)),
+            evidence: DetectionEvidence(ruleID: DetectorRuleID("test.review"),
+                                        observationIDs: [observation.id], confidence: Confidence(0.5))
+        )]
+    }
+}
+
 private struct SlowDetector: SecretDetector {
     func detectSecrets(in observations: [OCRObservation]) async throws -> [SecretDetection] {
         try? await Task.sleep(for: .milliseconds(200))

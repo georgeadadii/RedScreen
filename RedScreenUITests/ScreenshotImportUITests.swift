@@ -127,6 +127,94 @@ final class ScreenshotImportUITests: XCTestCase {
         finder.typeKey("w", modifierFlags: .command)
     }
 
+    @MainActor
+    func testReviewCandidateAndEditManualRectangle() throws {
+        let fixture = try copiedFixture()
+        openMenuBarPopover()
+        app.buttons["import-screenshot-button"].click()
+        chooseInOpenPanel(fixture)
+
+        let first = app.buttons["review-candidate-0"]
+        XCTAssertTrue(first.waitForExistence(timeout: 20))
+        app.typeKey(.downArrow, modifierFlags: .option)
+        XCTAssertFalse(first.label.contains("RSFAKE"))
+        let exclude = app.buttons["review-exclude"]
+        let include = app.buttons["review-include"]
+        XCTAssertTrue(exclude.isEnabled)
+        exclude.click()
+        XCTAssertFalse(exclude.isEnabled)
+        XCTAssertTrue(include.isEnabled)
+        app.buttons["review-undo"].click()
+        XCTAssertFalse(include.isEnabled)
+
+        app.buttons["review-add"].click()
+        let remove = app.buttons["review-delete"]
+        XCTAssertTrue(remove.isEnabled)
+        let image = app.images["document-image"]
+        XCTAssertTrue(image.exists)
+        let x = app.staticTexts["review-geometry-Horizontal position"]
+        let width = app.staticTexts["review-geometry-Width"]
+        XCTAssertTrue(x.exists)
+        XCTAssertTrue(width.exists)
+        let originalX = x.value as? String ?? x.label
+        let originalWidth = width.value as? String ?? width.label
+        let center = image.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let moved = center.withOffset(CGVector(dx: 25, dy: 20))
+        center.press(forDuration: 0.1, thenDragTo: moved)
+        XCTAssertNotEqual(x.value as? String ?? x.label, originalX, "Dragging the center should move the rectangle")
+        let y = app.staticTexts["review-geometry-Vertical position"]
+        let height = app.staticTexts["review-geometry-Height"]
+        let dimensions = try pixelSize(of: fixture)
+        let canvas = app.descendants(matching: .any)["document-drop-target"]
+        // The accessibility image element spans the canvas, including letterbox margins.
+        let scale = min((canvas.frame.width - 24) / Double(dimensions.width),
+                        (canvas.frame.height - 24) / Double(dimensions.height))
+        func canvasPoint(x: Double, y: Double) -> XCUICoordinate {
+            canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(
+                dx: (x - Double(dimensions.width) / 2) * scale,
+                dy: (y - Double(dimensions.height) / 2) * scale
+            ))
+        }
+        func pixels(_ field: XCUIElement) throws -> Double {
+            let text = field.value as? String ?? field.label
+            let number = text.split(separator: ":").last?.trimmingCharacters(in: .whitespaces)
+                .replacingOccurrences(of: " px", with: "")
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            return try XCTUnwrap(number.flatMap { formatter.number(from: $0)?.doubleValue })
+        }
+        let corner = try canvasPoint(x: pixels(x) + pixels(width), y: pixels(y) + pixels(height))
+        corner.press(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: 15, dy: 10)))
+        let resizedWidth = width.value as? String ?? width.label
+        XCTAssertNotEqual(resizedWidth, originalWidth, "Dragging a corner should resize the rectangle")
+        app.buttons["review-undo"].click()
+        XCTAssertEqual(width.value as? String ?? width.label, originalWidth)
+        app.buttons["review-redo"].click()
+        XCTAssertEqual(width.value as? String ?? width.label, resizedWidth)
+        remove.click()
+        XCTAssertFalse(remove.exists)
+        app.buttons["review-undo"].click()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Manual rectangle")).firstMatch.exists)
+        remove.click()
+        app.radioButtons["Draw"].click()
+        let start = canvasPoint(x: Double(dimensions.width) * 0.25, y: Double(dimensions.height) * 0.25)
+        let end = canvasPoint(x: Double(dimensions.width) * 0.4, y: Double(dimensions.height) * 0.4)
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(remove.exists, "Drawing should add and select a manual rectangle")
+
+        let preview = app.buttons["review-preview"]
+        XCTAssertFalse(preview.isEnabled)
+        let pending = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Pending review")).firstMatch
+        XCTAssertTrue(pending.exists)
+        pending.click()
+        include.click()
+        XCTAssertTrue(preview.isEnabled)
+        preview.click()
+        expectation(for: NSPredicate(format: "label == %@", "Back to Review"), evaluatedWith: preview)
+        waitForExpectations(timeout: 10)
+        XCTAssertEqual(image.label, "Redacted preview")
+    }
+
     // MARK: - Helpers
 
     private func openMenuBarPopover() {
