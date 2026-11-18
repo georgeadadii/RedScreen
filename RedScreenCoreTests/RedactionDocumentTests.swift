@@ -182,4 +182,50 @@ final class RedactionDocumentTests: XCTestCase {
     }
 
     private func requireSendable<T: Sendable>(_: T.Type) {}
+
+    func testDetectionsMustReferenceKnownObservationsWithinTheirText() throws {
+        let observation = OCRObservation(
+            text: "API_KEY=RSFAKE-key-6b2d91",
+            boundingBox: try NormalizedRect(x: 0.1, y: 0.1, width: 0.5, height: 0.05),
+            boundingBoxOrigin: .topLeft,
+            confidence: try Confidence(0.9)
+        )
+        let document = try RedactionDocument(
+            sourceIdentity: SourceImageIdentity(),
+            pixelDimensions: try PixelDimensions(width: 100, height: 100),
+            observations: [observation]
+        )
+        func detection(_ id: UUID, _ range: Range<Int>) throws -> SecretDetection {
+            try SecretDetection(
+                evidence: DetectionEvidence(
+                    ruleID: DetectorRuleID("assignment.env"),
+                    observationIDs: [id],
+                    confidence: Confidence(0.9)
+                ),
+                family: .envAssignment,
+                severity: .high,
+                assessment: .likely,
+                spans: [DetectedTextSpan(observationID: id, utf16Range: range)]
+            )
+        }
+
+        let valid = try document.replacingDetections([detection(observation.id, 8..<25)])
+        XCTAssertEqual(valid.detections.count, 1)
+        XCTAssertEqual(valid.processingState, .secretsDetected)
+        XCTAssertThrowsError(try document.replacingDetections([detection(observation.id, 8..<99)])) {
+            XCTAssertEqual($0 as? DomainModelError, .spanOutOfBounds)
+        }
+        XCTAssertThrowsError(try document.replacingDetections([detection(UUID(), 0..<3)])) {
+            XCTAssertEqual($0 as? DomainModelError, .unknownObservation)
+        }
+        XCTAssertTrue(try valid.replacingObservations([observation]).detections.isEmpty,
+                      "New observations invalidate old findings")
+        XCTAssertThrowsError(try SecretDetection(
+            evidence: DetectionEvidence(
+                ruleID: DetectorRuleID("x"), observationIDs: [observation.id], confidence: Confidence(1)
+            ),
+            family: .envAssignment, severity: .high, assessment: .likely,
+            spans: [DetectedTextSpan(observationID: UUID(), utf16Range: 0..<1)]
+        ))
+    }
 }

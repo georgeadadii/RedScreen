@@ -20,6 +20,8 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     /// Count is the elapsed recognition time in milliseconds.
     case textRecognitionDuration = "text_recognition_duration_ms"
     case textRecognitionFailed = "text_recognition_failed"
+    case detectionsNeedingReview = "detections_needing_review"
+    case secretDetectionFailed = "secret_detection_failed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -84,6 +86,10 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("text_recognition_duration_ms count=\(entry.count)")
         case .textRecognitionFailed:
             logger.info("text_recognition_failed count=\(entry.count)")
+        case .detectionsNeedingReview:
+            logger.info("detections_needing_review count=\(entry.count)")
+        case .secretDetectionFailed:
+            logger.info("secret_detection_failed count=\(entry.count)")
         }
     }
 }

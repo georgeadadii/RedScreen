@@ -10,6 +10,7 @@ struct DocumentView: View {
     @State private var isDropTargeted = false
     @State private var canvasSize: CGSize = .zero
     @State private var showsTextRegions = false
+    @State private var highlightsFindings = true
 
     private var controller: ScreenshotImportController { model.importController }
 
@@ -92,6 +93,11 @@ struct DocumentView: View {
                     textRegionOverlay(dimensions: dimensions, fittedSize: fittedSize)
                 }
             }
+            .overlay(alignment: .topLeading) {
+                if highlightsFindings {
+                    findingOverlay(dimensions: dimensions, fittedSize: fittedSize)
+                }
+            }
     }
 
     private var dropZone: some View {
@@ -129,8 +135,12 @@ struct DocumentView: View {
                     .foregroundStyle(.secondary)
             }
             recognitionStatusLabel
+            detectionStatusLabel
             Spacer()
             if controller.document != nil {
+                Toggle("Highlight Findings", isOn: $highlightsFindings)
+                    .toggleStyle(.checkbox)
+                    .accessibilityIdentifier("highlight-findings-toggle")
                 Toggle("Show Text Regions", isOn: $showsTextRegions)
                     .toggleStyle(.checkbox)
                     .accessibilityIdentifier("show-text-regions-toggle")
@@ -171,6 +181,60 @@ struct DocumentView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("recognition-status")
         }
+    }
+
+    @ViewBuilder
+    private var detectionStatusLabel: some View {
+        switch controller.detectionStatus {
+        case .idle:
+            EmptyView()
+        case .detecting:
+            Text("Checking for secrets…")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("detection-status")
+        case .detected(let likely, let review):
+            Text("\(likely) likely \(likely == 1 ? "secret" : "secrets") · \(review) to review")
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(likely > 0 ? Color.red : .secondary)
+                .accessibilityIdentifier("detection-status")
+        case .failed:
+            Text("Secret detection failed")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("detection-status")
+        }
+    }
+
+    /// Marks lines containing findings: red for likely secrets, orange for review. The precise
+    /// value rectangles arrive with candidate composition (issue #8); this shows the lines only.
+    private func findingOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
+        let scale = fittedSize.width / Double(dimensions.width)
+        let document = controller.activeDocument
+        var assessments: [OCRObservation.ID: DetectionAssessment] = [:]
+        for detection in document?.detections ?? [] {
+            for id in detection.evidence.observationIDs where assessments[id] != .likely {
+                assessments[id] = detection.assessment
+            }
+        }
+        let marks: [(rect: ImageRect, likely: Bool)] = (document?.observations ?? []).compactMap {
+            guard let assessment = assessments[$0.id],
+                  let rect = try? $0.imageRect(in: dimensions) else { return nil }
+            return (rect, assessment == .likely)
+        }
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
+                let color: Color = mark.likely ? .red : .orange
+                Rectangle()
+                    .strokeBorder(color, lineWidth: 2)
+                    .background(color.opacity(0.15))
+                    .frame(width: mark.rect.width * scale, height: mark.rect.height * scale)
+                    .offset(x: mark.rect.x * scale, y: mark.rect.y * scale)
+            }
+        }
+        .frame(width: fittedSize.width, height: fittedSize.height, alignment: .topLeading)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     /// Outlines recognized text so the user can see what OCR found. Shows geometry only.

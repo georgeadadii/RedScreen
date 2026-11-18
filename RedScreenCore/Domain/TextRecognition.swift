@@ -31,3 +31,11 @@ public enum TextRecognitionStatus: Equatable, Sendable {
     case recognized(observationCount: Int)
     case failed(TextRecognitionError)
 }
+
+/// Presentation state for secret detection on the open document. Counts only.
+public enum SecretDetectionStatus: Equatable, Sendable {
+    case idle
+    case detecting
+    case detected(likely: Int, needsReview: Int)
+    case failed
+}
