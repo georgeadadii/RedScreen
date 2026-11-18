@@ -7,7 +7,7 @@ FIXTURE_DIR := $(CURDIR)/RedScreenCoreTests/Fixtures
 FIXTURE_SUPPORT := RedScreenCoreTests/FixtureSupport
 FIXTURE_GENERATOR := $(CURDIR)/.build/fixture-generator/fixture-generator
 
-.PHONY: build run test install clean fixtures
+.PHONY: build run test test-core install clean fixtures
 
 build:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
@@ -24,6 +24,15 @@ test:
 		-configuration Debug \
 		-destination 'platform=macOS' \
 		-derivedDataPath $(DERIVED_DATA) \
+		test
+
+# Core suite for CI; the full test target also runs desktop UI automation.
+test-core:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-configuration Debug \
+		-destination 'platform=macOS' \
+		-derivedDataPath $(DERIVED_DATA) \
+		-only-testing:RedScreenCoreTests \
 		test
 
 install:

@@ -3,10 +3,13 @@
 RedScreen is a privacy-first native macOS menu bar utility for permanently redacting sensitive
 information from screenshots. Processing is designed to remain entirely on the Mac.
 
-This repository contains the Phase 1 foundation: a compact SwiftUI menu bar interface, a testable
-core module, dependency-injection interfaces for the future processing pipeline, an in-memory
-secure image-session lifecycle, privacy-safe logging, and automated unit and UI tests. Screenshot
-capture, importing, and processing are intentionally not implemented yet.
+This repository contains screenshot import, on-device OCR, developer-secret detection, reviewable
+redaction candidates, and a tested solid-pixel renderer, backed by an in-memory image lifecycle
+and privacy-safe logging. The app currently displays findings; connecting review actions to the
+renderer and image export remains to be implemented. Screenshot capture is also planned.
+
+`main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
+required checks, and local validation commands.
 
 ## Technology stack
 
