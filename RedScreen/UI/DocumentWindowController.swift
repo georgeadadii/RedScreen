@@ -26,7 +26,7 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.tabbingMode = .disallowed
-        window.contentMinSize = NSSize(width: 520, height: 380)
+        window.contentMinSize = NSSize(width: 720, height: 420)
         window.contentViewController = NSHostingController(rootView: DocumentView(model: model))
         window.setContentSize(NSSize(width: 900, height: 620))
         window.center()

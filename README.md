@@ -5,8 +5,8 @@ information from screenshots. Processing is designed to remain entirely on the M
 
 This repository contains screenshot import, on-device OCR, developer-secret detection, reviewable
 redaction candidates, and a tested solid-pixel renderer, backed by an in-memory image lifecycle
-and privacy-safe logging. The app currently displays findings; connecting review actions to the
-renderer and image export remains to be implemented. Screenshot capture is also planned.
+and privacy-safe logging. The app supports manual redaction review and a flattened on-device preview. Saving and copying
+redacted images and native screenshot capture are planned.
 
 `main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
 required checks, and local validation commands.
@@ -183,6 +183,7 @@ developer secret detection (see [Developer secret detection](docs/SECRET_DETECTI
 issue #8 composes findings into padded, reviewable redaction candidates with full pixel coverage
 on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.md)). Issue #9
 (RED-5) adds irreversible solid-pixel rendering into a new in-memory raster with exact opaque
-fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Wiring rendering into the review
-UI, screenshot capture, settings, and image export remain for later issues.
+fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Issue #10 (RED-6) adds
+[manual review and editing](docs/REDACTION_REVIEW.md) with a gated flattened preview. Screenshot
+capture, settings, and image export remain for later issues.
 

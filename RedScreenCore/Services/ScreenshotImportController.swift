@@ -8,6 +8,10 @@ public struct ImportedDocumentSummary: Equatable, Sendable {
     public let colorSpace: RenderingColorSpace
 }
 
+public enum ReviewRenderError: Error, Equatable, Sendable {
+    case reviewRequired
+}
+
 /// Coordinates user-initiated imports with the secure image lifecycle.
 ///
 /// - The current document is replaced only after the new image decodes successfully. Failures
@@ -26,6 +30,11 @@ public final class ScreenshotImportController {
     public private(set) var lastError: ImageImportError?
     public private(set) var recognitionStatus: TextRecognitionStatus = .idle
     public private(set) var detectionStatus: SecretDetectionStatus = .idle
+
+    public private(set) var reviewRevision = 0
+    private var undoHistory: [RedactionDocument] = []
+    private var redoHistory: [RedactionDocument] = []
+    private let reviewHistoryLimit = 100
 
     @ObservationIgnored private let lifecycle: SecureImageSessionLifecycle
     @ObservationIgnored private let importer: any ImageImporter
@@ -57,8 +66,90 @@ public final class ScreenshotImportController {
 
     /// The open document snapshot, including OCR observations once recognized.
     public var activeDocument: RedactionDocument? {
+        _ = reviewRevision // Observe edits while the secure session owns the current document.
         guard let document, lifecycle.activeSession?.id == document.sessionID else { return nil }
         return lifecycle.activeSession?.redactionDocument
+    }
+
+    public var canReview: Bool { !isImporting && activeDocument?.processingState == .readyForReview }
+    public var pendingReviewCount: Int {
+        activeDocument?.candidates.count(where: { $0.disposition == .pending }) ?? 0
+    }
+    public var canRenderReviewedImage: Bool { canReview && pendingReviewCount == 0 }
+    public var canUndoReview: Bool { canReview && !undoHistory.isEmpty }
+    public var canRedoReview: Bool { canReview && !redoHistory.isEmpty }
+
+    @discardableResult
+    public func setReviewDisposition(_ disposition: RedactionDisposition, for id: UUID) -> Bool {
+        guard disposition == .included || disposition == .excluded else { return false }
+        return applyReviewEdit { try $0.settingDisposition(disposition, for: id) }
+    }
+
+    @discardableResult
+    public func addManualRedaction(_ rect: ImageRect) -> UUID? {
+        let id = UUID()
+        return applyReviewEdit { try $0.addingManualRegion(RedactionRegion(rect: rect), candidateID: id) }
+            ? id : nil
+    }
+
+    @discardableResult
+    public func updateManualRedaction(_ id: UUID, rect: ImageRect) -> Bool {
+        applyReviewEdit { try $0.updatingManualRegion(rect, for: id) }
+    }
+
+    @discardableResult
+    public func deleteManualRedaction(_ id: UUID) -> Bool {
+        applyReviewEdit { try $0.removingManualCandidate(id) }
+    }
+
+    public func undoReview() {
+        guard canUndoReview, let previous = undoHistory.last, let current = activeDocument,
+              let id = document?.sessionID, storeReviewDocument(previous, id: id) else { return }
+        undoHistory.removeLast()
+        redoHistory.append(current)
+    }
+
+    public func redoReview() {
+        guard canRedoReview, let next = redoHistory.last, let current = activeDocument,
+              let id = document?.sessionID, storeReviewDocument(next, id: id) else { return }
+        redoHistory.removeLast()
+        undoHistory.append(current)
+    }
+
+    /// Returns only a flattened raster from the current reviewed revision. An edit, import, or
+    /// session replacement while rendering invalidates the result.
+    public func renderReviewedImage() async throws -> DecodedPixels {
+        guard canRenderReviewedImage, let current = activeDocument, let pixels = activePixels,
+              let sessionID = document?.sessionID else { throw ReviewRenderError.reviewRequired }
+        let revision = reviewRevision
+        let importGeneration = generation
+        let result = try await SolidFillRedactionRenderer().render(document: current, sourceImage: pixels)
+        try Task.checkCancellation()
+        guard document?.sessionID == sessionID, revision == reviewRevision,
+              importGeneration == generation, canRenderReviewedImage else { throw CancellationError() }
+        return result
+    }
+
+    private func applyReviewEdit(_ edit: (RedactionDocument) throws -> RedactionDocument) -> Bool {
+        guard canReview, let current = activeDocument, let id = document?.sessionID,
+              let next = try? edit(current), next != current,
+              storeReviewDocument(next, id: id) else { return false }
+        undoHistory.append(current)
+        if undoHistory.count > reviewHistoryLimit { undoHistory.removeFirst() }
+        redoHistory.removeAll()
+        return true
+    }
+
+    private func storeReviewDocument(_ snapshot: RedactionDocument, id: UUID) -> Bool {
+        guard lifecycle.storeDocument(snapshot, for: id) else { return false }
+        reviewRevision &+= 1
+        return true
+    }
+
+    private func resetReviewHistory() {
+        undoHistory.removeAll()
+        redoHistory.removeAll()
+        reviewRevision &+= 1
     }
 
     /// The task running OCR for the open document, if any. Exposed so tests can await it.
@@ -203,6 +294,7 @@ public final class ScreenshotImportController {
     }
 
     private func cancelRecognition() {
+        resetReviewHistory()
         recognitionTask?.cancel()
         recognitionTask = nil
         detectionTask?.cancel()

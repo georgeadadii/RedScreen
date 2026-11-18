@@ -270,3 +270,33 @@ public struct AspectFitGeometry: Equatable, Sendable {
         )
     }
 }
+
+/// Shared mapping for the review canvas. Presentation coordinates are points, independent of
+/// the display's backing scale. The source and both overlays use the same image frame.
+public struct ReviewCanvasGeometry: Equatable, Sendable {
+    public let imageFrame: CGRect
+    public let scale: Double
+
+    public init(fit: AspectFitGeometry, zoom: Double, pan: CGSize) {
+        let zoom = zoom.isFinite ? min(8, max(1, zoom)) : 1
+        scale = fit.scale * zoom
+        let width = Double(fit.imageDimensions.width) * scale
+        let height = Double(fit.imageDimensions.height) * scale
+        let maxX = max(0, (width - fit.presentationSize.width) / 2)
+        let maxY = max(0, (height - fit.presentationSize.height) / 2)
+        let x = min(maxX, max(-maxX, pan.width))
+        let y = min(maxY, max(-maxY, pan.height))
+        imageFrame = CGRect(x: (fit.presentationSize.width - width) / 2 + x,
+                            y: (fit.presentationSize.height - height) / 2 + y,
+                            width: width, height: height)
+    }
+
+    public func presentationRect(for rect: ImageRect) -> CGRect {
+        CGRect(x: imageFrame.minX + rect.x * scale, y: imageFrame.minY + rect.y * scale,
+               width: rect.width * scale, height: rect.height * scale)
+    }
+
+    public func imagePoint(for point: CGPoint) -> CGPoint {
+        CGPoint(x: (point.x - imageFrame.minX) / scale, y: (point.y - imageFrame.minY) / scale)
+    }
+}
