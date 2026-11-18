@@ -26,16 +26,28 @@ Tools/FixtureGenerator/
 
 Fixture IDs are `<scenario>-<scale>x`, for example `terminal-wrapped-url-dark-2x`.
 
+The `editor-env-vscode-dark`, `editor-env-monaco-light` and `terminal-couriernew-dark` scenarios
+reproduce real editor and terminal conditions found in user testing:
+- a line-number gutter and syntax colours;
+- tight line spacing;
+- quoted values containing spaces;
+- adjacent secrets;
+- a pooled database URL with a password.
+
+They use synthetic values and reserved hosts only. Scenarios can set a font (PostScript name and
+size) and a line-height factor, and runs can carry a syntax colour role (`key`, `string`,
+`comment`, `lineNumber`).
+
 ## Scenarios
 
-The 14 scenarios are each rendered at 1x and 2x (28 fixtures). Together they cover:
+The 17 scenarios are each rendered at 1x and 2x (34 fixtures). Together they cover:
 
 | Dimension | Values |
 | --- | --- |
 | Category | `.env` files, terminals, JSON config, YAML config, CI logs, dashboards, benign code |
 | Theme | light, dark, low contrast |
-| Font | monospace (Menlo 13 pt), proportional (Helvetica 14 pt) |
-| Difficulty | wrapped values, multiple columns, punctuation, nearby benign values, quoted values, multi-line blocks |
+| Font | monospace (Menlo 12–13 pt, Monaco 11 pt, Courier New 13 pt), proportional (Helvetica 14 pt) |
+| Difficulty | wrapped values, multiple columns, punctuation, nearby benign values, quoted values, multi-line blocks, editor chrome (line numbers, syntax colours, tight spacing), adjacent secrets |
 
 Each detector family from issue #7 (`envAssignment`, `credentialKeyword`, `bearerToken`,
 `privateKeyHeader`, `connectionString`, `providerKeyShape`, `highEntropyContextual`) has at least

@@ -1,0 +1,128 @@
+{
+  "category" : "terminal",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "adjacentSecrets",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "terminal-couriernew-dark-2x",
+  "pixelHeight" : 250,
+  "pixelWidth" : 1520,
+  "scale" : 2,
+  "scenario" : "A dark terminal in Courier New with tight line spacing exporting two adjacent secrets and a bearer token, next to benign settings.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "courier-deploy-password",
+      "note" : "Exported password",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.117813,
+            "width" : 0.195032,
+            "x" : 0.334261,
+            "y" : 0.305094
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 19,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "courier-service-key",
+      "note" : "Adjacent exported key",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.117813,
+            "width" : 0.256621,
+            "x" : 0.334261,
+            "y" : 0.441094
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 25,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "bearerToken",
+      "id" : "courier-bearer",
+      "note" : "Bearer token in single quotes",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.117813,
+            "width" : 0.215561,
+            "x" : 0.416379,
+            "y" : 0.713094
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 21,
+          "utf16Offset" : 38
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.117813,
+        "width" : 0.513241,
+        "x" : 0.026316,
+        "y" : 0.169094
+      },
+      "text" : "demo $ # RedScreen synthetic fixture - fake values"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.117813,
+        "width" : 0.502977,
+        "x" : 0.026316,
+        "y" : 0.305094
+      },
+      "text" : "demo $ export DEPLOY_PASSWORD=RSFAKE-deploy-pw-88"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.117813,
+        "width" : 0.564566,
+        "x" : 0.026316,
+        "y" : 0.441094
+      },
+      "text" : "demo $ export SERVICE_API_KEY=RSFAKEsvc0f1e2d3c4b5a6978"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.117813,
+        "width" : 0.307945,
+        "x" : 0.026316,
+        "y" : 0.577094
+      },
+      "text" : "demo $ export REGION=eu-west-1"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.117813,
+        "width" : 0.87251,
+        "x" : 0.026316,
+        "y" : 0.713094
+      },
+      "text" : "demo $ curl -H 'Authorization: Bearer RSFAKE-courier-tok-91' https://api.example.test"
+    }
+  ],
+  "theme" : "dark"
+}

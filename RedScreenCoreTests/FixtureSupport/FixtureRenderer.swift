@@ -141,13 +141,13 @@ struct FixtureRenderer {
             throw FixtureRenderError.invalidCanvasWidth(scenario: scenario.name)
         }
 
-        let font = try makeFont(scenario.fontStyle)
+        let font = try makeFont(scenario)
         let ascent = Double(CTFontGetAscent(font))
         let descent = Double(CTFontGetDescent(font))
-        let lineHeight = (Double(CTFontGetSize(font)) * 1.7).rounded()
+        let lineHeight = (Double(CTFontGetSize(font)) * scenario.lineHeightFactor).rounded()
         let canvasWidth = scenario.canvasWidth
         let canvasHeight = Self.padding * 2 + Double(scenario.rowCount) * lineHeight
-        let foreground = scenario.theme.palette.foreground
+        let palette = scenario.theme.palette
 
         var textBoxes: [FixtureTextBox] = []
         var laidOut: [LaidOutBlock] = []
@@ -161,14 +161,16 @@ struct FixtureRenderer {
                 throw FixtureRenderError.emptyRun(scenario: scenario.name, row: block.row)
             }
             let text = block.runs.map(\.text).joined()
-            let attributes: [NSAttributedString.Key: Any] = [
-                NSAttributedString.Key(kCTFontAttributeName as String): font,
-                NSAttributedString.Key(kCTForegroundColorAttributeName as String): foreground,
-                NSAttributedString.Key(kCTLigatureAttributeName as String): 0,
-            ]
-            let line = CTLineCreateWithAttributedString(
-                NSAttributedString(string: text, attributes: attributes)
-            )
+            let attributed = NSMutableAttributedString()
+            for run in block.runs {
+                attributed.append(NSAttributedString(string: run.text, attributes: [
+                    NSAttributedString.Key(kCTFontAttributeName as String): font,
+                    NSAttributedString.Key(kCTForegroundColorAttributeName as String):
+                        palette.color(for: run.role),
+                    NSAttributedString.Key(kCTLigatureAttributeName as String): 0,
+                ]))
+            }
+            let line = CTLineCreateWithAttributedString(attributed)
             let width = Double(CTLineGetTypographicBounds(line, nil, nil, nil))
             let originX = Self.padding + block.x
             // The text box covers visible text only: leading and trailing whitespace is excluded
@@ -281,11 +283,13 @@ struct FixtureRenderer {
         unit == 0x20 || unit == 0x09
     }
 
-    private func makeFont(_ style: FixtureFontStyle) throws -> CTFont {
-        let (name, size): (String, CGFloat) = switch style {
+    private func makeFont(_ scenario: FixtureScenario) throws -> CTFont {
+        let (defaultName, defaultSize): (String, CGFloat) = switch scenario.fontStyle {
         case .monospace: ("Menlo-Regular", 13)
         case .proportional: ("Helvetica", 14)
         }
+        let name = scenario.fontName ?? defaultName
+        let size = scenario.fontSize.map { CGFloat($0) } ?? defaultSize
         let font = CTFontCreateWithName(name as CFString, size, nil)
         // Core Text silently substitutes missing fonts; refuse rather than drift.
         guard CTFontCopyPostScriptName(font) as String == name else {
@@ -318,6 +322,20 @@ private struct FixturePalette {
     let background: CGColor
     let foreground: CGColor
     let stripe: CGColor
+    var key: CGColor?
+    var string: CGColor?
+    var comment: CGColor?
+    var lineNumber: CGColor?
+
+    func color(for role: FixtureColorRole) -> CGColor {
+        switch role {
+        case .plain: foreground
+        case .key: key ?? foreground
+        case .string: string ?? foreground
+        case .comment: comment ?? foreground
+        case .lineNumber: lineNumber ?? foreground
+        }
+    }
 }
 
 private extension FixtureTheme {
@@ -333,11 +351,16 @@ private extension FixtureTheme {
         return switch self {
         case .light:
             FixturePalette(
-                background: color(0xFFFFFF), foreground: color(0x1F2328), stripe: color(0xF0F2F5)
+                background: color(0xFFFFFF), foreground: color(0x1F2328), stripe: color(0xF0F2F5),
+                key: color(0x0451A5), string: color(0xA31515), comment: color(0x008000),
+                lineNumber: color(0x237893)
             )
         case .dark:
+            // Colours modelled on a typical dark code-editor theme.
             FixturePalette(
-                background: color(0x1E1E1E), foreground: color(0xD4D4D4), stripe: color(0x2A2D31)
+                background: color(0x1E1E1E), foreground: color(0xD4D4D4), stripe: color(0x2A2D31),
+                key: color(0x9CDCFE), string: color(0xCE9178), comment: color(0x6A9955),
+                lineNumber: color(0x858585)
             )
         case .lowContrast:
             FixturePalette(

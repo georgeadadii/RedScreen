@@ -55,6 +55,8 @@ final class SecretDetectorRuleTests: XCTestCase {
             Case("PASSW0RD=RSFAKE-ocr-pw-42", "RSFAKE-ocr-pw-42", .envAssignment, .likely,
                  "OCR 0/O confusion in key"),
             Case("SIGNING_KEY=RSFAKEq9W3e7R1t5Y8u2I6", "RSFAKEq9W3e7R1t5Y8u2I6"),
+            Case("§ export SERVICE_API_KEY-RSFAKEsve0f1e2d3c4b5a6978", "RSFAKEsve0f1e2d3c4b5a6978",
+                 nil, .likely, "OCR read = as -"),
             Case("SESSION_SALT=RSFAKEa1b2c3", "RSFAKEa1b2c3", .highEntropyContextual, .needsReview,
                  "weak context word"),
             Case("TRACE_TOKEN=rsfake-ambig-01", "rsfake-ambig-01", nil, .needsReview,

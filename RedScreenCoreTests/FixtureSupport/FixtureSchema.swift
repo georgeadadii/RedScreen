@@ -62,6 +62,10 @@ enum FixtureDifficulty: String, Codable, CaseIterable, Sendable {
     case nearbyBenign
     case quotedValue
     case multilineBlock
+    /// Code-editor rendering: line-number gutter, syntax colours, tight line spacing.
+    case editorChrome
+    /// Secrets on directly adjacent lines.
+    case adjacentSecrets
 }
 
 /// A rectangle in normalized, top-left-origin image coordinates.

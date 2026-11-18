@@ -31,6 +31,7 @@ public final class ScreenshotImportController {
     @ObservationIgnored private let importer: any ImageImporter
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
     @ObservationIgnored private let secretDetector: (any SecretDetector)?
+    @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
     @ObservationIgnored private var detectionTask: Task<Void, Never>?
     @ObservationIgnored private var recognitionGeneration = 0
     @ObservationIgnored private var recognitionTask: Task<Void, Never>?
@@ -43,8 +44,10 @@ public final class ScreenshotImportController {
         importer: any ImageImporter,
         textRecognizer: (any TextRecognizer)? = nil,
         secretDetector: (any SecretDetector)? = nil,
+        candidateComposer: (any CandidateComposer)? = nil,
         logger: PrivacySafeLogger = PrivacySafeLogger()
     ) {
+        self.candidateComposer = candidateComposer
         self.lifecycle = lifecycle
         self.importer = importer
         self.textRecognizer = textRecognizer
@@ -286,9 +289,23 @@ public final class ScreenshotImportController {
         detectionTask = nil
         switch result {
         case .success(let detections):
-            guard let detected = try? current.replacingDetections(detections) else {
+            guard var detected = try? current.replacingDetections(detections) else {
                 failDetection(current: current, sessionID: sessionID)
                 return
+            }
+            if let candidateComposer {
+                // Composition is synchronous, bounded geometry work on already-known findings.
+                guard let candidates = try? candidateComposer.composeCandidates(
+                    from: detections,
+                    observations: detected.observations,
+                    pixels: session.decodedPixels,
+                    dimensions: detected.pixelDimensions
+                ), let composed = try? detected.replacingCandidates(candidates) else {
+                    failDetection(current: current, sessionID: sessionID)
+                    return
+                }
+                detected = composed
+                logger.record(.candidatesComposed, count: UInt(candidates.count))
             }
             lifecycle.storeDocument(detected, for: sessionID)
             let likely = detections.filter { $0.assessment == .likely }.count

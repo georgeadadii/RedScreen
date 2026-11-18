@@ -11,11 +11,11 @@ final class RedactionDocumentTests: XCTestCase {
 
         XCTAssertEqual(included.id, fixture.candidate.id)
         XCTAssertEqual(excluded.id, fixture.candidate.id)
-        XCTAssertEqual(excluded.region, fixture.candidate.region)
+        XCTAssertEqual(excluded.regions, fixture.candidate.regions)
         XCTAssertEqual(excluded.evidence, fixture.candidate.evidence)
         XCTAssertEqual(excluded.disposition, .excluded)
-        XCTAssertEqual(excluded.evidence?.observationIDs, [fixture.observation.id])
-        XCTAssertEqual(excluded.evidence?.ruleID, fixture.ruleID)
+        XCTAssertEqual(excluded.evidence.first?.observationIDs, [fixture.observation.id])
+        XCTAssertEqual(excluded.evidence.first?.ruleID, fixture.ruleID)
     }
 
     func testDocumentDispositionUpdateIsImmutableAndRecordsNonSensitiveEdit() throws {
@@ -42,9 +42,10 @@ final class RedactionDocumentTests: XCTestCase {
         let updated = try generatedDocument.addingManualRegion(manualRegion)
 
         XCTAssertEqual(updated.candidates.count, 2)
-        XCTAssertEqual(updated.candidates.last?.region, manualRegion)
+        XCTAssertEqual(updated.candidates.last?.regions, [manualRegion])
         XCTAssertEqual(updated.candidates.last?.disposition, .manual)
-        XCTAssertNil(updated.candidates.last?.evidence)
+        XCTAssertEqual(updated.candidates.last?.geometry, .manual)
+        XCTAssertEqual(updated.candidates.last?.evidence, [])
         XCTAssertEqual(updated.userEdits.last?.disposition, .manual)
     }
 

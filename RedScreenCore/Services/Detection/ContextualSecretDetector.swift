@@ -372,14 +372,28 @@ public struct ContextualSecretDetector: SecretDetector {
     // MARK: - Key/value assignments (env, JSON, YAML, code, prose)
 
     nonisolated(unsafe) private static let separator = regex(#"(?:=(?!=)|:(?!//)|\b(?:is|was)\b)"#)
+    /// OCR sometimes reads `=` as `-` in thin fonts (`SERVICE_API_KEY-value`). Only accepted after
+    /// an all-caps, underscore-separated key that names a secret.
+    nonisolated(unsafe) private static let damagedSeparator = regex(#"(?<=[A-Z0-9])-(?=[A-Za-z0-9])"#)
+    nonisolated(unsafe) private static let envStyleKey = regex(#"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$"#)
     nonisolated(unsafe) private static let envLine = regex(#"^\s{0,8}(?:export\s{1,4})?[A-Z][A-Z0-9_]{0,63}\s{0,3}="#)
 
     private func assignmentFindings(_ line: Line) -> [Finding] {
         let text = line.normalized
         let isEnvLine = Self.firstMatch(Self.envLine, in: text) != nil
         var findings: [Finding] = []
-        for match in Self.separator.matches(in: text.text, range: NSRange(location: 0, length: text.length)) {
+        let all = NSRange(location: 0, length: text.length)
+        let separators = Self.separator.matches(in: text.text, range: all).map { ($0, false) }
+            + Self.damagedSeparator.matches(in: text.text, range: all).map { ($0, true) }
+        for (match, damaged) in separators {
             guard let key = keyPhrase(before: match.range.location, in: text) else { continue }
+            if damaged {
+                let lastWord = String(key.split(separator: " ").last ?? "")
+                guard Self.firstMatch(Self.envStyleKey, in: NormalizedLine(lastWord, maximumUTF16: 128)) != nil,
+                      SecretKeywords.classify(lastWord).strength == .strong else {
+                    continue
+                }
+            }
             let classification = SecretKeywords.classify(key)
             guard classification.strength != .none,
                   let valueRange = valueRange(after: NSMaxRange(match.range), in: text) else {

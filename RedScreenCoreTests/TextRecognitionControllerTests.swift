@@ -171,6 +171,31 @@ final class TextRecognitionControllerTests: XCTestCase {
         XCTAssertFalse(serialized.contains("RSFAKE"))
     }
 
+    func testComposedCandidatesAreStoredReadyForReview() async throws {
+        let sink = EventSink()
+        let controller = ScreenshotImportController(
+            lifecycle: SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: EventSink())),
+            importer: SizedImporter(),
+            textRecognizer: FixedRecognizer(count: 2, text: "DATABASE_PASSWORD=RSFAKE-pg-7d1c9a42"),
+            secretDetector: ContextualSecretDetector(),
+            candidateComposer: GeometricCandidateComposer(),
+            logger: PrivacySafeLogger(sink: sink)
+        )
+
+        await controller.importImage(from: url(width: 400)).value
+        await controller.currentRecognition?.value
+        await controller.currentDetection?.value
+
+        let document = try XCTUnwrap(controller.activeDocument)
+        XCTAssertEqual(document.processingState, .readyForReview)
+        // The fake image is only 2 px tall, so both padded lines overlap and merge into one
+        // candidate carrying both findings.
+        XCTAssertFalse(document.candidates.isEmpty)
+        XCTAssertTrue(document.candidates.allSatisfy { $0.disposition == .included })
+        XCTAssertEqual(Set(document.candidates.flatMap(\.detectionIDs)), Set(document.detections.map(\.id)))
+        XCTAssertTrue(sink.events.contains(.candidatesComposed))
+    }
+
     func testReplacingDocumentDiscardsPendingDetection() async throws {
         let controller = ScreenshotImportController(
             lifecycle: SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: EventSink())),

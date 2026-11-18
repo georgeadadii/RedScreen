@@ -71,6 +71,34 @@
       "imageSHA256" : "95301396d281c1f7931f5dcd95e662f2a0ee9d20d0d56a6085d95507cbbf5209"
     },
     {
+      "groundTruth" : "ground-truth/editor-env-monaco-light-1x.json",
+      "groundTruthSHA256" : "b68a67fffd52ec179048a87869aa50811581ac583f6e133268ec7798b959350f",
+      "id" : "editor-env-monaco-light-1x",
+      "image" : "images/editor-env-monaco-light-1x.png",
+      "imageSHA256" : "7ca13a87db366d4bd24b030a3bfb3c915f3abe694ccd74a3206ff4915a4b6591"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-monaco-light-2x.json",
+      "groundTruthSHA256" : "f5536d40b7a5acdc1b82a805b053fd1d876ca99d5cdd8fe4a4a49dad728d6693",
+      "id" : "editor-env-monaco-light-2x",
+      "image" : "images/editor-env-monaco-light-2x.png",
+      "imageSHA256" : "43ad59bf7ee1afcecf238c89689351ea8a5cccc305c8dcb6eac603afbb43c6f7"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-vscode-dark-1x.json",
+      "groundTruthSHA256" : "18b10091828760ee8894537007fed3dee3d377835b8c933b388c52e076f72a6d",
+      "id" : "editor-env-vscode-dark-1x",
+      "image" : "images/editor-env-vscode-dark-1x.png",
+      "imageSHA256" : "fe922685f97a7a5a6f30f3b3a12eeddb92a47cbc1d39d1e55ec6d5e8c0a4c159"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-vscode-dark-2x.json",
+      "groundTruthSHA256" : "f34a6341a7f2e2a8c9c9c0e68550d640a70b9ce869439f9b2f3db32cae2f1f16",
+      "id" : "editor-env-vscode-dark-2x",
+      "image" : "images/editor-env-vscode-dark-2x.png",
+      "imageSHA256" : "0abdad5fdea786187996c7bdd23093e56ba6ab6c366dc3ac574f1c94b90cf187"
+    },
+    {
       "groundTruth" : "ground-truth/env-diff-columns-light-1x.json",
       "groundTruthSHA256" : "73588521b15219a0805a24e7c92a9c351fa22e608eacaf39509af78fbe04afca",
       "id" : "env-diff-columns-light-1x",
@@ -153,6 +181,20 @@
       "id" : "support-ticket-low-contrast-2x",
       "image" : "images/support-ticket-low-contrast-2x.png",
       "imageSHA256" : "39faed75f8d31028e2efb5cfcf35a0c094f1c2a35e0c636e0917b91bfc2fac5c"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-couriernew-dark-1x.json",
+      "groundTruthSHA256" : "0b876be4503ac9f3dd47af5f25129e51e90968116c25a7412ce8e5e9f82fae85",
+      "id" : "terminal-couriernew-dark-1x",
+      "image" : "images/terminal-couriernew-dark-1x.png",
+      "imageSHA256" : "a9876b7d11356ee4f7d310529a64c3e7c35742725f3d74d4094f576ffc3b7d23"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-couriernew-dark-2x.json",
+      "groundTruthSHA256" : "bac65dba52846a65fc04aaf955aba5dc14f5ed222791eeb3dbfb42ba4e117238",
+      "id" : "terminal-couriernew-dark-2x",
+      "image" : "images/terminal-couriernew-dark-2x.png",
+      "imageSHA256" : "739249667733b536b1b0d5e1d3d52e8872c487150d39eb6843f3fbbb1f3a34c9"
     },
     {
       "groundTruth" : "ground-truth/terminal-session-dark-1x.json",

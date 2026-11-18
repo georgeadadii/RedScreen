@@ -22,6 +22,7 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case textRecognitionFailed = "text_recognition_failed"
     case detectionsNeedingReview = "detections_needing_review"
     case secretDetectionFailed = "secret_detection_failed"
+    case candidatesComposed = "candidates_composed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -90,6 +91,8 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("detections_needing_review count=\(entry.count)")
         case .secretDetectionFailed:
             logger.info("secret_detection_failed count=\(entry.count)")
+        case .candidatesComposed:
+            logger.info("candidates_composed count=\(entry.count)")
         }
     }
 }

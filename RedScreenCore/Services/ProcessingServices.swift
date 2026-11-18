@@ -47,10 +47,14 @@ public protocol SecretDetector: Sendable {
 }
 
 /// Converts detector evidence into the shared review/render candidate model.
+///
+/// `pixels` are the session's normalized pixels, used to measure character positions that OCR
+/// does not report. Implementations must cover the whole value when they cannot measure.
 public protocol CandidateComposer: Sendable {
     func composeCandidates(
         from detections: [SecretDetection],
         observations: [OCRObservation],
+        pixels: DecodedPixels?,
         dimensions: PixelDimensions
     ) throws -> [RedactionCandidate]
 }

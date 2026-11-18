@@ -16,7 +16,8 @@ final class AppModel {
             lifecycle: SecureImageSessionLifecycle(),
             importer: ImageIOImageImporter(),
             textRecognizer: VisionTextRecognizer(),
-            secretDetector: ContextualSecretDetector()
+            secretDetector: ContextualSecretDetector(),
+            candidateComposer: GeometricCandidateComposer()
         )
     }
 

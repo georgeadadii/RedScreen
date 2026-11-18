@@ -83,6 +83,9 @@ still index the original text, which is never mutated:
   - `export AWS_SECRET_ACCESS_KEY="wJalr…EXAMPLEKEY"` (value only, quotes excluded)
   - `API_KEY = RSFAKE-key-6b2d91` (spaces around the separator)
   - `PASSW0RD=…` (OCR digit in the key)
+- **OCR damage:** OCR sometimes reads `=` as `-` in thin fonts, as in
+  `SERVICE_API_KEY-value`. A `-` directly after an all-caps, underscore-separated key that names
+  a secret is accepted as the separator.
 - **Review:** `TRACE_TOKEN=rsfake-ambig-01`, a generic `token` key with a modest value.
 - **Counterexamples:** `NODE_ENV=production`, `PORT=3000`, `JWT_SECRET=changeme`,
   `API_KEY=your-api-key-here`, `GIT_SHA=<40 hex>`, `LOG_LEVEL=debug`.
@@ -181,7 +184,8 @@ span count only. Diagnostics carry counts only:
 
 ## Precision and recall
 
-Measured 2026-11-18 on the 14 synthetic scenarios (1x renderings) with
+Measured 2026-11-18 on the 17 synthetic scenarios (1x renderings), including the editor-style
+ones, with
 `SecretDetectorCorpusEvaluationTests`.
 
 ### Targets
@@ -195,8 +199,8 @@ Measured 2026-11-18 on the 14 synthetic scenarios (1x renderings) with
 
 | Input | Sensitive recall | Likely | Precision | Ambiguous surfaced | Benign hits |
 | --- | --- | --- | --- | --- | --- |
-| Ground-truth text | 22/22 (100%) | 22/22 | 33/33 (100%) | 11/11 | 0 |
-| Vision OCR (end to end) | 22/22 (100%) | 22/22 | 33/33 (100%) | 11/11 | 0 |
+| Ground-truth text | 34/34 (100%) | 34/34 | 46/46 (100%) | 12/12 | 0 |
+| Vision OCR (end to end) | 34/34 (100%) | 34/34 | 46/46 (100%) | 12/12 | 0 |
 
 **Read these numbers with care.** The rules were developed with this corpus in view, so 100% on
 it shows coverage of the known scenarios, not generalization. The off-corpus table tests in

@@ -49,6 +49,7 @@ private struct ComposerStub: CandidateComposer {
     func composeCandidates(
         from detections: [SecretDetection],
         observations: [OCRObservation],
+        pixels: DecodedPixels?,
         dimensions: PixelDimensions
     ) throws -> [RedactionCandidate] {
         []

@@ -67,7 +67,7 @@ Recognized text is never logged.
 ## Accuracy on the synthetic corpus
 
 `VisionTextRecognizerTests.testRecognizesTheSyntheticCorpusWithinTolerances` runs Vision on all
-28 fixtures.
+34 fixtures.
 
 **How a line is scored as found:**
 - OCR lines that overlap it vertically by at least half the smaller height cover at least 80% of
@@ -81,7 +81,7 @@ glyphs such as `{` and `}`.
 
 **Thresholds:** at least 85% of lines per fixture and at least 95% overall.
 
-**Measured (2026-11-18, macOS 26, Apple Silicon): 268 of 272 lines (98.5%).** The remaining misses
+**Measured (2026-11-18, macOS 26, Apple Silicon): 338 of 342 lines (98.8%)** across 34 fixtures. The remaining misses
 are genuine OCR errors:
 - dash runs in PEM armor read as em-dashes;
 - asterisk masks with the wrong count;
