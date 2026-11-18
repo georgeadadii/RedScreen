@@ -64,7 +64,8 @@ because it is configured as an `LSUIElement` agent application, it does not appe
 Closing the popover leaves the utility running.
 
 Choose **Import Screenshot…** (or drop a PNG, JPEG, or HEIC file on it) to open a screenshot in
-the document window. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
+the document window. Text is then recognized on device; the footer shows how many text regions
+were found and **Show Text Regions** outlines them. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
 
 ## Install into Applications
 
@@ -115,7 +116,7 @@ RedScreen/
 └── UI/                     # Menu bar popover and on-demand document window
 RedScreenCore/
 ├── Domain/                 # Documents, geometry, and framework-independent value types
-├── Platform/               # ImageIO import adapter and container integrity checks
+├── Platform/               # ImageIO import, container integrity checks, Vision OCR
 └── Services/               # Replaceable capabilities, import controller, security boundaries
     ├── ImageImporting
     ├── TextRecognizing
@@ -170,7 +171,9 @@ Issue #3 defines the shared document, geometry, and service contracts, and issue
 synthetic screenshot corpus and test utilities that later pipeline work is measured against.
 Issue #5 adds safe screenshot import: the Open panel and drag-and-drop lead to a validated,
 orientation-normalized, in-memory image shown in a document window (see
-[Screenshot import](docs/IMAGE_IMPORT.md)). OCR, sensitive-information detection, redaction
-rendering, screenshot capture, settings, and image export remain out of scope until later
-issues.
+[Screenshot import](docs/IMAGE_IMPORT.md)). Issue #6 adds on-device Apple Vision OCR with
+cancellation, stale-result rejection, and corpus accuracy gates (see
+[On-device text recognition](docs/TEXT_RECOGNITION.md)). Sensitive-information detection,
+redaction rendering, screenshot capture, settings, and image export remain out of scope until
+later issues.
 

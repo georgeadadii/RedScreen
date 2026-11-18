@@ -17,6 +17,9 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case documentUpdated = "document_updated"
     case imageImported = "image_imported"
     case importRejected = "import_rejected"
+    /// Count is the elapsed recognition time in milliseconds.
+    case textRecognitionDuration = "text_recognition_duration_ms"
+    case textRecognitionFailed = "text_recognition_failed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -77,6 +80,10 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("image_imported count=\(entry.count)")
         case .importRejected:
             logger.info("import_rejected count=\(entry.count)")
+        case .textRecognitionDuration:
+            logger.info("text_recognition_duration_ms count=\(entry.count)")
+        case .textRecognitionFailed:
+            logger.info("text_recognition_failed count=\(entry.count)")
         }
     }
 }
