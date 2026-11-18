@@ -59,9 +59,12 @@ Build and launch a fresh instance:
 make run
 ```
 
-RedScreen appears as a shield icon in the macOS menu bar. It intentionally has no main window and,
+RedScreen appears as a shield icon in the macOS menu bar. It opens no window at launch and,
 because it is configured as an `LSUIElement` agent application, it does not appear in the Dock.
 Closing the popover leaves the utility running.
+
+Choose **Import Screenshot…** (or drop a PNG, JPEG, or HEIC file on it) to open a screenshot in
+the document window. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
 
 ## Install into Applications
 
@@ -109,10 +112,11 @@ schema, comparison helpers, and synthetic-value policy.
 ```text
 RedScreen/
 ├── App/                    # MenuBarExtra entry point and application actions
-└── UI/                     # Compact menu bar popover presentation
+└── UI/                     # Menu bar popover and on-demand document window
 RedScreenCore/
 ├── Domain/                 # Documents, geometry, and framework-independent value types
-└── Services/               # Replaceable capabilities and security boundaries
+├── Platform/               # ImageIO import adapter and container integrity checks
+└── Services/               # Replaceable capabilities, import controller, security boundaries
     ├── ImageImporting
     ├── TextRecognizing
     ├── SensitiveInformationDetecting
@@ -155,15 +159,18 @@ in [Redaction document and coordinate architecture](docs/DOCUMENT_AND_GEOMETRY.m
 - Production logging accepts predefined event identifiers and non-sensitive counts only.
 - No source image, OCR result, detection result, preview, or undo state is autosaved.
 - Import-to-export processing must not create an application-managed plaintext temporary image.
-- File access will be granted only through explicit user interaction in a later phase.
+- File access is granted only through explicit user interaction: the Open panel or drag-and-drop
+  (`com.apple.security.files.user-selected.read-only`). Imported files are read once into memory
+  and are never copied, cached, or added to recent documents.
 
 ## Current status
 
 Issues #1 and #2 establish the application architecture and executable privacy boundaries.
 Issue #3 defines the shared document, geometry, and service contracts, and issue #4 adds the
-synthetic screenshot corpus and test utilities that later pipeline work is measured against. The
-menu bar popover includes disabled Capture Screenshot and Import Screenshot actions, a disabled
-Settings placeholder, About, and Quit RedScreen. Image import, OCR, sensitive-information
-detection, redaction rendering, screenshot capture, settings, and image export remain out of scope
-until later issues.
+synthetic screenshot corpus and test utilities that later pipeline work is measured against.
+Issue #5 adds safe screenshot import: the Open panel and drag-and-drop lead to a validated,
+orientation-normalized, in-memory image shown in a document window (see
+[Screenshot import](docs/IMAGE_IMPORT.md)). OCR, sensitive-information detection, redaction
+rendering, screenshot capture, settings, and image export remain out of scope until later
+issues.
 

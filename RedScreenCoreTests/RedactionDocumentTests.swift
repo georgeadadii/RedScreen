@@ -108,7 +108,7 @@ final class RedactionDocumentTests: XCTestCase {
         let imported = ImportedImage(
             sourceIdentity: fixture.document.sourceIdentity,
             pixelDimensions: fixture.document.pixelDimensions,
-            image: image
+            pixels: decoded
         )
         let destination = ExportDestination(
             url: URL(fileURLWithPath: "/Users/person/Secret Project/output.png")

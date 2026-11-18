@@ -1,19 +1,22 @@
 import Foundation
 
 /// Result of an explicit user-selected import. It remains in memory and is not serializable.
+///
+/// The encoded source file is not retained: `pixels` holds only the orientation-normalized,
+/// colour-normalized raster, so EXIF, GPS, maker notes, and other file metadata are discarded.
 public struct ImportedImage: Sendable, CustomStringConvertible, CustomDebugStringConvertible {
     public let sourceIdentity: SourceImageIdentity
     public let pixelDimensions: PixelDimensions
-    public let image: ScreenshotImage
+    public let pixels: DecodedPixels
 
     public init(
         sourceIdentity: SourceImageIdentity,
         pixelDimensions: PixelDimensions,
-        image: ScreenshotImage
+        pixels: DecodedPixels
     ) {
         self.sourceIdentity = sourceIdentity
         self.pixelDimensions = pixelDimensions
-        self.image = image
+        self.pixels = pixels
     }
 
     public var description: String {

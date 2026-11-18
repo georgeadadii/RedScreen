@@ -25,7 +25,7 @@ private struct ImporterStub: ImageImporter {
         ImportedImage(
             sourceIdentity: SourceImageIdentity(),
             pixelDimensions: try PixelDimensions(width: 1, height: 1),
-            image: ScreenshotImage(data: Data())
+            pixels: DecodedPixels(bytes: Data())
         )
     }
 }

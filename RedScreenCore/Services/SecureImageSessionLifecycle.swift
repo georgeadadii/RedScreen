@@ -29,12 +29,14 @@ public final class SecureImageSession {
     fileprivate init(
         id: UUID = UUID(),
         sourceIdentity: SourceImageIdentity,
-        sourceImage: ScreenshotImage,
+        sourceImage: ScreenshotImage?,
+        decodedPixels: DecodedPixels? = nil,
         redactionDocument: RedactionDocument? = nil
     ) {
         self.id = id
         self.sourceIdentity = sourceIdentity
         self.sourceImage = sourceImage
+        self.decodedPixels = decodedPixels
         self.redactionDocument = redactionDocument
     }
 
@@ -83,8 +85,17 @@ public final class SecureImageSessionLifecycle {
         return session
     }
 
+    /// Publishes a successfully decoded import as the active document.
+    ///
+    /// Callers must only invoke this after decoding succeeds, so a failed import never disturbs
+    /// the current document. Imported sessions hold the normalized pixels as their source; the
+    /// encoded file and its metadata are not retained, so `sourceImage` is nil.
     @discardableResult
     public func createSession(importedImage: ImportedImage) throws -> SecureImageSession {
+        if let layout = importedImage.pixels.layout,
+           layout.dimensions != importedImage.pixelDimensions {
+            throw ImageImportError.corruptImage
+        }
         let document = try RedactionDocument(
             sourceIdentity: importedImage.sourceIdentity,
             pixelDimensions: importedImage.pixelDimensions
@@ -98,7 +109,8 @@ public final class SecureImageSessionLifecycle {
         }
         let session = SecureImageSession(
             sourceIdentity: importedImage.sourceIdentity,
-            sourceImage: importedImage.image,
+            sourceImage: nil,
+            decodedPixels: importedImage.pixels,
             redactionDocument: document
         )
         activeSession = session

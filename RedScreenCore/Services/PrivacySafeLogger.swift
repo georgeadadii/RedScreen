@@ -15,6 +15,8 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case previewUpdated = "preview_updated"
     case clipboardPrepared = "clipboard_prepared"
     case documentUpdated = "document_updated"
+    case imageImported = "image_imported"
+    case importRejected = "import_rejected"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -71,6 +73,10 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("clipboard_prepared count=\(entry.count)")
         case .documentUpdated:
             logger.info("document_updated count=\(entry.count)")
+        case .imageImported:
+            logger.info("image_imported count=\(entry.count)")
+        case .importRejected:
+            logger.info("import_rejected count=\(entry.count)")
         }
     }
 }
