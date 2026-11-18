@@ -1,0 +1,128 @@
+{
+  "category" : "dashboard",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "punctuation",
+    "quotedValue"
+  ],
+  "fontStyle" : "proportional",
+  "id" : "support-ticket-low-contrast-2x",
+  "pixelHeight" : 320,
+  "pixelWidth" : 1240,
+  "scale" : 2,
+  "scenario" : "A low-contrast, proportional-font support ticket where passwords appear in punctuated prose, beside a reserved support address and a reference ID.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "ambiguous",
+      "family" : "credentialKeyword",
+      "id" : "ticket-reset-value",
+      "note" : "Password-like value in prose without a key label",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.0875,
+            "width" : 0.271111,
+            "x" : 0.258682,
+            "y" : 0.30625
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 21,
+          "utf16Offset" : 25
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "ticket-new-password",
+      "note" : "Password after an explicit label",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.0875,
+            "width" : 0.241331,
+            "x" : 0.412502,
+            "y" : 0.60625
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 18,
+          "utf16Offset" : 36
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "ticket-ref",
+      "note" : "Ticket reference ID",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.0875,
+            "width" : 0.110456,
+            "x" : 0.613313,
+            "y" : 0.75625
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 9,
+          "utf16Offset" : 56
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.0875,
+        "width" : 0.617528,
+        "x" : 0.032258,
+        "y" : 0.15625
+      },
+      "text" : "Support ticket #4821 (RedScreen synthetic fixture - fake data)"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.0875,
+        "width" : 0.646195,
+        "x" : 0.032258,
+        "y" : 0.30625
+      },
+      "text" : "Customer: I reset it to 'RSFAKE-Temp!Pass#2026' but login fails."
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.0875,
+        "width" : 0.608751,
+        "x" : 0.032258,
+        "y" : 0.45625
+      },
+      "text" : "Agent: Please never share your password; use the reset link."
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.0875,
+        "width" : 0.750806,
+        "x" : 0.032258,
+        "y" : 0.60625
+      },
+      "text" : "Customer: OK - the new password is: RSFAKE-n3w.P@ss_77 (temporary)."
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.0875,
+        "width" : 0.69151,
+        "x" : 0.032258,
+        "y" : 0.75625
+      },
+      "text" : "Agent: Thanks! Ticket mailbox: support@example.org, ref 0x7F3A-22"
+    }
+  ],
+  "theme" : "lowContrast"
+}

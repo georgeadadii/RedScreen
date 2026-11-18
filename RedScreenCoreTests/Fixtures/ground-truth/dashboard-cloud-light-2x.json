@@ -1,0 +1,189 @@
+{
+  "category" : "dashboard",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "multiColumn",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "proportional",
+  "id" : "dashboard-cloud-light-2x",
+  "pixelHeight" : 416,
+  "pixelWidth" : 1200,
+  "scale" : 2,
+  "scenario" : "A light, proportional-font cloud console table with an access key ID, its secret access key, and nearby benign region, date, and address cells.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "ambiguous",
+      "family" : "providerKeyShape",
+      "id" : "console-access-key-id",
+      "note" : "Access key ID shown without its secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.067308,
+            "width" : 0.293079,
+            "x" : 0.35,
+            "y" : 0.235577
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 20,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "console-secret-key",
+      "note" : "Secret key in a labelled table cell",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.067308,
+            "width" : 0.54847,
+            "x" : 0.35,
+            "y" : 0.350962
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 40,
+          "utf16Offset" : 0
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.571951,
+        "x" : 0.033333,
+        "y" : 0.120192
+      },
+      "text" : "Cloud console - RedScreen synthetic fixture (fake data)"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.147816,
+        "x" : 0.033333,
+        "y" : 0.235577
+      },
+      "text" : "Access key ID"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.293079,
+        "x" : 0.35,
+        "y" : 0.235577
+      },
+      "text" : "AKIAI44QH8DHBEXAMPLE"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.189333,
+        "x" : 0.033333,
+        "y" : 0.350962
+      },
+      "text" : "Secret access key"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.54847,
+        "x" : 0.35,
+        "y" : 0.350962
+      },
+      "text" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.073942,
+        "x" : 0.033333,
+        "y" : 0.466346
+      },
+      "text" : "Region"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.101138,
+        "x" : 0.35,
+        "y" : 0.466346
+      },
+      "text" : "us-west-2"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.083011,
+        "x" : 0.033333,
+        "y" : 0.581731
+      },
+      "text" : "Created"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.238665,
+        "x" : 0.35,
+        "y" : 0.581731
+      },
+      "text" : "2026-01-15 09:30 UTC"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.154333,
+        "x" : 0.033333,
+        "y" : 0.697115
+      },
+      "text" : "Last used from"
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.34722,
+        "x" : 0.35,
+        "y" : 0.697115
+      },
+      "text" : "api.example.test via 203.0.113.10"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.066149,
+        "x" : 0.033333,
+        "y" : 0.8125
+      },
+      "text" : "Status"
+    },
+    {
+      "id" : "t12",
+      "rect" : {
+        "height" : 0.067308,
+        "width" : 0.06354,
+        "x" : 0.35,
+        "y" : 0.8125
+      },
+      "text" : "Active"
+    }
+  ],
+  "theme" : "light"
+}

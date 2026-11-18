@@ -1,0 +1,457 @@
+{
+  "category" : "envFile",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "editorChrome",
+    "adjacentSecrets",
+    "quotedValue",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "editor-env-vscode-dark-2x",
+  "pixelHeight" : 658,
+  "pixelWidth" : 1800,
+  "scale" : 2,
+  "scenario" : "A .env.production file in a dark code editor with a line-number gutter, syntax colours, and tight line spacing: quoted values containing spaces, a pooled database URL with a password, and secrets on adjacent lines.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "editor-maps-key",
+      "note" : "Quoted key containing spaces",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.24082,
+            "x" : 0.279822,
+            "y" : 0.168741
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 30,
+          "utf16Offset" : 26
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "credentialKeyword",
+      "id" : "editor-publishable-key",
+      "note" : "Publishable key: public by design",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.216738,
+            "x" : 0.37615,
+            "y" : 0.272084
+          },
+          "textBoxID" : "t09",
+          "utf16Length" : 27,
+          "utf16Offset" : 38
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "connectionString",
+      "id" : "editor-database-password",
+      "note" : "Password inside a quoted connection URL",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.12041,
+            "x" : 0.440369,
+            "y" : 0.478771
+          },
+          "textBoxID" : "t16",
+          "utf16Length" : 15,
+          "utf16Offset" : 46
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "editor-auth-secret",
+      "note" : "Quoted auth secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.224766,
+            "x" : 0.175467,
+            "y" : 0.530443
+          },
+          "textBoxID" : "t18",
+          "utf16Length" : 28,
+          "utf16Offset" : 13
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "editor-embed-key",
+      "note" : "Secret directly above another secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.216738,
+            "x" : 0.287849,
+            "y" : 0.685458
+          },
+          "textBoxID" : "t23",
+          "utf16Length" : 27,
+          "utf16Offset" : 27
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "editor-resend-key",
+      "note" : "Secret directly below another secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.042458,
+            "width" : 0.224766,
+            "x" : 0.199549,
+            "y" : 0.73713
+          },
+          "textBoxID" : "t25",
+          "utf16Length" : 28,
+          "utf16Offset" : 16
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.065397
+      },
+      "text" : "1"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.553887,
+        "x" : 0.071111,
+        "y" : 0.065397
+      },
+      "text" : "# RedScreen synthetic fixture: public values are embedded in bundles."
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.117069
+      },
+      "text" : "2"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.369258,
+        "x" : 0.071111,
+        "y" : 0.117069
+      },
+      "text" : "NEXT_PUBLIC_APP_URL=\"https://app.example.test\""
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.168741
+      },
+      "text" : "3"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.457559,
+        "x" : 0.071111,
+        "y" : 0.168741
+      },
+      "text" : "NEXT_PUBLIC_MAPS_API_KEY=\"RSFAKE maps key with spaces 01\""
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.220412
+      },
+      "text" : "4"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.537832,
+        "x" : 0.071111,
+        "y" : 0.220412
+      },
+      "text" : "NEXT_PUBLIC_SUPABASE_URL=\"https://rsfake-ref.supabase.example.test\""
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.272084
+      },
+      "text" : "5"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.529805,
+        "x" : 0.071111,
+        "y" : 0.272084
+      },
+      "text" : "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=\"RSFAKEpublishable0a1b2c3d4e\""
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.323756
+      },
+      "text" : "6"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.36123,
+        "x" : 0.071111,
+        "y" : 0.323756
+      },
+      "text" : "SUPABASE_STORAGE_BUCKET=\"institution-gallery\""
+    },
+    {
+      "id" : "t12",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.375427
+      },
+      "text" : "7"
+    },
+    {
+      "id" : "t13",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.427099
+      },
+      "text" : "8"
+    },
+    {
+      "id" : "t14",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.481641,
+        "x" : 0.071111,
+        "y" : 0.427099
+      },
+      "text" : "# Runtime-only secrets. Never pass these as build arguments."
+    },
+    {
+      "id" : "t15",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.008027,
+        "x" : 0.055111,
+        "y" : 0.478771
+      },
+      "text" : "9"
+    },
+    {
+      "id" : "t16",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.899063,
+        "x" : 0.071111,
+        "y" : 0.478771
+      },
+      "text" : "DATABASE_URL=\"postgresql://postgres.rsfakeref:RSFAKE-db-pw-77@pooler.example.test:6543/postgres?sslmode=require\""
+    },
+    {
+      "id" : "t17",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.530443
+      },
+      "text" : "10"
+    },
+    {
+      "id" : "t18",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.337148,
+        "x" : 0.071111,
+        "y" : 0.530443
+      },
+      "text" : "AUTH_SECRET=\"fakeRSFAKEc9331e1c8fa93c6abc\""
+    },
+    {
+      "id" : "t19",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.582114
+      },
+      "text" : "11"
+    },
+    {
+      "id" : "t20",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.633786
+      },
+      "text" : "12"
+    },
+    {
+      "id" : "t21",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.280957,
+        "x" : 0.071111,
+        "y" : 0.633786
+      },
+      "text" : "AUTH_URL=\"https://app.example.test\""
+    },
+    {
+      "id" : "t22",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.685458
+      },
+      "text" : "13"
+    },
+    {
+      "id" : "t23",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.441504,
+        "x" : 0.071111,
+        "y" : 0.685458
+      },
+      "text" : "GOOGLE_MAPS_EMBED_API_KEY=\"RSFAKEembed qwoidwnqjd 0042\""
+    },
+    {
+      "id" : "t24",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.73713
+      },
+      "text" : "14"
+    },
+    {
+      "id" : "t25",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.36123,
+        "x" : 0.071111,
+        "y" : 0.73713
+      },
+      "text" : "RESEND_API_KEY=\"RSFAKEresend uqwkhdbjca 0043\""
+    },
+    {
+      "id" : "t26",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.788801
+      },
+      "text" : "15"
+    },
+    {
+      "id" : "t27",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.385313,
+        "x" : 0.071111,
+        "y" : 0.788801
+      },
+      "text" : "EMAIL_FROM=\"Example Team <noreply@example.test>\""
+    },
+    {
+      "id" : "t28",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.840473
+      },
+      "text" : "16"
+    },
+    {
+      "id" : "t29",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.112383,
+        "x" : 0.071111,
+        "y" : 0.840473
+      },
+      "text" : "CRON_SECRET=\"\""
+    },
+    {
+      "id" : "t30",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.016055,
+        "x" : 0.047111,
+        "y" : 0.892145
+      },
+      "text" : "17"
+    },
+    {
+      "id" : "t31",
+      "rect" : {
+        "height" : 0.042458,
+        "width" : 0.232793,
+        "x" : 0.071111,
+        "y" : 0.892145
+      },
+      "text" : "FEATURE_REVIEW_ENABLED=\"true\""
+    }
+  ],
+  "theme" : "dark"
+}

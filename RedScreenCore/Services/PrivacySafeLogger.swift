@@ -14,7 +14,15 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case sensitiveInformationDetected = "sensitive_information_detected"
     case previewUpdated = "preview_updated"
     case clipboardPrepared = "clipboard_prepared"
-    case undoStateUpdated = "undo_state_updated"
+    case documentUpdated = "document_updated"
+    case imageImported = "image_imported"
+    case importRejected = "import_rejected"
+    /// Count is the elapsed recognition time in milliseconds.
+    case textRecognitionDuration = "text_recognition_duration_ms"
+    case textRecognitionFailed = "text_recognition_failed"
+    case detectionsNeedingReview = "detections_needing_review"
+    case secretDetectionFailed = "secret_detection_failed"
+    case candidatesComposed = "candidates_composed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -69,8 +77,22 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("preview_updated count=\(entry.count)")
         case .clipboardPrepared:
             logger.info("clipboard_prepared count=\(entry.count)")
-        case .undoStateUpdated:
-            logger.info("undo_state_updated count=\(entry.count)")
+        case .documentUpdated:
+            logger.info("document_updated count=\(entry.count)")
+        case .imageImported:
+            logger.info("image_imported count=\(entry.count)")
+        case .importRejected:
+            logger.info("import_rejected count=\(entry.count)")
+        case .textRecognitionDuration:
+            logger.info("text_recognition_duration_ms count=\(entry.count)")
+        case .textRecognitionFailed:
+            logger.info("text_recognition_failed count=\(entry.count)")
+        case .detectionsNeedingReview:
+            logger.info("detections_needing_review count=\(entry.count)")
+        case .secretDetectionFailed:
+            logger.info("secret_detection_failed count=\(entry.count)")
+        case .candidatesComposed:
+            logger.info("candidates_composed count=\(entry.count)")
         }
     }
 }

@@ -1,0 +1,244 @@
+{
+  "entries" : [
+    {
+      "groundTruth" : "ground-truth/benign-code-light-1x.json",
+      "groundTruthSHA256" : "4b5b58f013d5b348d28a9524d66e81985f393e331e4af9af2f3124a1e971fcb9",
+      "id" : "benign-code-light-1x",
+      "image" : "images/benign-code-light-1x.png",
+      "imageSHA256" : "4c9793b92bda71fe71abce280ea7bf37bd0d7ac514cd6e2d8f5c0382cc401d2d"
+    },
+    {
+      "groundTruth" : "ground-truth/benign-code-light-2x.json",
+      "groundTruthSHA256" : "ca053da91c0dbd4710742164b3942ba031548c627d58341de7efd4b7c500f94e",
+      "id" : "benign-code-light-2x",
+      "image" : "images/benign-code-light-2x.png",
+      "imageSHA256" : "d487a4ac346bb405fef3d60d315a681cdbc54738f840a9329a226f9372cc220c"
+    },
+    {
+      "groundTruth" : "ground-truth/benign-terminal-dark-1x.json",
+      "groundTruthSHA256" : "598428763fa380a84576df4f05b32e7882c83acd2f8a7c6eb5a32ce51ed18ef2",
+      "id" : "benign-terminal-dark-1x",
+      "image" : "images/benign-terminal-dark-1x.png",
+      "imageSHA256" : "de7a653c723123c908c72172fa53383595b2759a0ed071a2101b5c57076891a4"
+    },
+    {
+      "groundTruth" : "ground-truth/benign-terminal-dark-2x.json",
+      "groundTruthSHA256" : "116ad97114b3aed846dbf2ea93b79072415483a1692f50e8bbf6f3ab0d3b252a",
+      "id" : "benign-terminal-dark-2x",
+      "image" : "images/benign-terminal-dark-2x.png",
+      "imageSHA256" : "85b1e0b37d7fd50e8c5646f4382744c8fcb2e5c082a724ac0e1ca1a21a78e711"
+    },
+    {
+      "groundTruth" : "ground-truth/ci-log-dark-1x.json",
+      "groundTruthSHA256" : "8d0a385f4d20a3e913f19ec288ab47bc518840199d34aee77326a57264f5ccbd",
+      "id" : "ci-log-dark-1x",
+      "image" : "images/ci-log-dark-1x.png",
+      "imageSHA256" : "9b84d94a83300d258f0c0d7b843155d6340f49e9e62859de4264e0c19bee439c"
+    },
+    {
+      "groundTruth" : "ground-truth/ci-log-dark-2x.json",
+      "groundTruthSHA256" : "26675406cdb6790a6562e7223401501ffeb6407d802e6fb1fa2c3ab3e8017964",
+      "id" : "ci-log-dark-2x",
+      "image" : "images/ci-log-dark-2x.png",
+      "imageSHA256" : "13724d7ba6b8b35e47bc02dbd422a2bb7aaf1e99d2c10c81c096cfb3f94e1b42"
+    },
+    {
+      "groundTruth" : "ground-truth/dashboard-api-keys-dark-1x.json",
+      "groundTruthSHA256" : "005a314556c68ae0f53f155722ea229c49d0ca3b3d423488e69b9980d60fe489",
+      "id" : "dashboard-api-keys-dark-1x",
+      "image" : "images/dashboard-api-keys-dark-1x.png",
+      "imageSHA256" : "916dcc2a2efc8cc15a4c39caa00b52cfe3bbb053a801625e463107dd1b9e139f"
+    },
+    {
+      "groundTruth" : "ground-truth/dashboard-api-keys-dark-2x.json",
+      "groundTruthSHA256" : "cbb980cd4dc96953585def4937c6e32e8d89cb9b03a44c2bada44d4bc277fe1f",
+      "id" : "dashboard-api-keys-dark-2x",
+      "image" : "images/dashboard-api-keys-dark-2x.png",
+      "imageSHA256" : "a23596ba6a90249aeaede9880cef57ae8492e564e304fa2b61244bf6f61dc3f2"
+    },
+    {
+      "groundTruth" : "ground-truth/dashboard-cloud-light-1x.json",
+      "groundTruthSHA256" : "dd95fa6079d5af32737498b61ab5ea4f299046c12135d2699c28804fc7977385",
+      "id" : "dashboard-cloud-light-1x",
+      "image" : "images/dashboard-cloud-light-1x.png",
+      "imageSHA256" : "0bb7e19e6029e5a296d757732655da7aef06ec8208eeba5bd53f7a8b22707514"
+    },
+    {
+      "groundTruth" : "ground-truth/dashboard-cloud-light-2x.json",
+      "groundTruthSHA256" : "c5e1a6f8905e64028e3923d9442315aecdcfd93c482c7d9010bfc09a5f128cc5",
+      "id" : "dashboard-cloud-light-2x",
+      "image" : "images/dashboard-cloud-light-2x.png",
+      "imageSHA256" : "95301396d281c1f7931f5dcd95e662f2a0ee9d20d0d56a6085d95507cbbf5209"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-monaco-light-1x.json",
+      "groundTruthSHA256" : "b68a67fffd52ec179048a87869aa50811581ac583f6e133268ec7798b959350f",
+      "id" : "editor-env-monaco-light-1x",
+      "image" : "images/editor-env-monaco-light-1x.png",
+      "imageSHA256" : "7ca13a87db366d4bd24b030a3bfb3c915f3abe694ccd74a3206ff4915a4b6591"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-monaco-light-2x.json",
+      "groundTruthSHA256" : "f5536d40b7a5acdc1b82a805b053fd1d876ca99d5cdd8fe4a4a49dad728d6693",
+      "id" : "editor-env-monaco-light-2x",
+      "image" : "images/editor-env-monaco-light-2x.png",
+      "imageSHA256" : "43ad59bf7ee1afcecf238c89689351ea8a5cccc305c8dcb6eac603afbb43c6f7"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-vscode-dark-1x.json",
+      "groundTruthSHA256" : "18b10091828760ee8894537007fed3dee3d377835b8c933b388c52e076f72a6d",
+      "id" : "editor-env-vscode-dark-1x",
+      "image" : "images/editor-env-vscode-dark-1x.png",
+      "imageSHA256" : "fe922685f97a7a5a6f30f3b3a12eeddb92a47cbc1d39d1e55ec6d5e8c0a4c159"
+    },
+    {
+      "groundTruth" : "ground-truth/editor-env-vscode-dark-2x.json",
+      "groundTruthSHA256" : "f34a6341a7f2e2a8c9c9c0e68550d640a70b9ce869439f9b2f3db32cae2f1f16",
+      "id" : "editor-env-vscode-dark-2x",
+      "image" : "images/editor-env-vscode-dark-2x.png",
+      "imageSHA256" : "0abdad5fdea786187996c7bdd23093e56ba6ab6c366dc3ac574f1c94b90cf187"
+    },
+    {
+      "groundTruth" : "ground-truth/env-diff-columns-light-1x.json",
+      "groundTruthSHA256" : "73588521b15219a0805a24e7c92a9c351fa22e608eacaf39509af78fbe04afca",
+      "id" : "env-diff-columns-light-1x",
+      "image" : "images/env-diff-columns-light-1x.png",
+      "imageSHA256" : "7645de38032b25d8d72b432b0ac929cc8a44e4ca82d8cf6ab644e9f1f404c109"
+    },
+    {
+      "groundTruth" : "ground-truth/env-diff-columns-light-2x.json",
+      "groundTruthSHA256" : "04e5416e7ab3d55117588752a3d4db8024bf0641e2e17b7606563e8b7a561191",
+      "id" : "env-diff-columns-light-2x",
+      "image" : "images/env-diff-columns-light-2x.png",
+      "imageSHA256" : "f76d674bfb0ccc305fbb705822d360119dfb3e1ea9dd5da90c8c5ff9eec95bc3"
+    },
+    {
+      "groundTruth" : "ground-truth/env-file-dark-1x.json",
+      "groundTruthSHA256" : "072dd03277254198ebcca184caeef6e335b5da9bb3dbdbeeec4ce2067a1f5f7c",
+      "id" : "env-file-dark-1x",
+      "image" : "images/env-file-dark-1x.png",
+      "imageSHA256" : "7ab3dc9f3aa50bb79dd46a5c832b997cdfd43bbe10797ff8a333754fe7c0da67"
+    },
+    {
+      "groundTruth" : "ground-truth/env-file-dark-2x.json",
+      "groundTruthSHA256" : "02b05a56390946008725f36ed5b6303bceebf0324bb84b4b562effa1d10417fe",
+      "id" : "env-file-dark-2x",
+      "image" : "images/env-file-dark-2x.png",
+      "imageSHA256" : "51063eea47123b0e9019678774f4b692f9943970d17b7914029130ca03eb035a"
+    },
+    {
+      "groundTruth" : "ground-truth/env-file-light-1x.json",
+      "groundTruthSHA256" : "0378a4308cbaea4d7a49a8994925d3b7207f9edc624cc2b722592d9daa2daa4a",
+      "id" : "env-file-light-1x",
+      "image" : "images/env-file-light-1x.png",
+      "imageSHA256" : "3bf16519cbac1fc5f8a22b976e4272909992e7301c4d9ab2c041a21504c5461d"
+    },
+    {
+      "groundTruth" : "ground-truth/env-file-light-2x.json",
+      "groundTruthSHA256" : "e00e7dbb0b4d2bea4c60da0eef8695a5c5d98cbbb402d61613c47cb02fc4227f",
+      "id" : "env-file-light-2x",
+      "image" : "images/env-file-light-2x.png",
+      "imageSHA256" : "ab11569ea572b897b2cc309eeb387d3d70f219589cae77be01e92d039f7d29a3"
+    },
+    {
+      "groundTruth" : "ground-truth/json-config-light-1x.json",
+      "groundTruthSHA256" : "30d9e5dde11f20bb4737af743f071a7722ec370273c546541caa124a9197b8f5",
+      "id" : "json-config-light-1x",
+      "image" : "images/json-config-light-1x.png",
+      "imageSHA256" : "c723e01f20a6a960d4d0047be4e86549392af1f61b611e2ecf22b200588645ee"
+    },
+    {
+      "groundTruth" : "ground-truth/json-config-light-2x.json",
+      "groundTruthSHA256" : "d2fecd33039eb93512b54e137dde359207d18507eaf1263c79d470bb8009cd28",
+      "id" : "json-config-light-2x",
+      "image" : "images/json-config-light-2x.png",
+      "imageSHA256" : "cb07c9c7febc5e8893ac97a394aaeebb472e6a31585dc60896185188f70429f0"
+    },
+    {
+      "groundTruth" : "ground-truth/private-key-block-light-1x.json",
+      "groundTruthSHA256" : "badd7ad1671b592b2122670e4b10866012289250b31bd5f195f69030af31fdfd",
+      "id" : "private-key-block-light-1x",
+      "image" : "images/private-key-block-light-1x.png",
+      "imageSHA256" : "e6822de44964fc7cc5e3aabbc18b2006a6c1891557ff1f5919a4e4679cbfc61d"
+    },
+    {
+      "groundTruth" : "ground-truth/private-key-block-light-2x.json",
+      "groundTruthSHA256" : "6dfd2a13edc32b6b2bee49bd95091a70a96d789bc8b36ba00fd3833d33ab8dd5",
+      "id" : "private-key-block-light-2x",
+      "image" : "images/private-key-block-light-2x.png",
+      "imageSHA256" : "e86864719e226005afe6b8f07f4871b45d7222c8ea0d184dbad5cf359d9662bc"
+    },
+    {
+      "groundTruth" : "ground-truth/support-ticket-low-contrast-1x.json",
+      "groundTruthSHA256" : "4aa7b89a6c974ad2c11df1c2330a8a0c6a93dc83acaaafe66fc0f14f97bd18b5",
+      "id" : "support-ticket-low-contrast-1x",
+      "image" : "images/support-ticket-low-contrast-1x.png",
+      "imageSHA256" : "f2243d3eef9ae47ab75d8cff8d0ee40da0fc7f39cfdf5543c9b4ff6e00fc7802"
+    },
+    {
+      "groundTruth" : "ground-truth/support-ticket-low-contrast-2x.json",
+      "groundTruthSHA256" : "647f6a1770f67bdcd9b8f1e0f9ae2aedbbec16a341c41d28fbd4ba570f2a1023",
+      "id" : "support-ticket-low-contrast-2x",
+      "image" : "images/support-ticket-low-contrast-2x.png",
+      "imageSHA256" : "39faed75f8d31028e2efb5cfcf35a0c094f1c2a35e0c636e0917b91bfc2fac5c"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-couriernew-dark-1x.json",
+      "groundTruthSHA256" : "0b876be4503ac9f3dd47af5f25129e51e90968116c25a7412ce8e5e9f82fae85",
+      "id" : "terminal-couriernew-dark-1x",
+      "image" : "images/terminal-couriernew-dark-1x.png",
+      "imageSHA256" : "a9876b7d11356ee4f7d310529a64c3e7c35742725f3d74d4094f576ffc3b7d23"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-couriernew-dark-2x.json",
+      "groundTruthSHA256" : "bac65dba52846a65fc04aaf955aba5dc14f5ed222791eeb3dbfb42ba4e117238",
+      "id" : "terminal-couriernew-dark-2x",
+      "image" : "images/terminal-couriernew-dark-2x.png",
+      "imageSHA256" : "739249667733b536b1b0d5e1d3d52e8872c487150d39eb6843f3fbbb1f3a34c9"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-session-dark-1x.json",
+      "groundTruthSHA256" : "e2a04f3fbe05669ec428924ff7a49672bc9fa3eaca17fac8e1e02a42577dc570",
+      "id" : "terminal-session-dark-1x",
+      "image" : "images/terminal-session-dark-1x.png",
+      "imageSHA256" : "05dfe77a814e6787cd780cba3ec1bb9a8ebdf2165b93c63472f4c43d602f19c9"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-session-dark-2x.json",
+      "groundTruthSHA256" : "b65b89b89d9cfaf532cb74d93c89601207f631281b9719af29562016eebef4c6",
+      "id" : "terminal-session-dark-2x",
+      "image" : "images/terminal-session-dark-2x.png",
+      "imageSHA256" : "80808e01865be399bfdbdc67e273f79161e8859138db91352f1fe1ccb452ea3e"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-wrapped-url-dark-1x.json",
+      "groundTruthSHA256" : "90072b61d821c4610d087cf8573175a85020fdee17fe59ed6de935acb80633af",
+      "id" : "terminal-wrapped-url-dark-1x",
+      "image" : "images/terminal-wrapped-url-dark-1x.png",
+      "imageSHA256" : "f28c1eb5c9d1e97032cd28ef7a3c14423e4487dfc2551686dd6cc96f31e41851"
+    },
+    {
+      "groundTruth" : "ground-truth/terminal-wrapped-url-dark-2x.json",
+      "groundTruthSHA256" : "e55089439866b0dbcc3ae01e7109ac63de8aede70b0cc2e629156737787aed3a",
+      "id" : "terminal-wrapped-url-dark-2x",
+      "image" : "images/terminal-wrapped-url-dark-2x.png",
+      "imageSHA256" : "c88be98a58e8d2efe69aad9f9e89f2c69d014f70b03b5d2af4fe5d327ec0bacf"
+    },
+    {
+      "groundTruth" : "ground-truth/yaml-config-low-contrast-1x.json",
+      "groundTruthSHA256" : "4a94dbd376546598db619622643e1099b696ebde3acb5b2b4092efc2044486ef",
+      "id" : "yaml-config-low-contrast-1x",
+      "image" : "images/yaml-config-low-contrast-1x.png",
+      "imageSHA256" : "ed6e1dd40594dda62378fcc2156621d07bbcc81abe470d4e01d54770a0d75dce"
+    },
+    {
+      "groundTruth" : "ground-truth/yaml-config-low-contrast-2x.json",
+      "groundTruthSHA256" : "c70dc38412cb04d156ef81482f58e93d32c7a6df5556b3d3d767a2fad5e6eb3f",
+      "id" : "yaml-config-low-contrast-2x",
+      "image" : "images/yaml-config-low-contrast-2x.png",
+      "imageSHA256" : "48444b11980c487fb0d8e396ca969c6fc4011ffe6b05c44cbd5492fc535b2bd1"
+    }
+  ],
+  "notice" : "Synthetic RedScreen test data. Every credential-like value is fake and reserved for tests.",
+  "schemaVersion" : 1
+}

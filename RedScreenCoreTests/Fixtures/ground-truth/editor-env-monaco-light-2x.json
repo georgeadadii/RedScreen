@@ -1,0 +1,248 @@
+{
+  "category" : "envFile",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "editorChrome",
+    "adjacentSecrets",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "editor-env-monaco-light-2x",
+  "pixelHeight" : 336,
+  "pixelWidth" : 1440,
+  "scale" : 2,
+  "scenario" : "A light code editor in Monaco with line numbers mixing unquoted .env exports, YAML keys, and a Python assignment, with secrets on adjacent lines.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "monaco-webhook-secret",
+      "note" : "Unquoted exported secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.081845,
+            "width" : 0.210868,
+            "x" : 0.343654,
+            "y" : 0.220982
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 23,
+          "utf16Offset" : 29
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "monaco-signing-key",
+      "note" : "Adjacent unquoted secret",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.081845,
+            "width" : 0.201699,
+            "x" : 0.251973,
+            "y" : 0.31622
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 22,
+          "utf16Offset" : 19
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "monaco-yaml-token",
+      "note" : "YAML token value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.081845,
+            "width" : 0.183363,
+            "x" : 0.178628,
+            "y" : 0.601935
+          },
+          "textBoxID" : "t10",
+          "utf16Length" : 20,
+          "utf16Offset" : 11
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "monaco-python-password",
+      "note" : "Quoted Python string",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.081845,
+            "width" : 0.137522,
+            "x" : 0.2153,
+            "y" : 0.792411
+          },
+          "textBoxID" : "t14",
+          "utf16Length" : 15,
+          "utf16Offset" : 15
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.125744
+      },
+      "text" : "1"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.394231,
+        "x" : 0.077778,
+        "y" : 0.125744
+      },
+      "text" : "# RedScreen synthetic fixture (fake values)"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.220982
+      },
+      "text" : "2"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.476744,
+        "x" : 0.077778,
+        "y" : 0.220982
+      },
+      "text" : "export STRIPE_WEBHOOK_SECRET=RSFAKEwhsec0a1b2c3d4e5f"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.31622
+      },
+      "text" : "3"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.375895,
+        "x" : 0.077778,
+        "y" : 0.31622
+      },
+      "text" : "export SIGNING_KEY=RSFAKEsign9f8e7d6c5b4a"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.411458
+      },
+      "text" : "4"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.192531,
+        "x" : 0.077778,
+        "y" : 0.411458
+      },
+      "text" : "export LOG_LEVEL=info"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.506696
+      },
+      "text" : "5"
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.601935
+      },
+      "text" : "6"
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.284213,
+        "x" : 0.077778,
+        "y" : 0.601935
+      },
+      "text" : "api_token: RSFAKE-yaml-token-55"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.697173
+      },
+      "text" : "7"
+    },
+    {
+      "id" : "t12",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.174195,
+        "x" : 0.077778,
+        "y" : 0.697173
+      },
+      "text" : "timeout_seconds: 30"
+    },
+    {
+      "id" : "t13",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.009168,
+        "x" : 0.059444,
+        "y" : 0.792411
+      },
+      "text" : "8"
+    },
+    {
+      "id" : "t14",
+      "rect" : {
+        "height" : 0.081845,
+        "width" : 0.284213,
+        "x" : 0.077778,
+        "y" : 0.792411
+      },
+      "text" : "db_password = \"RSFAKE-py-pw-31\""
+    }
+  ],
+  "theme" : "light"
+}

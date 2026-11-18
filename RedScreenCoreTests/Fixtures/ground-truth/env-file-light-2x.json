@@ -1,0 +1,225 @@
+{
+  "category" : "envFile",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "nearbyBenign",
+    "punctuation"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "env-file-light-2x",
+  "pixelHeight" : 476,
+  "pixelWidth" : 1120,
+  "scale" : 2,
+  "scenario" : "A .env file in a light editor theme mixing one secret assignment with nearby benign settings, a port, and a credential-free localhost URL.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "benign",
+      "family" : "envAssignment",
+      "id" : "node-env",
+      "note" : "Non-secret environment name",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.139762,
+            "x" : 0.1615,
+            "y" : 0.190897
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 10,
+          "utf16Offset" : 9
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "envAssignment",
+      "id" : "port",
+      "note" : "Port number",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.055905,
+            "x" : 0.105595,
+            "y" : 0.283334
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 4,
+          "utf16Offset" : 5
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "database-password",
+      "note" : "Password assignment value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.251571,
+            "x" : 0.287286,
+            "y" : 0.375771
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 18,
+          "utf16Offset" : 18
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "connectionString",
+      "id" : "api-base-url",
+      "note" : "Credential-free localhost URL",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.349404,
+            "x" : 0.217405,
+            "y" : 0.468208
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 25,
+          "utf16Offset" : 13
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "webhook-secret",
+      "note" : "Signing secret assignment",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.321452,
+            "x" : 0.357166,
+            "y" : 0.560645
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 23,
+          "utf16Offset" : 23
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "envAssignment",
+      "id" : "session-salt",
+      "note" : "Salt-like value; sensitivity depends on deployment",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.167714,
+            "x" : 0.217405,
+            "y" : 0.653082
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 12,
+          "utf16Offset" : 13
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.754714,
+        "x" : 0.035714,
+        "y" : 0.09846
+      },
+      "text" : "# Synthetic RedScreen test data - not real credentials"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.265547,
+        "x" : 0.035714,
+        "y" : 0.190897
+      },
+      "text" : "NODE_ENV=production"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.125786,
+        "x" : 0.035714,
+        "y" : 0.283334
+      },
+      "text" : "PORT=3000"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.503142,
+        "x" : 0.035714,
+        "y" : 0.375771
+      },
+      "text" : "DATABASE_PASSWORD=RSFAKE-pg-7d1c9a42"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.531095,
+        "x" : 0.035714,
+        "y" : 0.468208
+      },
+      "text" : "API_BASE_URL=http://localhost:8080/api"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.642904,
+        "x" : 0.035714,
+        "y" : 0.560645
+      },
+      "text" : "WEBHOOK_SIGNING_SECRET=RSFAKE_whsec_5Tq8Lm2Vx9"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.349404,
+        "x" : 0.035714,
+        "y" : 0.653082
+      },
+      "text" : "SESSION_SALT=RSFAKEa1b2c3"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.209643,
+        "x" : 0.035714,
+        "y" : 0.745519
+      },
+      "text" : "LOG_LEVEL=debug"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.391333,
+        "x" : 0.035714,
+        "y" : 0.837956
+      },
+      "text" : "FEATURE_FLAGS=search,exports"
+    }
+  ],
+  "theme" : "light"
+}
