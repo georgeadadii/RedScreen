@@ -113,33 +113,11 @@ public struct ImageIOImageImporter: ImageImporter {
             throw ImageImportError.corruptImage
         }
 
-        let colorSpace = Self.renderingColorSpace(for: image.colorSpace)
-        let dimensions = try PixelDimensions(width: width, height: height)
-        let layout = PixelBufferLayout(dimensions: dimensions, colorSpace: colorSpace)
-        guard let cgColorSpace = CGColorSpace(name: colorSpace.cgName) else {
+        do {
+            return try PixelNormalization.draw(image, width: width, height: height)
+        } catch {
             throw ImageImportError.corruptImage
         }
-
-        var bytes = Data(count: layout.byteCount)
-        let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
-            guard let context = CGContext(
-                data: buffer.baseAddress,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: layout.bytesPerRow,
-                space: cgColorSpace,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            ) else {
-                return false
-            }
-            context.interpolationQuality = .none
-            context.setBlendMode(.copy)
-            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-            return true
-        }
-        guard drawn else { throw ImageImportError.corruptImage }
-        return DecodedPixels(bytes: bytes, layout: layout)
     }
 
     private func enforceBudget(width: Int, height: Int) throws {

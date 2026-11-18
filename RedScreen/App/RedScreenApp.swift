@@ -9,6 +9,7 @@ struct RedScreenApp: App {
         MenuBarExtra("RedScreen", systemImage: "shield.lefthalf.filled") {
             MenuBarContentView(
                 importScreenshot: model.chooseScreenshot,
+                capture: model.capture,
                 importDroppedItems: model.importDroppedItems,
                 showAbout: showAbout,
                 quit: quit

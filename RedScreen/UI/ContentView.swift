@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MenuBarContentView: View {
     let importScreenshot: () -> Void
+    let capture: (AppModel.CaptureKind) -> Void
     let importDroppedItems: ([URL]) -> Void
     let showAbout: () -> Void
     let quit: () -> Void
@@ -16,11 +17,7 @@ struct MenuBarContentView: View {
             Divider()
 
             VStack(spacing: 6) {
-                unavailableAction(
-                    title: "Capture Screenshot",
-                    systemImage: "camera.viewfinder",
-                    identifier: "capture-screenshot-button"
-                )
+                captureMenu
                 actionButton(
                     title: "Import Screenshot…",
                     systemImage: "photo.badge.plus",
@@ -71,6 +68,25 @@ struct MenuBarContentView: View {
         }
         .padding(16)
         .frame(width: 300)
+    }
+
+    private var captureMenu: some View {
+        Menu {
+            Button("Region…") { dismissPopover(); capture(.region) }
+                .accessibilityIdentifier("capture-region-button")
+            Button("Window…") { dismissPopover(); capture(.window) }
+                .accessibilityIdentifier("capture-window-button")
+            Button("Display") { dismissPopover(); capture(.display) }
+                .accessibilityIdentifier("capture-display-button")
+        } label: {
+            Label("Capture Screenshot", systemImage: "camera.viewfinder")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.visible)
+        .help("Capture a region, window, or display directly into RedScreen. Nothing is saved.")
+        .accessibilityIdentifier("capture-screenshot-button")
+        .padding(.vertical, 5)
     }
 
     /// Closes the menu bar popover so it does not cover the document window.

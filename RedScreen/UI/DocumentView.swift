@@ -62,6 +62,9 @@ struct DocumentView: View {
             if let error = controller.lastError {
                 errorBanner(error)
             }
+            if let error = controller.lastCaptureError {
+                captureErrorBanner(error)
+            }
             if case .failed(let error) = controller.recognitionStatus {
                 recognitionBanner(error)
             }
@@ -679,6 +682,13 @@ struct DocumentView: View {
                         .accessibilityIdentifier("show-text-regions-toggle")
                 }
                 Spacer()
+                Menu("Capture") {
+                    Button("Region…") { model.capture(.region) }
+                    Button("Window…") { model.capture(.window) }
+                    Button("Display") { model.capture(.display) }
+                }
+                .fixedSize()
+                .accessibilityIdentifier("document-capture-menu")
                 Button("Import…", action: model.chooseScreenshot)
                     .keyboardShortcut("o")
                     .accessibilityIdentifier("document-import-button")
@@ -766,6 +776,32 @@ struct DocumentView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color.orange.opacity(0.12))
+    }
+
+    private func captureErrorBanner(_ error: CaptureError) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+                .accessibilityHidden(true)
+            Text(error.userMessage)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("capture-error-message")
+            Spacer()
+            if error == .permissionDenied {
+                Button("Open Settings") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.borderless)
+            }
+            Button("Dismiss", action: controller.dismissError)
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("capture-error-dismiss")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.yellow.opacity(0.15))
     }
 
     private func errorBanner(_ error: ImageImportError) -> some View {
