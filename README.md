@@ -178,7 +178,8 @@ cancellation, stale-result rejection, and corpus accuracy gates (see
 [On-device text recognition](docs/TEXT_RECOGNITION.md)). Issue #7 adds context-sensitive
 developer secret detection (see [Developer secret detection](docs/SECRET_DETECTION.md)), and
 issue #8 composes findings into padded, reviewable redaction candidates with full pixel coverage
-on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.md)). Redaction
-rendering, the review UI, screenshot capture, settings, and image export remain out of scope until
-later issues.
+on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.md)). Issue #9
+(RED-5) adds irreversible solid-pixel rendering into a new in-memory raster with exact opaque
+fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Wiring rendering into the review
+UI, screenshot capture, settings, and image export remain for later issues.
 

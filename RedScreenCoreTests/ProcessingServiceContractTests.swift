@@ -57,8 +57,8 @@ private struct ComposerStub: CandidateComposer {
 }
 
 private struct RendererStub: RedactionRenderer {
-    func render(document: RedactionDocument, sourceImage: ScreenshotImage) async throws
-        -> ScreenshotImage {
+    func render(document: RedactionDocument, sourceImage: DecodedPixels) async throws
+        -> DecodedPixels {
         sourceImage
     }
 }
