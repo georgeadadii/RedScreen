@@ -1,0 +1,205 @@
+{
+  "category" : "terminal",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "benign-terminal-dark-2x",
+  "pixelHeight" : 476,
+  "pixelWidth" : 1280,
+  "scale" : 2,
+  "scenario" : "A dark terminal with git log SHAs, an npm integrity hash, a loopback dev server URL, and a public SSH key fingerprint; nothing should be redacted.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "log-sha-1",
+      "note" : "Abbreviated commit SHA",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.085604,
+            "x" : 0.03125,
+            "y" : 0.190897
+          },
+          "textBoxID" : "t01",
+          "utf16Length" : 7,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "log-sha-2",
+      "note" : "Abbreviated commit SHA",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.085604,
+            "x" : 0.03125,
+            "y" : 0.283334
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 7,
+          "utf16Offset" : 0
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "npm-integrity",
+      "note" : "Package integrity hash",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.379104,
+            "x" : 0.398125,
+            "y" : 0.560645
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 31,
+          "utf16Offset" : 30
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "connectionString",
+      "id" : "dev-server-url",
+      "note" : "Loopback dev server URL",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.269041,
+            "x" : 0.178,
+            "y" : 0.653082
+          },
+          "textBoxID" : "t06",
+          "utf16Length" : 22,
+          "utf16Offset" : 12
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "highEntropyContextual",
+      "id" : "ssh-fingerprint",
+      "note" : "Public key fingerprint",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.063583,
+            "width" : 0.403562,
+            "x" : 0.165771,
+            "y" : 0.837956
+          },
+          "textBoxID" : "t08",
+          "utf16Length" : 33,
+          "utf16Offset" : 11
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.709291,
+        "x" : 0.03125,
+        "y" : 0.09846
+      },
+      "text" : "demo % git log --oneline -3  # RedScreen synthetic fixture"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.635916,
+        "x" : 0.03125,
+        "y" : 0.190897
+      },
+      "text" : "d7ff0b2 feat: define redaction document and geometry"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.562541,
+        "x" : 0.03125,
+        "y" : 0.283334
+      },
+      "text" : "63c2d54 feat: implement secure image lifecycle"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.562541,
+        "x" : 0.03125,
+        "y" : 0.375771
+      },
+      "text" : "81985d5 Merge pull request from feature branch"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.158979,
+        "x" : 0.03125,
+        "y" : 0.468208
+      },
+      "text" : "demo % npm ci"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.745979,
+        "x" : 0.03125,
+        "y" : 0.560645
+      },
+      "text" : "added 214 packages, integrity sha512-Zm9vYmFyYmF6cXV4cXV1eA=="
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.415791,
+        "x" : 0.03125,
+        "y" : 0.653082
+      },
+      "text" : "demo % open http://127.0.0.1:5173/"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.525854,
+        "x" : 0.03125,
+        "y" : 0.745519
+      },
+      "text" : "demo % ssh-keygen -lf ~/.ssh/id_ed25519.pub"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.063583,
+        "width" : 0.856041,
+        "x" : 0.03125,
+        "y" : 0.837956
+      },
+      "text" : "256 SHA256:RSFAKEfingerprintAbCdEf0123456789 dev@workstation (ED25519)"
+    }
+  ],
+  "theme" : "dark"
+}

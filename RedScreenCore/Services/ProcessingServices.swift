@@ -1,52 +1,98 @@
 import Foundation
 
-/// Loads image data chosen through an explicit user interaction.
-public protocol ImageImporting: Sendable {
-    func loadImage(from url: URL) async throws -> ScreenshotImage
+/// Result of an explicit user-selected import. It remains in memory and is not serializable.
+///
+/// The encoded source file is not retained: `pixels` holds only the orientation-normalized,
+/// colour-normalized raster, so EXIF, GPS, maker notes, and other file metadata are discarded.
+public struct ImportedImage: Sendable, CustomStringConvertible, CustomDebugStringConvertible {
+    public let sourceIdentity: SourceImageIdentity
+    public let pixelDimensions: PixelDimensions
+    public let pixels: DecodedPixels
+
+    public init(
+        sourceIdentity: SourceImageIdentity,
+        pixelDimensions: PixelDimensions,
+        pixels: DecodedPixels
+    ) {
+        self.sourceIdentity = sourceIdentity
+        self.pixelDimensions = pixelDimensions
+        self.pixels = pixels
+    }
+
+    public var description: String {
+        "ImportedImage(source: \(sourceIdentity.rawValue), image: <redacted>)"
+    }
+    public var debugDescription: String { description }
 }
 
-/// Recognizes text locally from an in-memory screenshot.
-public protocol TextRecognizing: Sendable {
-    func recognizeText(in image: ScreenshotImage) async throws -> [RecognizedText]
+/// Reads an explicitly user-selected image and normalizes its orientation in memory.
+public protocol ImageImporter: Sendable {
+    func importImage(from url: URL) async throws -> ImportedImage
 }
 
-/// Finds sensitive values in recognized text without external services.
-public protocol SensitiveInformationDetecting: Sendable {
-    func detectSensitiveInformation(in text: [RecognizedText]) async throws -> [SensitiveRegion]
+/// Produces sensitive OCR observations locally from the session's normalized pixels.
+///
+/// Implementations must run on device, honour task cancellation, write nothing to disk, and
+/// return boxes in in-bounds normalized coordinates with their producer origin stated.
+public protocol TextRecognizer: Sendable {
+    func recognizeText(
+        in pixels: DecodedPixels,
+        dimensions: PixelDimensions
+    ) async throws -> [OCRObservation]
 }
 
-/// Permanently applies redactions to an image in memory.
-public protocol RedactionRendering: Sendable {
-    func renderRedactions(
-        on image: ScreenshotImage,
-        regions: [SensitiveRegion]
-    ) async throws -> ScreenshotImage
+/// Identifies rule evidence by OCR identity without copying matched secret strings.
+public protocol SecretDetector: Sendable {
+    func detectSecrets(in observations: [OCRObservation]) async throws -> [SecretDetection]
 }
 
-/// Writes an already-redacted image to a user-selected destination.
-public protocol ImageExporting: Sendable {
-    func export(_ image: ScreenshotImage, to destination: ExportDestination) async throws
+/// Converts detector evidence into the shared review/render candidate model.
+///
+/// `pixels` are the session's normalized pixels, used to measure character positions that OCR
+/// does not report. Implementations must cover the whole value when they cannot measure.
+public protocol CandidateComposer: Sendable {
+    func composeCandidates(
+        from detections: [SecretDetection],
+        observations: [OCRObservation],
+        pixels: DecodedPixels?,
+        dimensions: PixelDimensions
+    ) throws -> [RedactionCandidate]
+}
+
+/// Permanently applies included and manual regions to a new orientation-normalized raster.
+/// The result contains only flattened pixels and layout metadata, with no source or annotations.
+public protocol RedactionRenderer: Sendable {
+    func render(document: RedactionDocument, sourceImage: DecodedPixels) async throws
+        -> DecodedPixels
+}
+
+/// Writes only an already-rendered image to an explicitly selected destination.
+public protocol ImageExporter: Sendable {
+    func export(_ redactedImage: ScreenshotImage, to destination: ExportDestination) async throws
 }
 
 /// Explicit dependency container for the future local processing pipeline.
 public struct ProcessingDependencies: Sendable {
-    public let imageImporter: any ImageImporting
-    public let textRecognizer: any TextRecognizing
-    public let detector: any SensitiveInformationDetecting
-    public let renderer: any RedactionRendering
-    public let exporter: any ImageExporting
+    public let imageImporter: any ImageImporter
+    public let textRecognizer: any TextRecognizer
+    public let secretDetector: any SecretDetector
+    public let candidateComposer: any CandidateComposer
+    public let redactionRenderer: any RedactionRenderer
+    public let imageExporter: any ImageExporter
 
     public init(
-        imageImporter: any ImageImporting,
-        textRecognizer: any TextRecognizing,
-        detector: any SensitiveInformationDetecting,
-        renderer: any RedactionRendering,
-        exporter: any ImageExporting
+        imageImporter: any ImageImporter,
+        textRecognizer: any TextRecognizer,
+        secretDetector: any SecretDetector,
+        candidateComposer: any CandidateComposer,
+        redactionRenderer: any RedactionRenderer,
+        imageExporter: any ImageExporter
     ) {
         self.imageImporter = imageImporter
         self.textRecognizer = textRecognizer
-        self.detector = detector
-        self.renderer = renderer
-        self.exporter = exporter
+        self.secretDetector = secretDetector
+        self.candidateComposer = candidateComposer
+        self.redactionRenderer = redactionRenderer
+        self.imageExporter = imageExporter
     }
 }

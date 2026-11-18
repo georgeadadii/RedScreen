@@ -24,7 +24,8 @@ pasteboard; retaining one document's state after opening another; applying an as
 detection result to the wrong document; exporting source pixels instead of rendered pixels; or
 introducing a network-capable dependency.
 
-Mitigations are an application-sandbox entitlement with no network entitlement, no network or
+Mitigations are an application-sandbox entitlement with no network entitlement and only
+user-selected read-only file access, no network or
 telemetry code, a single in-memory lifecycle owner, clearing every session-owned artifact on close
 or replacement, session-ID checks for asynchronous stage results, no lifecycle file-I/O API,
 closed-enum logging with counts only, no recent-document registration, and explicit user action for
@@ -35,9 +36,10 @@ application-managed temporary source copies.
 
 Later import, OCR, detection, rendering, clipboard, and export work must preserve these rules:
 
-1. Source images, decoded pixels, OCR text, detected candidate values, previews, clipboard-ready
-   images, and undo history live only in the active `SecureImageSession` unless the user performs an
-   explicit export or copy action.
+1. Source, decoded, preview, and clipboard image buffers live only in the active
+   `SecureImageSession`. OCR text, candidate evidence, user edits, and processing state live in the
+   session's single current `RedactionDocument` snapshot unless the user performs an explicit
+   export or copy action.
 2. Creating a replacement session clears the old session before publishing the new one. Closing a
    document clears the active session and releases the lifecycle's reference to it. Results tagged
    with an inactive session ID are rejected.
@@ -50,11 +52,24 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    descriptions never enter the logging API.
 6. Processing remains on device. Do not add network entitlements, clients, telemetry, remote crash
    upload, cloud services, or network-capable dependencies.
-7. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
+7. Import reads only a file the user selected or dropped, once, into memory. It releases
+   security-scoped access before decoding, enforces byte and pixel budgets before allocating, and
+   keeps only the normalized pixels and their colour space. The encoded file and its metadata are
+   discarded. A failed import never replaces the open document.
+8. Text recognition runs on device with Apple Vision, language correction off and no custom
+   words. Recognized text lives only in the session's `RedactionDocument`, is never logged or
+   written, and results for a replaced or closed document are discarded.
+9. Secret detection consumes OCR observations only. Findings reference observations and UTF-16
+   ranges instead of copying matched text, live only in the session document, and are logged as
+   counts. Detector work is bounded to resist pathological input.
+10. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
    pasteboard. Do not retain export destinations after the operation ends.
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.
+
+See [Redaction document and coordinate architecture](DOCUMENT_AND_GEOMETRY.md) for the canonical
+geometry, immutable document, provenance, and service-boundary rules.
 
 ## Operating-system limitations
 

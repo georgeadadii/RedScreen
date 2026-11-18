@@ -3,10 +3,13 @@
 RedScreen is a privacy-first native macOS menu bar utility for permanently redacting sensitive
 information from screenshots. Processing is designed to remain entirely on the Mac.
 
-This repository contains the Phase 1 foundation: a compact SwiftUI menu bar interface, a testable
-core module, dependency-injection interfaces for the future processing pipeline, an in-memory
-secure image-session lifecycle, privacy-safe logging, and automated unit and UI tests. Screenshot
-capture, importing, and processing are intentionally not implemented yet.
+This repository contains screenshot import, on-device OCR, developer-secret detection, reviewable
+redaction candidates, and a tested solid-pixel renderer, backed by an in-memory image lifecycle
+and privacy-safe logging. The app currently displays findings; connecting review actions to the
+renderer and image export remains to be implemented. Screenshot capture is also planned.
+
+`main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
+required checks, and local validation commands.
 
 ## Technology stack
 
@@ -59,9 +62,15 @@ Build and launch a fresh instance:
 make run
 ```
 
-RedScreen appears as a shield icon in the macOS menu bar. It intentionally has no main window and,
+RedScreen appears as a shield icon in the macOS menu bar. It opens no window at launch and,
 because it is configured as an `LSUIElement` agent application, it does not appear in the Dock.
 Closing the popover leaves the utility running.
+
+Choose **Import Screenshot…** (or drop a PNG, JPEG, or HEIC file on it) to open a screenshot in
+the document window. Text is then recognized on device, checked for developer secrets, and
+turned into redaction rectangles: the footer shows how many likely secrets were found, and
+**Highlight Findings** draws the proposed redactions (filled red: included, orange: to review,
+dashed: whole word covered, needs review). **Show Text Regions** outlines all recognized text. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
 
 ## Install into Applications
 
@@ -94,22 +103,36 @@ make test
 Neither test suite reads user files, uses real screenshots, requests screen-recording permission,
 or accesses the network.
 
+Core tests use a generated corpus of synthetic developer screenshots with machine-readable ground
+truth. To regenerate it after changing a scenario, run the sandboxed generator:
+
+```sh
+make fixtures
+```
+
+See [Synthetic screenshot fixtures](docs/TEST_FIXTURES.md) for the corpus layout, ground-truth
+schema, comparison helpers, and synthetic-value policy.
+
 ## Architecture
 
 ```text
 RedScreen/
 ├── App/                    # MenuBarExtra entry point and application actions
-└── UI/                     # Compact menu bar popover presentation
+└── UI/                     # Menu bar popover and on-demand document window
 RedScreenCore/
-├── Domain/                 # Framework-independent pipeline value types
-└── Services/               # Replaceable capabilities and security boundaries
+├── Domain/                 # Documents, geometry, and framework-independent value types
+├── Platform/               # ImageIO import, container integrity checks, Vision OCR
+└── Services/               # Import controller, secret detector, candidate composer
     ├── ImageImporting
     ├── TextRecognizing
     ├── SensitiveInformationDetecting
     ├── RedactionRendering
     └── ImageExporting
 RedScreenCoreTests/         # Core tests without launching SwiftUI
+├── Fixtures/               # Generated synthetic screenshots and ground truth
+└── FixtureSupport/         # Fixture schema, scenarios, renderer, loaders, and matchers
 RedScreenUITests/           # Launch and empty-state UI tests
+Tools/FixtureGenerator/     # Sandboxed generator for the synthetic fixture corpus
 ```
 
 The app target depends on `RedScreenCore`; the core module does not depend on SwiftUI. Future
@@ -127,6 +150,10 @@ the open document. See [Privacy boundaries and secure image lifecycle](docs/PRIV
 for the threat model, invariants, and operating-system limitations that later pipeline work must
 preserve.
 
+The immutable document model, canonical top-left pixel coordinate space, OCR origin conversion,
+aspect-fit presentation mapping, raster rounding policy, and Phase 1 service contracts are defined
+in [Redaction document and coordinate architecture](docs/DOCUMENT_AND_GEOMETRY.md).
+
 ## Privacy and security
 
 - All future screenshot processing is intended to happen locally.
@@ -138,13 +165,24 @@ preserve.
 - Production logging accepts predefined event identifiers and non-sensitive counts only.
 - No source image, OCR result, detection result, preview, or undo state is autosaved.
 - Import-to-export processing must not create an application-managed plaintext temporary image.
-- File access will be granted only through explicit user interaction in a later phase.
+- File access is granted only through explicit user interaction: the Open panel or drag-and-drop
+  (`com.apple.security.files.user-selected.read-only`). Imported files are read once into memory
+  and are never copied, cached, or added to recent documents.
 
 ## Current status
 
-Issues #1 and #2 establish the application architecture and executable privacy boundaries. The
-menu bar popover includes disabled Capture Screenshot and Import Screenshot actions, a disabled
-Settings placeholder, About, and Quit RedScreen. Image import, OCR, sensitive-information
-detection, redaction rendering, screenshot capture, settings, and image export remain out of scope
-until later issues.
+Issues #1 and #2 establish the application architecture and executable privacy boundaries.
+Issue #3 defines the shared document, geometry, and service contracts, and issue #4 adds the
+synthetic screenshot corpus and test utilities that later pipeline work is measured against.
+Issue #5 adds safe screenshot import: the Open panel and drag-and-drop lead to a validated,
+orientation-normalized, in-memory image shown in a document window (see
+[Screenshot import](docs/IMAGE_IMPORT.md)). Issue #6 adds on-device Apple Vision OCR with
+cancellation, stale-result rejection, and corpus accuracy gates (see
+[On-device text recognition](docs/TEXT_RECOGNITION.md)). Issue #7 adds context-sensitive
+developer secret detection (see [Developer secret detection](docs/SECRET_DETECTION.md)), and
+issue #8 composes findings into padded, reviewable redaction candidates with full pixel coverage
+on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.md)). Issue #9
+(RED-5) adds irreversible solid-pixel rendering into a new in-memory raster with exact opaque
+fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Wiring rendering into the review
+UI, screenshot capture, settings, and image export remain for later issues.
 

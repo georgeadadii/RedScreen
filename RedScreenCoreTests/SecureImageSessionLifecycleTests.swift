@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class SecureImageSessionLifecycleTests: XCTestCase {
-    func testSessionCreationReplacementAndReset() {
+    func testSessionCreationReplacementAndReset() throws {
         let lifecycle = SecureImageSessionLifecycle(logger: silentLogger)
         let first = lifecycle.createSession(sourceImage: ScreenshotImage(data: Data([0x01])))
 
@@ -13,25 +13,20 @@ final class SecureImageSessionLifecycleTests: XCTestCase {
         XCTAssertEqual(first.sourceImage?.data, Data([0x01]))
 
         XCTAssertTrue(lifecycle.storeDecodedPixels(DecodedPixels(bytes: Data([0x02])), for: first.id))
-        XCTAssertTrue(lifecycle.storeRecognizedText([RecognizedText(value: "private OCR")], for: first.id))
-        XCTAssertTrue(lifecycle.storeDetectedInformation([
-            DetectedSensitiveInformation(region: SensitiveRegion(), candidateValue: "secret")
-        ], for: first.id))
+        let document = try makeDocument(sourceIdentity: first.sourceIdentity, secret: "private OCR")
+        XCTAssertTrue(lifecycle.storeDocument(document, for: first.id))
         XCTAssertTrue(lifecycle.storePreview(ScreenshotImage(data: Data([0x03])), for: first.id))
         XCTAssertTrue(lifecycle.storeClipboardImage(ScreenshotImage(data: Data([0x04])), for: first.id))
-        XCTAssertTrue(lifecycle.appendUndoState(RedactionUndoState(redactedRegions: [SensitiveRegion()]), for: first.id))
 
         let replacement = lifecycle.createSession(sourceImage: ScreenshotImage(data: Data([0x05])))
 
         XCTAssertTrue(lifecycle.activeSession === replacement)
         XCTAssertNil(first.sourceImage)
         XCTAssertNil(first.decodedPixels)
-        XCTAssertTrue(first.recognizedText.isEmpty)
-        XCTAssertTrue(first.detectedInformation.isEmpty)
+        XCTAssertNil(first.redactionDocument)
         XCTAssertNil(first.previewImage)
         XCTAssertNil(first.clipboardImage)
-        XCTAssertTrue(first.undoHistory.isEmpty)
-        XCTAssertFalse(lifecycle.storeRecognizedText([RecognizedText(value: "stale")], for: first.id))
+        XCTAssertFalse(lifecycle.storeDocument(document, for: first.id))
 
         lifecycle.reset()
 
@@ -65,7 +60,7 @@ final class SecureImageSessionLifecycleTests: XCTestCase {
         XCTAssertNil(weakFirstSession)
     }
 
-    func testPrivacyLoggerContainsOnlyIdentifiersAndCounts() {
+    func testPrivacyLoggerContainsOnlyIdentifiersAndCounts() throws {
         let sink = RecordingPrivacyLogSink()
         let lifecycle = SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: sink))
         let rawOCR = "AKIA-RAW-OCR-SHOULD-NOT-APPEAR"
@@ -73,10 +68,11 @@ final class SecureImageSessionLifecycleTests: XCTestCase {
         let sensitiveFilename = "/Users/person/Top Secret Screenshot.png"
         let session = lifecycle.createSession(sourceImage: ScreenshotImage(data: Data([0x01])))
 
-        lifecycle.storeRecognizedText([RecognizedText(value: rawOCR)], for: session.id)
-        lifecycle.storeDetectedInformation([
-            DetectedSensitiveInformation(region: SensitiveRegion(), candidateValue: detectedSecret)
-        ], for: session.id)
+        let document = try makeDocument(
+            sourceIdentity: session.sourceIdentity,
+            secret: rawOCR + detectedSecret
+        )
+        lifecycle.storeDocument(document, for: session.id)
         lifecycle.reset()
 
         let serializedEntries = sink.entries
@@ -85,8 +81,7 @@ final class SecureImageSessionLifecycleTests: XCTestCase {
 
         XCTAssertEqual(sink.entries.map(\.event), [
             .sessionCreated,
-            .textRecognized,
-            .sensitiveInformationDetected,
+            .documentUpdated,
             .sessionReset
         ])
         XCTAssertFalse(serializedEntries.contains(rawOCR))
@@ -129,6 +124,24 @@ final class SecureImageSessionLifecycleTests: XCTestCase {
 
     private var silentLogger: PrivacySafeLogger {
         PrivacySafeLogger(sink: RecordingPrivacyLogSink())
+    }
+
+    private func makeDocument(
+        sourceIdentity: SourceImageIdentity,
+        secret: String
+    ) throws -> RedactionDocument {
+        let observation = OCRObservation(
+            text: secret,
+            boundingBox: try NormalizedRect(x: 0.1, y: 0.2, width: 0.3, height: 0.1),
+            boundingBoxOrigin: .topLeft,
+            confidence: try Confidence(0.9)
+        )
+        return try RedactionDocument(
+            sourceIdentity: sourceIdentity,
+            pixelDimensions: PixelDimensions(width: 100, height: 50),
+            observations: [observation],
+            processingState: .textRecognized
+        )
     }
 }
 

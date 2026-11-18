@@ -1,0 +1,265 @@
+{
+  "category" : "envFile",
+  "coordinateSpace" : "normalized-top-left",
+  "difficulties" : [
+    "multiColumn",
+    "nearbyBenign"
+  ],
+  "fontStyle" : "monospace",
+  "id" : "env-diff-columns-light-1x",
+  "pixelHeight" : 194,
+  "pixelWidth" : 640,
+  "scale" : 1,
+  "scenario" : "A light side-by-side diff of .env.example placeholders against .env.local values, so benign placeholders sit directly beside real-looking secrets.",
+  "schemaVersion" : 1,
+  "spans" : [
+    {
+      "expectation" : "benign",
+      "family" : "envAssignment",
+      "id" : "example-api-key",
+      "note" : "Placeholder value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.207896,
+            "x" : 0.129083,
+            "y" : 0.234194
+          },
+          "textBoxID" : "t02",
+          "utf16Length" : 17,
+          "utf16Offset" : 8
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "envAssignment",
+      "id" : "local-api-key",
+      "note" : "API key assignment value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.207896,
+            "x" : 0.597833,
+            "y" : 0.234194
+          },
+          "textBoxID" : "t03",
+          "utf16Length" : 17,
+          "utf16Offset" : 8
+        }
+      ]
+    },
+    {
+      "expectation" : "benign",
+      "family" : "credentialKeyword",
+      "id" : "example-db-pass",
+      "note" : "Placeholder value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.122292,
+            "x" : 0.129083,
+            "y" : 0.347596
+          },
+          "textBoxID" : "t04",
+          "utf16Length" : 10,
+          "utf16Offset" : 8
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "credentialKeyword",
+      "id" : "local-db-pass",
+      "note" : "Password assignment value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.171208,
+            "x" : 0.597833,
+            "y" : 0.347596
+          },
+          "textBoxID" : "t05",
+          "utf16Length" : 14,
+          "utf16Offset" : 8
+        }
+      ]
+    },
+    {
+      "expectation" : "sensitive",
+      "family" : "highEntropyContextual",
+      "id" : "local-signing-key",
+      "note" : "High-entropy value with key context",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.269041,
+            "x" : 0.64675,
+            "y" : 0.5744
+          },
+          "textBoxID" : "t09",
+          "utf16Length" : 22,
+          "utf16Offset" : 12
+        }
+      ]
+    },
+    {
+      "expectation" : "ambiguous",
+      "family" : "credentialKeyword",
+      "id" : "local-trace-token",
+      "note" : "Token keyword with a short value",
+      "segments" : [
+        {
+          "rect" : {
+            "height" : 0.078004,
+            "width" : 0.183437,
+            "x" : 0.64675,
+            "y" : 0.801204
+          },
+          "textBoxID" : "t12",
+          "utf16Length" : 15,
+          "utf16Offset" : 12
+        }
+      ]
+    }
+  ],
+  "syntheticTestData" : true,
+  "textBoxes" : [
+    {
+      "id" : "t00",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.14675,
+        "x" : 0.03125,
+        "y" : 0.120792
+      },
+      "text" : ".env.example"
+    },
+    {
+      "id" : "t01",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.281271,
+        "x" : 0.5,
+        "y" : 0.120792
+      },
+      "text" : ".env.local  # synthetic"
+    },
+    {
+      "id" : "t02",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.305729,
+        "x" : 0.03125,
+        "y" : 0.234194
+      },
+      "text" : "API_KEY=your-api-key-here"
+    },
+    {
+      "id" : "t03",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.305729,
+        "x" : 0.5,
+        "y" : 0.234194
+      },
+      "text" : "API_KEY=RSFAKE-key-6b2d91"
+    },
+    {
+      "id" : "t04",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.220125,
+        "x" : 0.03125,
+        "y" : 0.347596
+      },
+      "text" : "DB_PASS=<password>"
+    },
+    {
+      "id" : "t05",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.269041,
+        "x" : 0.5,
+        "y" : 0.347596
+      },
+      "text" : "DB_PASS=RSFAKE-db-0c7e"
+    },
+    {
+      "id" : "t06",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.342416,
+        "x" : 0.03125,
+        "y" : 0.460998
+      },
+      "text" : "SMTP_USER=mailer@example.com"
+    },
+    {
+      "id" : "t07",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.342416,
+        "x" : 0.5,
+        "y" : 0.460998
+      },
+      "text" : "SMTP_USER=mailer@example.com"
+    },
+    {
+      "id" : "t08",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.14675,
+        "x" : 0.03125,
+        "y" : 0.5744
+      },
+      "text" : "SIGNING_KEY="
+    },
+    {
+      "id" : "t09",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.415791,
+        "x" : 0.5,
+        "y" : 0.5744
+      },
+      "text" : "SIGNING_KEY=RSFAKEq9W3e7R1t5Y8u2I6"
+    },
+    {
+      "id" : "t10",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.134521,
+        "x" : 0.03125,
+        "y" : 0.687802
+      },
+      "text" : "DEBUG=false"
+    },
+    {
+      "id" : "t11",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.122292,
+        "x" : 0.5,
+        "y" : 0.687802
+      },
+      "text" : "DEBUG=true"
+    },
+    {
+      "id" : "t12",
+      "rect" : {
+        "height" : 0.078004,
+        "width" : 0.330187,
+        "x" : 0.5,
+        "y" : 0.801204
+      },
+      "text" : "TRACE_TOKEN=rsfake-ambig-01"
+    }
+  ],
+  "theme" : "light"
+}
