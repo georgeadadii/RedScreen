@@ -76,6 +76,18 @@ struct DocumentView: View {
                 .background(.orange.opacity(0.12))
             }
 
+            if controller.workflowState == .canceled, controller.document != nil {
+                HStack {
+                    Text("Processing canceled. No findings were checked.")
+                        .accessibilityIdentifier("processing-canceled")
+                    Spacer()
+                    Button("Retry") { controller.retryRecognition() }
+                        .accessibilityIdentifier("processing-retry")
+                }
+                .padding(12)
+                .background(.yellow.opacity(0.12))
+            }
+
             if controller.document != nil { reviewToolbar }
             HStack(spacing: 0) {
                 canvas
@@ -126,7 +138,12 @@ struct DocumentView: View {
                 dropZone
             }
             if controller.isImporting {
-                ProgressView("Importing…")
+                VStack(spacing: 10) {
+                    ProgressView("Importing…")
+                    Button("Cancel", action: controller.cancelProcessing)
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("import-cancel")
+                }
                     .padding(16)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
                     .accessibilityIdentifier("import-progress")
@@ -674,6 +691,13 @@ struct DocumentView: View {
         .padding(.vertical, 10)
     }
 
+    private var processingCancelButton: some View {
+        Button("Cancel", action: controller.cancelProcessing)
+            .controlSize(.small)
+            .keyboardShortcut(.cancelAction)
+            .accessibilityIdentifier("processing-cancel")
+    }
+
     @ViewBuilder
     private var recognitionStatusLabel: some View {
         switch controller.recognitionStatus {
@@ -688,6 +712,7 @@ struct DocumentView: View {
             .foregroundStyle(.secondary)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("recognition-status")
+            processingCancelButton
         case .recognized(let count):
             Text(count == 1 ? "1 text region" : "\(count) text regions")
                 .font(.callout.monospacedDigit())
@@ -711,6 +736,7 @@ struct DocumentView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("detection-status")
+            processingCancelButton
         case .detected(let likely, _):
             Text("\(likely) likely \(likely == 1 ? "secret" : "secrets") · \(controller.pendingReviewCount) to review")
                 .font(.callout.monospacedDigit())

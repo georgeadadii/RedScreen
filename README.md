@@ -187,5 +187,8 @@ on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.
 fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Issue #10 (RED-6) adds
 [manual review and editing](docs/REDACTION_REVIEW.md) with a gated flattened preview. Issue #11
 (RED-7) adds [saving and copying](docs/IMAGE_EXPORT.md) of the reviewed, flattened,
-metadata-scrubbed PNG. Screenshot capture and settings remain for later issues.
+metadata-scrubbed PNG. Issue #12 (RED-8) joins these stages into an explicit, cancelable
+[workflow state machine](docs/WORKFLOW.md) with end-to-end, privacy, and timing gates, and records
+the [Phase 1 readiness checklist](docs/PHASE1_READINESS.md). Screenshot capture and settings remain
+for later issues.
 
