@@ -24,7 +24,8 @@ pasteboard; retaining one document's state after opening another; applying an as
 detection result to the wrong document; exporting source pixels instead of rendered pixels; or
 introducing a network-capable dependency.
 
-Mitigations are an application-sandbox entitlement with no network entitlement, no network or
+Mitigations are an application-sandbox entitlement with no network entitlement and only
+user-selected read-only file access, no network or
 telemetry code, a single in-memory lifecycle owner, clearing every session-owned artifact on close
 or replacement, session-ID checks for asynchronous stage results, no lifecycle file-I/O API,
 closed-enum logging with counts only, no recent-document registration, and explicit user action for
@@ -51,7 +52,11 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    descriptions never enter the logging API.
 6. Processing remains on device. Do not add network entitlements, clients, telemetry, remote crash
    upload, cloud services, or network-capable dependencies.
-7. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
+7. Import reads only a file the user selected or dropped, once, into memory. It releases
+   security-scoped access before decoding, enforces byte and pixel budgets before allocating, and
+   keeps only the normalized pixels and their colour space. The encoded file and its metadata are
+   discarded. A failed import never replaces the open document.
+8. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
    pasteboard. Do not retain export destinations after the operation ends.
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a

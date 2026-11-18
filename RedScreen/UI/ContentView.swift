@@ -1,8 +1,13 @@
+import AppKit
 import SwiftUI
 
 struct MenuBarContentView: View {
+    let importScreenshot: () -> Void
+    let importDroppedItems: ([URL]) -> Void
     let showAbout: () -> Void
     let quit: () -> Void
+
+    @State private var isDropTargeted = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -16,11 +21,26 @@ struct MenuBarContentView: View {
                     systemImage: "camera.viewfinder",
                     identifier: "capture-screenshot-button"
                 )
-                unavailableAction(
-                    title: "Import Screenshot",
+                actionButton(
+                    title: "Import Screenshot…",
                     systemImage: "photo.badge.plus",
-                    identifier: "import-screenshot-button"
+                    identifier: "import-screenshot-button",
+                    action: {
+                        dismissPopover()
+                        importScreenshot()
+                    }
                 )
+                .keyboardShortcut("o")
+                .help("Open a PNG, JPEG, or HEIC screenshot, or drop one here.")
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isDropTargeted ? Color.accentColor.opacity(0.18) : .clear)
+                )
+                .dropDestination(for: URL.self) { urls, _ in
+                    dismissPopover()
+                    importDroppedItems(urls)
+                    return true
+                } isTargeted: { isDropTargeted = $0 }
             }
 
             Divider()
@@ -51,6 +71,11 @@ struct MenuBarContentView: View {
         }
         .padding(16)
         .frame(width: 300)
+    }
+
+    /// Closes the menu bar popover so it does not cover the document window.
+    private func dismissPopover() {
+        NSApplication.shared.keyWindow?.orderOut(nil)
     }
 
     private var header: some View {
