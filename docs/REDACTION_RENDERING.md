@@ -34,8 +34,8 @@ return or failure. Cancellation is checked before rendering, each filled row, an
 returning, so a cancelled operation cannot return a partial result. As with the existing image
 lifecycle, release is best effort; Swift `Data` does not promise cryptographic memory erasure.
 
-Review/controller integration and export encoding are separate issues. An exporter must encode
-this returned raster rather than the original source. The renderer does not change the session
+The controller wraps the result in a `FlattenedRedactedImage`, the only type the exporter and
+clipboard accept (see [Saving and copying redacted images](IMAGE_EXPORT.md)). The renderer does not change the session
 or its review state.
 
 ## Verification

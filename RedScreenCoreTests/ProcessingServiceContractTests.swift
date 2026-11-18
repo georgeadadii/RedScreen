@@ -64,5 +64,5 @@ private struct RendererStub: RedactionRenderer {
 }
 
 private struct ExporterStub: ImageExporter {
-    func export(_ redactedImage: ScreenshotImage, to destination: ExportDestination) async throws {}
+    func export(_ redactedImage: FlattenedRedactedImage, to destination: ExportDestination) async throws {}
 }

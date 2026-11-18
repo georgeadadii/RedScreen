@@ -261,7 +261,7 @@ final class TextRecognitionControllerTests: XCTestCase {
         controller.undoReview()
         XCTAssertEqual(controller.activeDocument?.candidates.last?.id, id)
 
-        let output = try await controller.renderReviewedImage()
+        let output = try await controller.renderReviewedImage().pixels
         let alpha = stride(from: 3, to: output.bytes.count, by: 4).map { output.bytes[$0] }
         for i in alpha.indices {
             XCTAssertEqual(alpha[i], (5..<8).contains(i % 12) ? 255 : 0)
@@ -279,6 +279,67 @@ final class TextRecognitionControllerTests: XCTestCase {
         controller.closeDocument()
         XCTAssertFalse(controller.canReview)
         XCTAssertFalse(controller.canRenderReviewedImage)
+    }
+
+    func testExportAndCopyAcceptOnlyTheCurrentReviewedRender() async throws {
+        let sink = EventSink()
+        let exporter = RecordingExporter()
+        let clipboard = RecordingClipboard()
+        let controller = ScreenshotImportController(
+            lifecycle: SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: EventSink())),
+            importer: SizedImporter(),
+            textRecognizer: FixedRecognizer(count: 1),
+            secretDetector: SlowDetector(),
+            candidateComposer: PendingReviewComposer(),
+            imageExporter: exporter,
+            clipboard: clipboard,
+            logger: PrivacySafeLogger(sink: sink)
+        )
+        await controller.importImage(from: url(width: 12)).value
+        await controller.currentRecognition?.value
+        await controller.currentDetection?.value
+        let pending = try XCTUnwrap(controller.activeDocument?.candidates.first)
+        XCTAssertTrue(controller.setReviewDisposition(.included, for: pending.id))
+        let destination = ExportDestination(url: URL(fileURLWithPath: "/synthetic/out.png"))
+
+        let reviewed = try await controller.renderReviewedImage()
+        XCTAssertTrue(controller.isCurrentReviewedImage(reviewed))
+        try await controller.exportReviewedImage(reviewed, to: destination)
+        try controller.copyReviewedImage(reviewed)
+        let exported = try XCTUnwrap(exporter.images.first)
+        XCTAssertEqual(exported.pixels, reviewed.pixels, "Export must write the reviewed render itself")
+        XCTAssertEqual(clipboard.images.first?.pixels, reviewed.pixels)
+        XCTAssertNotEqual(reviewed.pixels, controller.activePixels, "Output must not be the source raster")
+        XCTAssertEqual(exporter.destinations, [destination])
+
+        // Any edit makes the earlier render stale; it can no longer be saved or copied.
+        _ = try XCTUnwrap(controller.addManualRedaction(try ImageRect(x: 6, y: 0, width: 2, height: 1)))
+        XCTAssertFalse(controller.isCurrentReviewedImage(reviewed))
+        await XCTAssertThrowsAsync(try await controller.exportReviewedImage(reviewed, to: destination)) {
+            XCTAssertEqual($0 as? ImageExportError, .reviewChanged)
+        }
+        XCTAssertThrowsError(try controller.copyReviewedImage(reviewed)) {
+            XCTAssertEqual($0 as? ImageExportError, .reviewChanged)
+        }
+        controller.undoReview()
+        XCTAssertFalse(controller.isCurrentReviewedImage(reviewed), "Undo creates a new revision")
+
+        // Exporter failures surface as non-sensitive errors and are logged as events only.
+        let fresh = try await controller.renderReviewedImage()
+        exporter.failure = .writeFailed
+        await XCTAssertThrowsAsync(try await controller.exportReviewedImage(fresh, to: destination)) {
+            XCTAssertEqual($0 as? ImageExportError, .writeFailed)
+        }
+        controller.closeDocument()
+        XCTAssertThrowsError(try controller.copyReviewedImage(fresh)) {
+            XCTAssertEqual($0 as? ImageExportError, .reviewChanged)
+        }
+        XCTAssertEqual(exporter.images.count, 1)
+        XCTAssertEqual(clipboard.images.count, 1)
+        XCTAssertEqual(
+            sink.events.filter { $0.rawValue.hasPrefix("redacted_image") },
+            [.redactedImageSaved, .redactedImageCopied, .redactedImageSaveFailed]
+        )
     }
 
     // MARK: - Helpers
@@ -411,6 +472,48 @@ private struct SlowDetector: SecretDetector {
     func detectSecrets(in observations: [OCRObservation]) async throws -> [SecretDetection] {
         try? await Task.sleep(for: .milliseconds(200))
         return ContextualSecretDetector().detect(in: observations)
+    }
+}
+
+private final class RecordingExporter: ImageExporter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: [(FlattenedRedactedImage, ExportDestination)] = []
+    private var storedFailure: ImageExportError?
+
+    var images: [FlattenedRedactedImage] { lock.withLock { stored.map(\.0) } }
+    var destinations: [ExportDestination] { lock.withLock { stored.map(\.1) } }
+    var failure: ImageExportError? {
+        get { lock.withLock { storedFailure } }
+        set { lock.withLock { storedFailure = newValue } }
+    }
+
+    func export(_ redactedImage: FlattenedRedactedImage, to destination: ExportDestination) async throws {
+        if let failure { throw failure }
+        lock.withLock { stored.append((redactedImage, destination)) }
+    }
+}
+
+@MainActor
+private final class RecordingClipboard: RedactedImageClipboard {
+    var images: [FlattenedRedactedImage] = []
+
+    func copy(_ image: FlattenedRedactedImage) throws {
+        images.append(image)
+    }
+}
+
+@MainActor
+private func XCTAssertThrowsAsync(
+    _ expression: @autoclosure () async throws -> Void,
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    _ handler: (any Error) -> Void
+) async {
+    do {
+        try await expression()
+        XCTFail("Expected an error", file: file, line: line)
+    } catch {
+        handler(error)
     }
 }
 

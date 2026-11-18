@@ -41,6 +41,8 @@ public final class ScreenshotImportController {
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
     @ObservationIgnored private let secretDetector: (any SecretDetector)?
     @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
+    @ObservationIgnored private let imageExporter: (any ImageExporter)?
+    @ObservationIgnored private let clipboard: (any RedactedImageClipboard)?
     @ObservationIgnored private var detectionTask: Task<Void, Never>?
     @ObservationIgnored private var recognitionGeneration = 0
     @ObservationIgnored private var recognitionTask: Task<Void, Never>?
@@ -54,9 +56,13 @@ public final class ScreenshotImportController {
         textRecognizer: (any TextRecognizer)? = nil,
         secretDetector: (any SecretDetector)? = nil,
         candidateComposer: (any CandidateComposer)? = nil,
+        imageExporter: (any ImageExporter)? = nil,
+        clipboard: (any RedactedImageClipboard)? = nil,
         logger: PrivacySafeLogger = PrivacySafeLogger()
     ) {
         self.candidateComposer = candidateComposer
+        self.imageExporter = imageExporter
+        self.clipboard = clipboard
         self.lifecycle = lifecycle
         self.importer = importer
         self.textRecognizer = textRecognizer
@@ -123,7 +129,7 @@ public final class ScreenshotImportController {
 
     /// Returns only a flattened raster from the current reviewed revision. An edit, import, or
     /// session replacement while rendering invalidates the result.
-    public func renderReviewedImage() async throws -> DecodedPixels {
+    public func renderReviewedImage() async throws -> FlattenedRedactedImage {
         guard canRenderReviewedImage, let current = activeDocument, let pixels = activePixels,
               let sessionID = document?.sessionID else { throw ReviewRenderError.reviewRequired }
         let revision = reviewRevision
@@ -132,7 +138,50 @@ public final class ScreenshotImportController {
         try Task.checkCancellation()
         guard document?.sessionID == sessionID, revision == reviewRevision,
               importGeneration == generation, canRenderReviewedImage else { throw CancellationError() }
-        return result
+        return FlattenedRedactedImage(
+            renderedPixels: result,
+            sessionID: sessionID,
+            reviewRevision: revision,
+            importGeneration: importGeneration
+        )
+    }
+
+    /// Whether `image` was rendered from the open document's current, fully reviewed revision.
+    public func isCurrentReviewedImage(_ image: FlattenedRedactedImage) -> Bool {
+        canRenderReviewedImage && image.sessionID == document?.sessionID
+            && image.reviewRevision == reviewRevision && image.importGeneration == generation
+    }
+
+    /// Saves exactly `image`, the flattened render the user reviewed, to a user-selected file.
+    /// Refuses a render made before the latest edit, import, or close.
+    public func exportReviewedImage(
+        _ image: FlattenedRedactedImage,
+        to destination: ExportDestination
+    ) async throws {
+        guard let imageExporter else { throw ImageExportError.unavailable }
+        guard isCurrentReviewedImage(image) else { throw ImageExportError.reviewChanged }
+        do {
+            try await imageExporter.export(image, to: destination)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            logger.record(.redactedImageSaveFailed)
+            throw error as? ImageExportError ?? .writeFailed
+        }
+        logger.record(.redactedImageSaved)
+    }
+
+    /// Copies exactly `image` to the clipboard as rendered image data only.
+    public func copyReviewedImage(_ image: FlattenedRedactedImage) throws {
+        guard let clipboard else { throw ImageExportError.unavailable }
+        guard isCurrentReviewedImage(image) else { throw ImageExportError.reviewChanged }
+        do {
+            try clipboard.copy(image)
+        } catch {
+            logger.record(.redactedImageCopyFailed)
+            throw error as? ImageExportError ?? .clipboardFailed
+        }
+        logger.record(.redactedImageCopied)
     }
 
     private func applyReviewEdit(_ edit: (RedactionDocument) throws -> RedactionDocument) -> Bool {

@@ -17,8 +17,39 @@ final class AppModel {
             importer: ImageIOImageImporter(),
             textRecognizer: VisionTextRecognizer(),
             secretDetector: ContextualSecretDetector(),
-            candidateComposer: GeometricCandidateComposer()
+            candidateComposer: GeometricCandidateComposer(),
+            imageExporter: AtomicFileImageExporter(),
+            clipboard: PasteboardImageWriter()
         )
+    }
+
+    /// Asks for a destination and saves exactly `image`. Returns false if the user cancels.
+    ///
+    /// The suggested name is generic, never the source filename. The Save panel confirms any
+    /// replacement; only then is the exporter allowed to replace an existing file. The URL is not
+    /// retained after this call.
+    func saveRedactedImage(_ image: FlattenedRedactedImage) async throws -> Bool {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.png]
+        panel.nameFieldStringValue = "Redacted Screenshot.png"
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        panel.prompt = "Save"
+        panel.message = "Saves the flattened redacted image as PNG without the original's metadata."
+        let response: NSApplication.ModalResponse
+        if let window = documentWindowController?.window {
+            response = await withCheckedContinuation { continuation in
+                panel.beginSheetModal(for: window) { continuation.resume(returning: $0) }
+            }
+        } else {
+            response = panel.runModal()
+        }
+        guard response == .OK, let url = panel.url else { return false }
+        let replaces = FileManager.default.fileExists(atPath: url.path)
+        try await importController.exportReviewedImage(
+            image, to: ExportDestination(url: url, replacesExistingItem: replaces)
+        )
+        return true
     }
 
     /// Shows the document window and presents an Open panel for one PNG, JPEG, or HEIC file.

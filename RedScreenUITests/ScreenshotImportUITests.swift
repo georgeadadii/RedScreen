@@ -204,6 +204,8 @@ final class ScreenshotImportUITests: XCTestCase {
 
         let preview = app.buttons["review-preview"]
         XCTAssertFalse(preview.isEnabled)
+        XCTAssertFalse(app.buttons["export-copy"].exists, "Output actions require the flattened preview")
+        XCTAssertFalse(app.buttons["export-save"].exists)
         let pending = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Pending review")).firstMatch
         XCTAssertTrue(pending.exists)
         pending.click()
@@ -213,6 +215,51 @@ final class ScreenshotImportUITests: XCTestCase {
         expectation(for: NSPredicate(format: "label == %@", "Back to Review"), evaluatedWith: preview)
         waitForExpectations(timeout: 10)
         XCTAssertEqual(image.label, "Redacted preview")
+
+        // Copy places only the flattened render on the clipboard, as PNG image data.
+        NSPasteboard.general.clearContents()
+        let copy = app.buttons["export-copy"]
+        XCTAssertTrue(copy.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["export-save"].exists)
+        copy.click()
+        let status = app.staticTexts["export-status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertEqual(status.value as? String ?? status.label, "Copied the redacted image.")
+        let items = try XCTUnwrap(NSPasteboard.general.pasteboardItems)
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items.first?.types, [.png])
+        let png = try XCTUnwrap(NSPasteboard.general.data(forType: .png))
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(png as CFData, nil))
+        let copied = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        XCTAssertEqual(copied.width, dimensions.width)
+        XCTAssertEqual(copied.height, dimensions.height)
+        // The rectangle drawn from 25% to 40% of the image is opaque black in the copy.
+        let bitmap = NSBitmapImageRep(cgImage: copied)
+        let drawn = try XCTUnwrap(bitmap.colorAt(x: dimensions.width * 13 / 40, y: dimensions.height * 13 / 40))
+        XCTAssertEqual(drawn.redComponent, 0, accuracy: 0.01)
+        XCTAssertEqual(drawn.greenComponent, 0, accuracy: 0.01)
+        XCTAssertEqual(drawn.blueComponent, 0, accuracy: 0.01)
+        XCTAssertEqual(drawn.alphaComponent, 1, accuracy: 0.01)
+
+        // Save As writes the same flattened PNG through the sandboxed Save panel, without the
+        // source filename and without any EXIF or text chunk.
+        app.buttons["export-save"].click()
+        let saved = workDirectory.appendingPathComponent("ui-redacted.png")
+        chooseInSavePanel(saved)
+        expectation(for: NSPredicate(format: "value == %@", "Saved the redacted image."), evaluatedWith: status)
+        waitForExpectations(timeout: 10)
+        let file = try Data(contentsOf: saved)
+        XCTAssertEqual(file, png, "Saved and copied output are the same scrubbed encoding")
+        XCTAssertFalse(String(decoding: file, as: UTF8.self).contains("eXIf"))
+        XCTAssertFalse(String(decoding: file, as: UTF8.self).contains(fixture.deletingPathExtension().lastPathComponent))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: workDirectory.path).filter {
+            $0.hasPrefix("ui-redacted")
+        }, ["ui-redacted.png"])
+
+        // Returning to review removes every output action.
+        preview.click()
+        XCTAssertTrue(copy.waitForNonExistence(timeout: 5))
+        NSPasteboard.general.clearContents()
     }
 
     // MARK: - Helpers
@@ -236,6 +283,26 @@ final class ScreenshotImportUITests: XCTestCase {
         sleep(1)
         app.typeKey(.return, modifierFlags: [])
         XCTAssertTrue(sheet.waitForNonExistence(timeout: 10), "Open panel did not close")
+    }
+
+    /// Drives the Save panel: Go to Folder for the directory, then the file name.
+    private func chooseInSavePanel(_ url: URL) {
+        let sheet = app.sheets.firstMatch
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), "Save panel did not appear")
+        let name = sheet.textFields["saveAsNameTextField"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "Redacted Screenshot.png", "Suggested name must be generic")
+        sheet.typeKey("g", modifierFlags: [.command, .shift])
+        sleep(1)
+        app.typeText(url.deletingLastPathComponent().path)
+        sleep(1)
+        app.typeKey(.return, modifierFlags: [])
+        sleep(1)
+        name.click()
+        name.typeKey("a", modifierFlags: .command)
+        name.typeText(url.lastPathComponent)
+        sheet.buttons["Save"].click()
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 10), "Save panel did not close")
     }
 
     /// Width and height, in screenshot pixels, of the near-white region crossing the centre.

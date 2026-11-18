@@ -18,8 +18,17 @@ struct DocumentView: View {
     @State private var drag: ReviewDrag?
     @State private var draft: ImageRect?
     @State private var preview: CGImage?
+    /// The exact flattened raster shown as `preview`; the only thing Save and Copy may output.
+    @State private var previewOutput: FlattenedRedactedImage?
     @State private var previewTask: Task<Void, Never>?
     @State private var previewFailed = false
+    @State private var exportTask: Task<Void, Never>?
+    @State private var exportFeedback: ExportFeedback?
+
+    private struct ExportFeedback: Equatable {
+        let message: String
+        let isError: Bool
+    }
 
     private enum ReviewMode: String, CaseIterable {
         case select = "Select", draw = "Draw", pan = "Pan"
@@ -292,8 +301,73 @@ struct DocumentView: View {
             if previewTask != nil {
                 ProgressView("Rendering preview…").controlSize(.small)
             }
+            if let output = previewOutput {
+                exportControls(output)
+            }
         }
         .padding(10)
+    }
+
+    /// Final review gate: output actions exist only while the flattened result is on screen, and
+    /// they write that exact raster. There is no action that outputs the source.
+    @ViewBuilder
+    private func exportControls(_ output: FlattenedRedactedImage) -> some View {
+        Divider()
+        Text("Review the redacted image above. It is exactly what will be saved or copied.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("export-review-note")
+        Button("Save As…") { save(output) }
+            .keyboardShortcut("s", modifiers: [.command, .shift])
+            .disabled(exportTask != nil)
+            .accessibilityIdentifier("export-save")
+        Button("Copy Redacted Image") { copy(output) }
+            .keyboardShortcut("c", modifiers: [.command, .shift])
+            .disabled(exportTask != nil)
+            .accessibilityIdentifier("export-copy")
+        if let exportFeedback {
+            Text(exportFeedback.message)
+                .font(.caption)
+                .foregroundStyle(exportFeedback.isError ? Color.red : Color.secondary)
+                .accessibilityIdentifier("export-status")
+        }
+    }
+
+    private func save(_ output: FlattenedRedactedImage) {
+        exportFeedback = nil
+        exportTask = Task {
+            do {
+                if try await model.saveRedactedImage(output) {
+                    exportFeedback = ExportFeedback(message: "Saved the redacted image.", isError: false)
+                }
+            } catch is CancellationError {
+            } catch {
+                exportFeedback = ExportFeedback(message: Self.message(for: error, saving: true), isError: true)
+            }
+            exportTask = nil
+        }
+    }
+
+    private func copy(_ output: FlattenedRedactedImage) {
+        do {
+            try controller.copyReviewedImage(output)
+            exportFeedback = ExportFeedback(message: "Copied the redacted image.", isError: false)
+        } catch {
+            exportFeedback = ExportFeedback(message: Self.message(for: error, saving: false), isError: true)
+        }
+    }
+
+    /// Fixed, non-sensitive feedback: never a path, filename, or system error description.
+    private static func message(for error: any Error, saving: Bool) -> String {
+        switch error as? ImageExportError {
+        case .reviewChanged: "The review changed. Preview the redacted image again."
+        case .destinationExists: "A file with that name already exists. Choose another name."
+        case .invalidDestination: "Choose a file location to save to."
+        case .encodingFailed: "Could not create the image. Try again."
+        case .writeFailed: "Could not save to that location. Choose another location."
+        case .clipboardFailed: "Could not copy to the clipboard. Try again."
+        case .unavailable, nil: saving ? "Could not save the image." : "Could not copy the image."
+        }
     }
 
     private func selectCandidate(_ id: UUID) {
@@ -464,7 +538,9 @@ struct DocumentView: View {
         previewTask?.cancel()
         previewTask = nil
         preview = nil
+        previewOutput = nil
         previewFailed = false
+        exportFeedback = nil
     }
 
     private func cancelInteraction() {
@@ -482,9 +558,10 @@ struct DocumentView: View {
         previewFailed = false
         previewTask = Task {
             do {
-                let pixels = try await controller.renderReviewedImage()
+                let output = try await controller.renderReviewedImage()
                 guard !Task.isCancelled else { return }
-                preview = pixels.makeCGImage()
+                preview = output.pixels.makeCGImage()
+                previewOutput = preview == nil ? nil : output
                 previewFailed = preview == nil
                 mode = .pan
             } catch is CancellationError {

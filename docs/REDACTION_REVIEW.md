@@ -19,7 +19,8 @@ the original image pixels. Display backing scale does not change a rectangle's p
 **Preview Redacted Image** is available after processing and after explicitly including or
 excluding every pending candidate. It renders the reviewed document into a new flattened raster
 in memory. An edit or new import invalidates the preview. **Back to Review** returns to the
-editable source. RED-7 covers saving and copying the flattened output.
+editable source. While the preview is shown, **Save As…** and **Copy Redacted Image** output that
+exact raster; see [Saving and copying redacted images](IMAGE_EXPORT.md).
 
 The candidate list shows classification metadata and geometry warnings. It never displays the
 recognized value. The image is displayed by the app, without external previews or source-sharing

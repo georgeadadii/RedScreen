@@ -66,9 +66,14 @@ public protocol RedactionRenderer: Sendable {
         -> DecodedPixels
 }
 
-/// Writes only an already-rendered image to an explicitly selected destination.
+/// Writes only a flattened, reviewed render to an explicitly selected destination.
+///
+/// The parameter type cannot be built from source pixels outside RedScreenCore. Implementations
+/// must not leave a partial destination, must not replace an existing file unless
+/// `destination.replacesExistingItem`, must write no inherited metadata, and must not log or
+/// retain the destination.
 public protocol ImageExporter: Sendable {
-    func export(_ redactedImage: ScreenshotImage, to destination: ExportDestination) async throws
+    func export(_ redactedImage: FlattenedRedactedImage, to destination: ExportDestination) async throws
 }
 
 /// Explicit dependency container for the future local processing pipeline.
