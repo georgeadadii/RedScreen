@@ -166,8 +166,9 @@ in [Redaction document and coordinate architecture](docs/DOCUMENT_AND_GEOMETRY.m
 - No source image, OCR result, detection result, preview, or undo state is autosaved.
 - Import-to-export processing must not create an application-managed plaintext temporary image.
 - File access is granted only through explicit user interaction: the Open panel or drag-and-drop
-  (`com.apple.security.files.user-selected.read-only`). Imported files are read once into memory
-  and are never copied, cached, or added to recent documents.
+  for import and the Save panel for export (`com.apple.security.files.user-selected.read-write`).
+  Imported files are read once into memory and are never copied, cached, or added to recent
+  documents. Only the flattened, metadata-scrubbed redacted PNG is saved or copied.
 
 ## Current status
 
@@ -184,6 +185,7 @@ issue #8 composes findings into padded, reviewable redaction candidates with ful
 on the corpus (see [Redaction candidate composition](docs/CANDIDATE_COMPOSITION.md)). Issue #9
 (RED-5) adds irreversible solid-pixel rendering into a new in-memory raster with exact opaque
 fills (see [Redaction rendering](docs/REDACTION_RENDERING.md)). Issue #10 (RED-6) adds
-[manual review and editing](docs/REDACTION_REVIEW.md) with a gated flattened preview. Screenshot
-capture, settings, and image export remain for later issues.
+[manual review and editing](docs/REDACTION_REVIEW.md) with a gated flattened preview. Issue #11
+(RED-7) adds [saving and copying](docs/IMAGE_EXPORT.md) of the reviewed, flattened,
+metadata-scrubbed PNG. Screenshot capture and settings remain for later issues.
 

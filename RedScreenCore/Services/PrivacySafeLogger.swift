@@ -23,6 +23,10 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case detectionsNeedingReview = "detections_needing_review"
     case secretDetectionFailed = "secret_detection_failed"
     case candidatesComposed = "candidates_composed"
+    case redactedImageSaved = "redacted_image_saved"
+    case redactedImageSaveFailed = "redacted_image_save_failed"
+    case redactedImageCopied = "redacted_image_copied"
+    case redactedImageCopyFailed = "redacted_image_copy_failed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -93,6 +97,14 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("secret_detection_failed count=\(entry.count)")
         case .candidatesComposed:
             logger.info("candidates_composed count=\(entry.count)")
+        case .redactedImageSaved:
+            logger.info("redacted_image_saved count=\(entry.count)")
+        case .redactedImageSaveFailed:
+            logger.info("redacted_image_save_failed count=\(entry.count)")
+        case .redactedImageCopied:
+            logger.info("redacted_image_copied count=\(entry.count)")
+        case .redactedImageCopyFailed:
+            logger.info("redacted_image_copy_failed count=\(entry.count)")
         }
     }
 }

@@ -86,12 +86,16 @@ public final class DecodedPixels: Equatable, Sendable, CustomStringConvertible,
     public var debugDescription: String { description }
 }
 
+/// A user-selected file location. Not logged, persisted, or retained after the export ends.
 public struct ExportDestination: Equatable, Sendable, CustomStringConvertible,
     CustomDebugStringConvertible {
     public let url: URL
+    /// True only when the user explicitly confirmed replacing an existing file.
+    public let replacesExistingItem: Bool
 
-    public init(url: URL) {
+    public init(url: URL, replacesExistingItem: Bool = false) {
         self.url = url
+        self.replacesExistingItem = replacesExistingItem
     }
 
     public var description: String { "ExportDestination(<redacted>)" }

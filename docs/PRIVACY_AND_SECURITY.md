@@ -25,7 +25,7 @@ detection result to the wrong document; exporting source pixels instead of rende
 introducing a network-capable dependency.
 
 Mitigations are an application-sandbox entitlement with no network entitlement and only
-user-selected read-only file access, no network or
+user-selected file access (read for import, write only through the Save panel), no network or
 telemetry code, a single in-memory lifecycle owner, clearing every session-owned artifact on close
 or replacement, session-ID checks for asynchronous stage results, no lifecycle file-I/O API,
 closed-enum logging with counts only, no recent-document registration, and explicit user action for
@@ -63,7 +63,9 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    ranges instead of copying matched text, live only in the session document, and are logged as
    counts. Detector work is bounded to resist pathological input.
 10. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
-   pasteboard. Do not retain export destinations after the operation ends.
+   pasteboard. Do not retain export destinations after the operation ends. Output accepts only a
+   `FlattenedRedactedImage` from the current review revision, encoded with a PNG chunk allowlist
+   and saved atomically. See [Saving and copying redacted images](IMAGE_EXPORT.md).
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.
