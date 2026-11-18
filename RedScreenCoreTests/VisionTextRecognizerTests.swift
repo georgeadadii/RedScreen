@@ -29,6 +29,24 @@ final class VisionTextRecognizerTests: XCTestCase {
         XCTAssertFalse(request.automaticallyDetectsLanguage)
     }
 
+    // Temporary diagnostic: counts/IDs only, never recognized fixture text.
+    func testDiagnosesHostedOCRBackends() async throws {
+        let fixture = try FixtureLibrary.bundled().fixture(id: "private-key-block-light-2x")
+        let imported = try await ImageIOImageImporter().importImage(from: fixture.imageURL)
+        let image = try XCTUnwrap(imported.pixels.makeCGImage())
+        for revision in [VNRecognizeTextRequestRevision2, VNRecognizeTextRequestRevision3] {
+            for cpuOnly in [false, true] {
+                let request = VisionTextRecognizer().makeRequest()
+                request.revision = revision
+                request.usesCPUOnly = cpuOnly
+                try VNImageRequestHandler(cgImage: image, orientation: .up, options: [:]).perform([request])
+                let observations = (request.results ?? []).compactMap(VisionTextRecognizer.observation(from:))
+                let score = try Self.score(observations, against: fixture.groundTruth)
+                print("OCR backend diagnostic revision=\(revision) cpuOnly=\(cpuOnly) found=\(score.found)/\(score.total) missedIDs=\(score.missedBoxIDs)")
+            }
+        }
+    }
+
     // MARK: - Corpus accuracy
 
     func testRecognizesTheSyntheticCorpusWithinTolerances() async throws {
