@@ -64,8 +64,9 @@ because it is configured as an `LSUIElement` agent application, it does not appe
 Closing the popover leaves the utility running.
 
 Choose **Import Screenshot…** (or drop a PNG, JPEG, or HEIC file on it) to open a screenshot in
-the document window. Text is then recognized on device; the footer shows how many text regions
-were found and **Show Text Regions** outlines them. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
+the document window. Text is then recognized on device and checked for developer secrets: the
+footer shows how many text regions and likely secrets were found, **Highlight Findings** marks
+lines with findings (red: likely, orange: review), and **Show Text Regions** outlines all text. Synthetic screenshots to try are in `RedScreenCoreTests/Fixtures/images`.
 
 ## Install into Applications
 
@@ -117,7 +118,7 @@ RedScreen/
 RedScreenCore/
 ├── Domain/                 # Documents, geometry, and framework-independent value types
 ├── Platform/               # ImageIO import, container integrity checks, Vision OCR
-└── Services/               # Replaceable capabilities, import controller, security boundaries
+└── Services/               # Import controller, secret detector, security boundaries
     ├── ImageImporting
     ├── TextRecognizing
     ├── SensitiveInformationDetecting
@@ -173,7 +174,8 @@ Issue #5 adds safe screenshot import: the Open panel and drag-and-drop lead to a
 orientation-normalized, in-memory image shown in a document window (see
 [Screenshot import](docs/IMAGE_IMPORT.md)). Issue #6 adds on-device Apple Vision OCR with
 cancellation, stale-result rejection, and corpus accuracy gates (see
-[On-device text recognition](docs/TEXT_RECOGNITION.md)). Sensitive-information detection,
-redaction rendering, screenshot capture, settings, and image export remain out of scope until
-later issues.
+[On-device text recognition](docs/TEXT_RECOGNITION.md)). Issue #7 adds context-sensitive
+developer secret detection (see [Developer secret detection](docs/SECRET_DETECTION.md)).
+Candidate composition, redaction rendering, screenshot capture, settings, and image export remain
+out of scope until later issues.
 

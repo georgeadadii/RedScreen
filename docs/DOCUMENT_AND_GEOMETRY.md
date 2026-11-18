@@ -62,6 +62,9 @@ rectangles must fall inside the aspect-fit image content rather than a letterbox
 
 ## Candidate provenance and state
 
+`SecretDetection`s are stored in `RedactionDocument.detections`, validated against the
+document's observations, and cleared when observations change. Each locates its value by
+observation ID and UTF-16 range (see [Developer secret detection](SECRET_DETECTION.md)).
 `DetectionEvidence` stores a detector rule ID, confidence, and stable OCR observation IDs. It never
 copies the matched OCR string. This is sufficient to explain which observations and rule produced a
 candidate while keeping one copy of sensitive text in the document.

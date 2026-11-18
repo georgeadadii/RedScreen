@@ -146,6 +146,49 @@ final class TextRecognitionControllerTests: XCTestCase {
         XCTAssertTrue(serialized.contains("text_recognized=2"))
     }
 
+    func testSecretDetectionRunsAfterRecognitionAndStoresFindings() async throws {
+        let sink = EventSink()
+        let controller = ScreenshotImportController(
+            lifecycle: SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: EventSink())),
+            importer: SizedImporter(),
+            textRecognizer: FixedRecognizer(count: 2, text: "DATABASE_PASSWORD=RSFAKE-pg-7d1c9a42"),
+            secretDetector: ContextualSecretDetector(),
+            logger: PrivacySafeLogger(sink: sink)
+        )
+
+        await controller.importImage(from: url(width: 4)).value
+        await controller.currentRecognition?.value
+        await controller.currentDetection?.value
+
+        XCTAssertEqual(controller.detectionStatus, .detected(likely: 2, needsReview: 0))
+        let document = try XCTUnwrap(controller.activeDocument)
+        XCTAssertEqual(document.processingState, .secretsDetected)
+        XCTAssertEqual(document.detections.count, 2)
+        XCTAssertTrue(document.detections.allSatisfy { $0.family == .envAssignment })
+        let serialized = sink.entries.map { "\($0.event.rawValue)=\($0.count)" }.joined(separator: " ")
+        XCTAssertTrue(serialized.contains("sensitive_information_detected=2"))
+        XCTAssertTrue(serialized.contains("detections_needing_review=0"))
+        XCTAssertFalse(serialized.contains("RSFAKE"))
+    }
+
+    func testReplacingDocumentDiscardsPendingDetection() async throws {
+        let controller = ScreenshotImportController(
+            lifecycle: SecureImageSessionLifecycle(logger: PrivacySafeLogger(sink: EventSink())),
+            importer: SizedImporter(),
+            textRecognizer: FixedRecognizer(count: 1, text: "API_KEY=RSFAKE-key-6b2d91"),
+            secretDetector: SlowDetector()
+        )
+        await controller.importImage(from: url(width: 4)).value
+        await controller.currentRecognition?.value
+        let staleDetection = try XCTUnwrap(controller.currentDetection)
+
+        await controller.importImage(from: url(width: 9)).value
+        await staleDetection.value
+        XCTAssertNotEqual(controller.detectionStatus, .detected(likely: 1, needsReview: 0))
+        XCTAssertEqual(controller.activeDocument?.pixelDimensions.width, 9)
+        XCTAssertTrue(controller.activeDocument?.detections.isEmpty ?? false)
+    }
+
     // MARK: - Helpers
 
     private func url(width: Int) -> URL {
@@ -254,6 +297,14 @@ private actor GatedRecognizer: TextRecognizer {
 
     private func markCancelled(_ width: Int) {
         cancelled.insert(width)
+    }
+}
+
+/// Returns findings only after a delay, so a newer document can replace this one first.
+private struct SlowDetector: SecretDetector {
+    func detectSecrets(in observations: [OCRObservation]) async throws -> [SecretDetection] {
+        try? await Task.sleep(for: .milliseconds(200))
+        return ContextualSecretDetector().detect(in: observations)
     }
 }
 

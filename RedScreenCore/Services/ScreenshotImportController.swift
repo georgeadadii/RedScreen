@@ -25,10 +25,13 @@ public final class ScreenshotImportController {
     public private(set) var isImporting = false
     public private(set) var lastError: ImageImportError?
     public private(set) var recognitionStatus: TextRecognitionStatus = .idle
+    public private(set) var detectionStatus: SecretDetectionStatus = .idle
 
     @ObservationIgnored private let lifecycle: SecureImageSessionLifecycle
     @ObservationIgnored private let importer: any ImageImporter
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
+    @ObservationIgnored private let secretDetector: (any SecretDetector)?
+    @ObservationIgnored private var detectionTask: Task<Void, Never>?
     @ObservationIgnored private var recognitionGeneration = 0
     @ObservationIgnored private var recognitionTask: Task<Void, Never>?
     @ObservationIgnored private let logger: PrivacySafeLogger
@@ -39,11 +42,13 @@ public final class ScreenshotImportController {
         lifecycle: SecureImageSessionLifecycle,
         importer: any ImageImporter,
         textRecognizer: (any TextRecognizer)? = nil,
+        secretDetector: (any SecretDetector)? = nil,
         logger: PrivacySafeLogger = PrivacySafeLogger()
     ) {
         self.lifecycle = lifecycle
         self.importer = importer
         self.textRecognizer = textRecognizer
+        self.secretDetector = secretDetector
         self.logger = logger
     }
 
@@ -55,6 +60,9 @@ public final class ScreenshotImportController {
 
     /// The task running OCR for the open document, if any. Exposed so tests can await it.
     public var currentRecognition: Task<Void, Never>? { recognitionTask }
+
+    /// The task running secret detection for the open document, if any.
+    public var currentDetection: Task<Void, Never>? { detectionTask }
 
     /// The open document's normalized pixels, owned by the active session.
     public var activePixels: DecodedPixels? {
@@ -194,8 +202,11 @@ public final class ScreenshotImportController {
     private func cancelRecognition() {
         recognitionTask?.cancel()
         recognitionTask = nil
+        detectionTask?.cancel()
+        detectionTask = nil
         recognitionGeneration &+= 1
         recognitionStatus = .idle
+        detectionStatus = .idle
     }
 
     private func finishRecognition(
@@ -224,6 +235,7 @@ public final class ScreenshotImportController {
                 recognitionStatus = .recognized(observationCount: observations.count)
                 logger.record(.textRecognized, count: UInt(observations.count))
                 logger.record(.textRecognitionDuration, count: milliseconds)
+                startDetection(observations, token: token, sessionID: sessionID)
             } catch {
                 failRecognition(.recognitionFailed, current: current, sessionID: sessionID)
             }
@@ -238,6 +250,69 @@ public final class ScreenshotImportController {
                 sessionID: sessionID
             )
         }
+    }
+
+    // MARK: - Secret detection
+
+    private func startDetection(_ observations: [OCRObservation], token: Int, sessionID: UUID) {
+        guard let secretDetector else { return }
+        detectionStatus = .detecting
+        if let session = lifecycle.activeSession, session.id == sessionID,
+           let current = session.redactionDocument,
+           let detecting = try? current.replacingDetections([], processingState: .detectingSecrets) {
+            lifecycle.storeDocument(detecting, for: sessionID)
+        }
+        detectionTask = Task { [weak self] in
+            let result: Result<[SecretDetection], any Error>
+            do {
+                result = .success(try await secretDetector.detectSecrets(in: observations))
+            } catch {
+                result = .failure(error)
+            }
+            self?.finishDetection(result, token: token, sessionID: sessionID)
+        }
+    }
+
+    private func finishDetection(
+        _ result: Result<[SecretDetection], any Error>,
+        token: Int,
+        sessionID: UUID
+    ) {
+        guard token == recognitionGeneration,
+              let session = lifecycle.activeSession, session.id == sessionID,
+              let current = session.redactionDocument else {
+            return
+        }
+        detectionTask = nil
+        switch result {
+        case .success(let detections):
+            guard let detected = try? current.replacingDetections(detections) else {
+                failDetection(current: current, sessionID: sessionID)
+                return
+            }
+            lifecycle.storeDocument(detected, for: sessionID)
+            let likely = detections.filter { $0.assessment == .likely }.count
+            let review = detections.count - likely
+            detectionStatus = .detected(likely: likely, needsReview: review)
+            logger.record(.sensitiveInformationDetected, count: UInt(likely))
+            logger.record(.detectionsNeedingReview, count: UInt(review))
+        case .failure(let error):
+            if error is CancellationError {
+                detectionStatus = .idle
+                return
+            }
+            failDetection(current: current, sessionID: sessionID)
+        }
+    }
+
+    private func failDetection(current: RedactionDocument, sessionID: UUID) {
+        detectionStatus = .failed
+        if let failed = try? current.replacingDetections(
+            [], processingState: .failed(.detectionFailed)
+        ) {
+            lifecycle.storeDocument(failed, for: sessionID)
+        }
+        logger.record(.secretDetectionFailed)
     }
 
     private func failRecognition(

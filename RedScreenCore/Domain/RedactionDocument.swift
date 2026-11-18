@@ -10,6 +10,7 @@ public enum DomainModelError: Error, Equatable, Sendable {
     case invalidCandidateTransition
     case candidateNotFound
     case regionOutOfBounds
+    case spanOutOfBounds
 }
 
 /// Non-sensitive stable identity for an imported source. It never contains a filename or URL.
@@ -133,14 +134,43 @@ public struct DetectionEvidence: Equatable, Sendable {
 }
 
 /// Detector output before one or more observations are composed into a review candidate.
-public struct SecretDetection: Identifiable, Equatable, Sendable {
+///
+/// It locates the sensitive **value** (not its label) by observation identity and UTF-16 range,
+/// so no matched text is copied. Wrapped values have one span per observation.
+public struct SecretDetection: Identifiable, Equatable, Sendable, CustomStringConvertible,
+    CustomDebugStringConvertible {
     public let id: UUID
     public let evidence: DetectionEvidence
+    public let family: SecretFamily
+    public let severity: SecretSeverity
+    public let assessment: DetectionAssessment
+    public let spans: [DetectedTextSpan]
 
-    public init(id: UUID = UUID(), evidence: DetectionEvidence) {
+    public init(
+        id: UUID = UUID(),
+        evidence: DetectionEvidence,
+        family: SecretFamily,
+        severity: SecretSeverity,
+        assessment: DetectionAssessment,
+        spans: [DetectedTextSpan]
+    ) throws {
+        guard !spans.isEmpty else { throw DomainModelError.emptyEvidence }
+        guard Set(spans.map(\.observationID)).isSubset(of: Set(evidence.observationIDs)) else {
+            throw DomainModelError.unknownObservation
+        }
         self.id = id
         self.evidence = evidence
+        self.family = family
+        self.severity = severity
+        self.assessment = assessment
+        self.spans = spans
     }
+
+    public var description: String {
+        "SecretDetection(rule: \(evidence.ruleID.rawValue), family: \(family.rawValue), "
+            + "assessment: \(assessment), spans: \(spans.count))"
+    }
+    public var debugDescription: String { description }
 }
 
 /// The rectangle consumed by review and rendering for both generated and manual redactions.
@@ -241,6 +271,7 @@ public enum RedactionProcessingState: Equatable, Sendable {
     case recognizingText
     case textRecognized
     case detectingSecrets
+    case secretsDetected
     case readyForReview
     case rendering
     case readyToExport
@@ -256,6 +287,8 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
     public let sourceIdentity: SourceImageIdentity
     public let pixelDimensions: PixelDimensions
     public let observations: [OCRObservation]
+    /// Detector findings over `observations`. Cleared whenever observations are replaced.
+    public let detections: [SecretDetection]
     public let candidates: [RedactionCandidate]
     public let userEdits: [RedactionEdit]
     public let processingState: RedactionProcessingState
@@ -264,11 +297,13 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         sourceIdentity: SourceImageIdentity,
         pixelDimensions: PixelDimensions,
         observations: [OCRObservation] = [],
+        detections: [SecretDetection] = [],
         candidates: [RedactionCandidate] = [],
         userEdits: [RedactionEdit] = [],
         processingState: RedactionProcessingState = .imported
     ) throws {
         guard Set(observations.map(\.id)).count == observations.count,
+              Set(detections.map(\.id)).count == detections.count,
               Set(candidates.map(\.id)).count == candidates.count,
               Set(candidates.map(\.region.id)).count == candidates.count,
               Set(userEdits.map(\.id)).count == userEdits.count else {
@@ -276,6 +311,21 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         }
 
         let observationIDs = Set(observations.map(\.id))
+        let textLengths = Dictionary(
+            uniqueKeysWithValues: observations.map { ($0.id, $0.text.utf16.count) }
+        )
+        for detection in detections {
+            guard Set(detection.evidence.observationIDs).isSubset(of: observationIDs) else {
+                throw DomainModelError.unknownObservation
+            }
+            for span in detection.spans {
+                guard let length = textLengths[span.observationID],
+                      span.utf16Range.lowerBound >= 0,
+                      span.utf16Range.upperBound <= length else {
+                    throw DomainModelError.spanOutOfBounds
+                }
+            }
+        }
         for candidate in candidates {
             guard candidate.region.rect.isContained(in: pixelDimensions) else {
                 throw DomainModelError.regionOutOfBounds
@@ -294,6 +344,7 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         self.sourceIdentity = sourceIdentity
         self.pixelDimensions = pixelDimensions
         self.observations = observations
+        self.detections = detections
         self.candidates = candidates
         self.userEdits = userEdits
         self.processingState = processingState
@@ -313,6 +364,23 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         )
     }
 
+    /// Stores detector findings for the current observations. Clears candidates and edits,
+    /// which were derived from earlier findings.
+    public func replacingDetections(
+        _ detections: [SecretDetection],
+        processingState: RedactionProcessingState = .secretsDetected
+    ) throws -> RedactionDocument {
+        try RedactionDocument(
+            sourceIdentity: sourceIdentity,
+            pixelDimensions: pixelDimensions,
+            observations: observations,
+            detections: detections,
+            candidates: [],
+            userEdits: [],
+            processingState: processingState
+        )
+    }
+
     public func replacingCandidates(
         _ candidates: [RedactionCandidate],
         processingState: RedactionProcessingState = .readyForReview
@@ -321,6 +389,7 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
             sourceIdentity: sourceIdentity,
             pixelDimensions: pixelDimensions,
             observations: observations,
+            detections: detections,
             candidates: candidates,
             userEdits: [],
             processingState: processingState
@@ -346,6 +415,7 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
             sourceIdentity: sourceIdentity,
             pixelDimensions: pixelDimensions,
             observations: observations,
+            detections: detections,
             candidates: updatedCandidates,
             userEdits: userEdits + [edit],
             processingState: processingState
@@ -367,6 +437,7 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
             sourceIdentity: sourceIdentity,
             pixelDimensions: pixelDimensions,
             observations: observations,
+            detections: detections,
             candidates: candidates + [candidate],
             userEdits: userEdits + [edit],
             processingState: processingState
@@ -374,7 +445,8 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
     }
 
     public var description: String {
-        "RedactionDocument(source: \(sourceIdentity.rawValue), observations: \(observations.count), candidates: \(candidates.count))"
+        "RedactionDocument(source: \(sourceIdentity.rawValue), observations: \(observations.count), "
+            + "detections: \(detections.count), candidates: \(candidates.count))"
     }
     public var debugDescription: String { description }
 }

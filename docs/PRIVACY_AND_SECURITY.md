@@ -59,7 +59,10 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
 8. Text recognition runs on device with Apple Vision, language correction off and no custom
    words. Recognized text lives only in the session's `RedactionDocument`, is never logged or
    written, and results for a replaced or closed document are discarded.
-9. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
+9. Secret detection consumes OCR observations only. Findings reference observations and UTF-16
+   ranges instead of copying matched text, live only in the session document, and are logged as
+   counts. Detector work is bounded to resist pathological input.
+10. Copy and export are explicit user actions. Do not place unredacted pixels or detected text on the
    pasteboard. Do not retain export destinations after the operation ends.
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
