@@ -114,14 +114,14 @@
     },
     {
       "groundTruth" : "ground-truth/json-config-light-1x.json",
-      "groundTruthSHA256" : "41e926e10d611b15702ccd8dbb101ebc7e3f6b9dee07be4a142f7e6e2326590f",
+      "groundTruthSHA256" : "30d9e5dde11f20bb4737af743f071a7722ec370273c546541caa124a9197b8f5",
       "id" : "json-config-light-1x",
       "image" : "images/json-config-light-1x.png",
       "imageSHA256" : "c723e01f20a6a960d4d0047be4e86549392af1f61b611e2ecf22b200588645ee"
     },
     {
       "groundTruth" : "ground-truth/json-config-light-2x.json",
-      "groundTruthSHA256" : "e285ee4cc165fea92c094cdb280503f26959af0b1c2b9b6de8cee85d4383d572",
+      "groundTruthSHA256" : "d2fecd33039eb93512b54e137dde359207d18507eaf1263c79d470bb8009cd28",
       "id" : "json-config-light-2x",
       "image" : "images/json-config-light-2x.png",
       "imageSHA256" : "cb07c9c7febc5e8893ac97a394aaeebb472e6a31585dc60896185188f70429f0"
@@ -156,14 +156,14 @@
     },
     {
       "groundTruth" : "ground-truth/terminal-session-dark-1x.json",
-      "groundTruthSHA256" : "47d9500d9b4e1e9ddcd1022130ea7f96abc7c4d0049155448e8a7daad2dd08d3",
+      "groundTruthSHA256" : "e2a04f3fbe05669ec428924ff7a49672bc9fa3eaca17fac8e1e02a42577dc570",
       "id" : "terminal-session-dark-1x",
       "image" : "images/terminal-session-dark-1x.png",
       "imageSHA256" : "05dfe77a814e6787cd780cba3ec1bb9a8ebdf2165b93c63472f4c43d602f19c9"
     },
     {
       "groundTruth" : "ground-truth/terminal-session-dark-2x.json",
-      "groundTruthSHA256" : "236951dff7d883fbfe1ae4aa56fb08214d0523b8001947b7292f3fd836c4c399",
+      "groundTruthSHA256" : "b65b89b89d9cfaf532cb74d93c89601207f631281b9719af29562016eebef4c6",
       "id" : "terminal-session-dark-2x",
       "image" : "images/terminal-session-dark-2x.png",
       "imageSHA256" : "80808e01865be399bfdbdc67e273f79161e8859138db91352f1fe1ccb452ea3e"
@@ -184,14 +184,14 @@
     },
     {
       "groundTruth" : "ground-truth/yaml-config-low-contrast-1x.json",
-      "groundTruthSHA256" : "acae1e928b32e1cc6964d139cd13df18811154531615546db57297036b9caaea",
+      "groundTruthSHA256" : "4a94dbd376546598db619622643e1099b696ebde3acb5b2b4092efc2044486ef",
       "id" : "yaml-config-low-contrast-1x",
       "image" : "images/yaml-config-low-contrast-1x.png",
       "imageSHA256" : "ed6e1dd40594dda62378fcc2156621d07bbcc81abe470d4e01d54770a0d75dce"
     },
     {
       "groundTruth" : "ground-truth/yaml-config-low-contrast-2x.json",
-      "groundTruthSHA256" : "bb18e21ae974689edaddb5d697bcf8f6af96d4818434eb4a8ef20e0899a38853",
+      "groundTruthSHA256" : "c70dc38412cb04d156ef81482f58e93d32c7a6df5556b3d3d767a2fad5e6eb3f",
       "id" : "yaml-config-low-contrast-2x",
       "image" : "images/yaml-config-low-contrast-2x.png",
       "imageSHA256" : "48444b11980c487fb0d8e396ca969c6fc4011ffe6b05c44cbd5492fc535b2bd1"

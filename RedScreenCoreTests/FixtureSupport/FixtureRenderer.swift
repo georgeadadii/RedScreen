@@ -171,6 +171,18 @@ struct FixtureRenderer {
             )
             let width = Double(CTLineGetTypographicBounds(line, nil, nil, nil))
             let originX = Self.padding + block.x
+            // The text box covers visible text only: leading and trailing whitespace is excluded
+            // from its geometry, though it stays in `text` so offsets are unchanged.
+            guard let firstInk = text.utf16.firstIndex(where: { !Self.isSpace($0) }),
+                  let lastInk = text.utf16.lastIndex(where: { !Self.isSpace($0) }) else {
+                throw FixtureRenderError.emptyRun(scenario: scenario.name, row: block.row)
+            }
+            let inkStart = Double(CTLineGetOffsetForStringIndex(
+                line, text.utf16.distance(from: text.utf16.startIndex, to: firstInk), nil
+            ))
+            let inkEnd = Double(CTLineGetOffsetForStringIndex(
+                line, text.utf16.distance(from: text.utf16.startIndex, to: lastInk) + 1, nil
+            ))
             let top = Self.padding + Double(block.row) * lineHeight
             let baselineY = top + (lineHeight - (ascent + descent)) / 2 + ascent
             let boxY = baselineY - ascent
@@ -186,7 +198,7 @@ struct FixtureRenderer {
                 id: textBoxID,
                 text: text,
                 rect: normalized(
-                    x: originX, y: boxY, width: width, height: boxHeight,
+                    x: originX + inkStart, y: boxY, width: inkEnd - inkStart, height: boxHeight,
                     canvasWidth: canvasWidth, canvasHeight: canvasHeight
                 )
             ))
@@ -263,6 +275,10 @@ struct FixtureRenderer {
             canvasHeight: canvasHeight,
             lineHeight: lineHeight
         )
+    }
+
+    private static func isSpace(_ unit: UTF16.CodeUnit) -> Bool {
+        unit == 0x20 || unit == 0x09
     }
 
     private func makeFont(_ style: FixtureFontStyle) throws -> CTFont {

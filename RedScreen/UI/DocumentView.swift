@@ -9,6 +9,7 @@ struct DocumentView: View {
     @State private var displayImage: CGImage?
     @State private var isDropTargeted = false
     @State private var canvasSize: CGSize = .zero
+    @State private var showsTextRegions = false
 
     private var controller: ScreenshotImportController { model.importController }
 
@@ -16,6 +17,9 @@ struct DocumentView: View {
         VStack(spacing: 0) {
             if let error = controller.lastError {
                 errorBanner(error)
+            }
+            if case .failed(let error) = controller.recognitionStatus {
+                recognitionBanner(error)
             }
 
             ZStack {
@@ -59,7 +63,7 @@ struct DocumentView: View {
         }
         .frame(minWidth: 520, minHeight: 380)
         .task(id: controller.document?.sessionID) {
-            displayImage = controller.activePixels?.makeDisplayImage()
+            displayImage = controller.activePixels?.makeCGImage()
         }
     }
 
@@ -83,6 +87,11 @@ struct DocumentView: View {
             .interpolation(.high)
             .frame(width: fittedSize.width, height: fittedSize.height)
             .accessibilityIdentifier("document-image")
+            .overlay(alignment: .topLeading) {
+                if showsTextRegions {
+                    textRegionOverlay(dimensions: dimensions, fittedSize: fittedSize)
+                }
+            }
     }
 
     private var dropZone: some View {
@@ -119,7 +128,13 @@ struct DocumentView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+            recognitionStatusLabel
             Spacer()
+            if controller.document != nil {
+                Toggle("Show Text Regions", isOn: $showsTextRegions)
+                    .toggleStyle(.checkbox)
+                    .accessibilityIdentifier("show-text-regions-toggle")
+            }
             Button("Import…", action: model.chooseScreenshot)
                 .keyboardShortcut("o")
                 .accessibilityIdentifier("document-import-button")
@@ -129,6 +144,71 @@ struct DocumentView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var recognitionStatusLabel: some View {
+        switch controller.recognitionStatus {
+        case .idle:
+            EmptyView()
+        case .recognizing:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Recognizing text…")
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("recognition-status")
+        case .recognized(let count):
+            Text(count == 1 ? "1 text region" : "\(count) text regions")
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("recognition-status")
+        case .failed:
+            Text("Text recognition failed")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("recognition-status")
+        }
+    }
+
+    /// Outlines recognized text so the user can see what OCR found. Shows geometry only.
+    private func textRegionOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
+        let scale = fittedSize.width / Double(dimensions.width)
+        let rects = (controller.activeDocument?.observations ?? []).compactMap {
+            try? $0.imageRect(in: dimensions)
+        }
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(rects.enumerated()), id: \.offset) { _, rect in
+                Rectangle()
+                    .strokeBorder(Color.accentColor, lineWidth: 1.5)
+                    .background(Color.accentColor.opacity(0.12))
+                    .frame(width: rect.width * scale, height: rect.height * scale)
+                    .offset(x: rect.x * scale, y: rect.y * scale)
+            }
+        }
+        .frame(width: fittedSize.width, height: fittedSize.height, alignment: .topLeading)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func recognitionBanner(_ error: TextRecognitionError) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "text.viewfinder")
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+            Text(error.userMessage)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("recognition-error-message")
+            Spacer()
+            Button("Retry") { controller.retryRecognition() }
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("recognition-retry-button")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.orange.opacity(0.12))
     }
 
     private func errorBanner(_ error: ImageImportError) -> some View {
@@ -147,29 +227,5 @@ struct DocumentView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color.yellow.opacity(0.15))
-    }
-}
-
-extension DecodedPixels {
-    /// Wraps the session's pixel buffer for display without writing it anywhere.
-    func makeDisplayImage() -> CGImage? {
-        guard let layout,
-              let colorSpace = CGColorSpace(name: layout.colorSpace.cgName),
-              let provider = CGDataProvider(data: bytes as CFData) else {
-            return nil
-        }
-        return CGImage(
-            width: layout.dimensions.width,
-            height: layout.dimensions.height,
-            bitsPerComponent: 8,
-            bitsPerPixel: 32,
-            bytesPerRow: layout.bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
-            provider: provider,
-            decode: nil,
-            shouldInterpolate: true,
-            intent: .defaultIntent
-        )
     }
 }

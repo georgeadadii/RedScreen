@@ -32,7 +32,7 @@ private struct ImporterStub: ImageImporter {
 
 private struct RecognizerStub: TextRecognizer {
     func recognizeText(
-        in image: ScreenshotImage,
+        in pixels: DecodedPixels,
         dimensions: PixelDimensions
     ) async throws -> [OCRObservation] {
         []

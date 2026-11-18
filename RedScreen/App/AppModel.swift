@@ -14,7 +14,8 @@ final class AppModel {
     init() {
         importController = ScreenshotImportController(
             lifecycle: SecureImageSessionLifecycle(),
-            importer: ImageIOImageImporter()
+            importer: ImageIOImageImporter(),
+            textRecognizer: VisionTextRecognizer()
         )
     }
 

@@ -34,14 +34,15 @@ RedScreen uses three separate coordinate spaces:
 3. `PresentationRect` is framework-neutral UI geometry measured in view points with a top-left
    origin. `AspectFitGeometry` owns the scale and letterbox offsets. Domain and service types do
    not import SwiftUI, AppKit, Core Graphics, or Vision. Platform adapters in
-   `RedScreenCore/Platform` (such as the ImageIO importer) may use ImageIO and Core Graphics but
-   never AppKit or SwiftUI, and UI adapters convert presentation values at their boundary.
+   `RedScreenCore/Platform` (the ImageIO importer and Vision recognizer) may use ImageIO, Core
+   Graphics, and Vision but never AppKit or SwiftUI, and UI adapters convert presentation values at their boundary.
 
 Importers must normalize image orientation before publishing `PixelDimensions`. The ImageIO
 importer publishes `DecodedPixels` whose `PixelBufferLayout` describes an upright, top-left,
 tightly packed RGBA8 buffer in sRGB or Display P3 (see [Screenshot import](IMAGE_IMPORT.md)).
 Imported sessions keep these pixels as their source and do not retain the encoded file. OCR adapters must
-retain the OCR producer's normalized origin. Detection and composition convert observations into
+retain the OCR producer's normalized origin; the Vision recognizer records `.bottomLeft` for line
+boxes and their word segments (see [On-device text recognition](TEXT_RECOGNITION.md)). Detection and composition convert observations into
 canonical image rectangles. Review and rendering consume the same `RedactionRegion` model for both
 detector-generated and manual candidates.
 

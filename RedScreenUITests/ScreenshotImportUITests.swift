@@ -48,6 +48,15 @@ final class ScreenshotImportUITests: XCTestCase {
         )
         XCTAssertFalse(app.buttons["import-screenshot-button"].isHittable, "Popover stayed open")
 
+        // On-device OCR runs automatically and reports a count of text regions, never text.
+        let recognition = app.staticTexts["recognition-status"]
+        let recognized = NSPredicate(format: "value ENDSWITH 'text regions'")
+        expectation(for: recognized, evaluatedWith: recognition)
+        waitForExpectations(timeout: 20)
+        let regions = Int((recognition.value as? String ?? "").split(separator: " ").first ?? "")
+        XCTAssertGreaterThanOrEqual(regions ?? 0, 8, "Expected the fixture's lines to be found")
+        app.checkBoxes["show-text-regions-toggle"].click()
+
         // A corrupt file reports an actionable error and leaves the open document in place.
         let corrupt = workDirectory.appendingPathComponent("corrupt.png")
         try Data("synthetic corrupt image bytes".utf8).write(to: corrupt)

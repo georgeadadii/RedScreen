@@ -53,7 +53,8 @@ box by up to 2e-6. Convert with `FixtureRect.normalizedRect()` and
 `sourceOrigin: .topLeft`.
 
 - `textBoxes` — one per rendered line or table cell: ID, exact text, and the typographic box
-  (ascent to descent, origin to advance width). This is the OCR-level ground truth.
+  of its visible text (ascent to descent, first to last non-whitespace glyph; leading indentation
+  stays in `text` but not in the box). This is the OCR-level ground truth.
 - `spans` — labelled values with a detector `family`, an `expectation`, a short `note`, and one
   `segment` per text box the value occupies. Segments carry UTF-16 offsets into the box text and
   the value's own rectangle. Labels exclude surrounding keys, quotes, and separators so the
