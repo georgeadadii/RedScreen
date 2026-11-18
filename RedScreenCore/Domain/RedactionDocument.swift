@@ -11,6 +11,7 @@ public enum DomainModelError: Error, Equatable, Sendable {
     case candidateNotFound
     case regionOutOfBounds
     case spanOutOfBounds
+    case unknownDetection
 }
 
 /// Non-sensitive stable identity for an imported source. It never contains a filename or URL.
@@ -191,52 +192,116 @@ public enum RedactionDisposition: Equatable, Sendable {
     case manual
 }
 
+/// How a candidate's rectangles were derived. Review UIs should flag anything but `wordAligned`
+/// and `manual`.
+public enum CandidateGeometry: Int, Comparable, Equatable, Sendable {
+    /// The value starts and ends on OCR word boundaries; rectangles are word boxes.
+    case wordAligned = 0
+    /// The value is part of an OCR word or line; its extent was estimated from character
+    /// positions and widened by a safety margin.
+    case estimated = 1
+    /// No usable sub-line geometry: the whole OCR line is covered. Needs review.
+    case lineFallback = 2
+    /// Drawn by the user.
+    case manual = 3
+
+    public static func < (lhs: CandidateGeometry, rhs: CandidateGeometry) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
 /// One reviewable redaction. Generated candidates retain evidence; manual candidates do not.
+///
+/// A candidate may hold several rectangles (for example a value wrapped across lines). Review
+/// acts on the candidate as a whole; rendering covers every region of an included or manual
+/// candidate.
 public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStringConvertible,
     CustomDebugStringConvertible {
     public let id: UUID
-    public let region: RedactionRegion
-    public let evidence: DetectionEvidence?
+    public let regions: [RedactionRegion]
+    /// Combined provenance of every finding merged into this candidate. Empty for manual ones.
+    public let evidence: [DetectionEvidence]
+    /// The `SecretDetection` IDs this candidate was composed from.
+    public let detectionIDs: [UUID]
+    public let geometry: CandidateGeometry
+    public let assessment: DetectionAssessment?
+    public let severity: SecretSeverity?
     public let disposition: RedactionDisposition
 
+    public init(
+        id: UUID = UUID(),
+        regions: [RedactionRegion],
+        evidence: [DetectionEvidence],
+        detectionIDs: [UUID] = [],
+        geometry: CandidateGeometry = .wordAligned,
+        assessment: DetectionAssessment = .likely,
+        severity: SecretSeverity = .high,
+        disposition: RedactionDisposition = .pending
+    ) throws {
+        guard disposition != .manual, geometry != .manual else {
+            throw DomainModelError.invalidCandidateDisposition
+        }
+        guard !regions.isEmpty, !evidence.isEmpty else { throw DomainModelError.emptyEvidence }
+        self.id = id
+        self.regions = regions
+        self.evidence = evidence
+        self.detectionIDs = detectionIDs
+        self.geometry = geometry
+        self.assessment = assessment
+        self.severity = severity
+        self.disposition = disposition
+    }
+
+    /// Convenience for a single-region generated candidate.
     public init(
         id: UUID = UUID(),
         region: RedactionRegion,
         evidence: DetectionEvidence,
         disposition: RedactionDisposition = .pending
     ) throws {
-        guard disposition != .manual else { throw DomainModelError.invalidCandidateDisposition }
-        self.id = id
-        self.region = region
-        self.evidence = evidence
-        self.disposition = disposition
+        try self.init(id: id, regions: [region], evidence: [evidence], disposition: disposition)
     }
 
     public static func manual(id: UUID = UUID(), region: RedactionRegion) -> RedactionCandidate {
-        RedactionCandidate(id: id, region: region)
+        RedactionCandidate(manualID: id, region: region)
     }
 
-    private init(id: UUID, region: RedactionRegion) {
-        self.id = id
-        self.region = region
-        evidence = nil
+    private init(manualID: UUID, region: RedactionRegion) {
+        id = manualID
+        regions = [region]
+        evidence = []
+        detectionIDs = []
+        geometry = .manual
+        assessment = nil
+        severity = nil
         disposition = .manual
     }
 
+    public var isManual: Bool { disposition == .manual }
+
+    /// True when the rectangles are an estimate or a whole-line fallback.
+    public var needsGeometryReview: Bool { geometry == .estimated || geometry == .lineFallback }
+
     public func settingDisposition(_ disposition: RedactionDisposition) throws -> RedactionCandidate {
-        guard evidence != nil, disposition != .manual else {
+        guard !isManual, disposition != .manual,
+              let assessment, let severity else {
             throw DomainModelError.invalidCandidateTransition
         }
         return try RedactionCandidate(
             id: id,
-            region: region,
-            evidence: evidence!,
+            regions: regions,
+            evidence: evidence,
+            detectionIDs: detectionIDs,
+            geometry: geometry,
+            assessment: assessment,
+            severity: severity,
             disposition: disposition
         )
     }
 
     public var description: String {
-        "RedactionCandidate(id: \(id), disposition: \(disposition))"
+        "RedactionCandidate(id: \(id), disposition: \(disposition), regions: \(regions.count), "
+            + "geometry: \(geometry))"
     }
     public var debugDescription: String { description }
 }
@@ -305,7 +370,8 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
         guard Set(observations.map(\.id)).count == observations.count,
               Set(detections.map(\.id)).count == detections.count,
               Set(candidates.map(\.id)).count == candidates.count,
-              Set(candidates.map(\.region.id)).count == candidates.count,
+              Set(candidates.flatMap { $0.regions.map(\.id) }).count
+                == candidates.map(\.regions.count).reduce(0, +),
               Set(userEdits.map(\.id)).count == userEdits.count else {
             throw DomainModelError.duplicateIdentifier
         }
@@ -326,13 +392,18 @@ public struct RedactionDocument: Equatable, Sendable, CustomStringConvertible,
                 }
             }
         }
+        let detectionIDs = Set(detections.map(\.id))
         for candidate in candidates {
-            guard candidate.region.rect.isContained(in: pixelDimensions) else {
+            guard candidate.regions.allSatisfy({ $0.rect.isContained(in: pixelDimensions) }) else {
                 throw DomainModelError.regionOutOfBounds
             }
-            if let evidence = candidate.evidence,
-               !Set(evidence.observationIDs).isSubset(of: observationIDs) {
+            guard candidate.evidence.allSatisfy({
+                Set($0.observationIDs).isSubset(of: observationIDs)
+            }) else {
                 throw DomainModelError.unknownObservation
+            }
+            guard Set(candidate.detectionIDs).isSubset(of: detectionIDs) else {
+                throw DomainModelError.unknownDetection
             }
         }
 

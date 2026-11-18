@@ -206,28 +206,28 @@ struct DocumentView: View {
         }
     }
 
-    /// Marks lines containing findings: red for likely secrets, orange for review. The precise
-    /// value rectangles arrive with candidate composition (issue #8); this shows the lines only.
+    /// Draws composed redaction candidates: filled red for included ones, orange outlines for
+    /// ones awaiting review, dashed where the geometry is estimated or a whole-line fallback.
     private func findingOverlay(dimensions: PixelDimensions, fittedSize: CGSize) -> some View {
         let scale = fittedSize.width / Double(dimensions.width)
-        let document = controller.activeDocument
-        var assessments: [OCRObservation.ID: DetectionAssessment] = [:]
-        for detection in document?.detections ?? [] {
-            for id in detection.evidence.observationIDs where assessments[id] != .likely {
-                assessments[id] = detection.assessment
+        let marks: [(rect: ImageRect, included: Bool, estimated: Bool)] =
+            (controller.activeDocument?.candidates ?? []).flatMap { candidate in
+                candidate.regions.map {
+                    ($0.rect, candidate.disposition == .included || candidate.isManual,
+                     candidate.needsGeometryReview)
+                }
             }
-        }
-        let marks: [(rect: ImageRect, likely: Bool)] = (document?.observations ?? []).compactMap {
-            guard let assessment = assessments[$0.id],
-                  let rect = try? $0.imageRect(in: dimensions) else { return nil }
-            return (rect, assessment == .likely)
-        }
         return ZStack(alignment: .topLeading) {
             ForEach(Array(marks.enumerated()), id: \.offset) { _, mark in
-                let color: Color = mark.likely ? .red : .orange
+                let color: Color = mark.included ? .red : .orange
                 Rectangle()
-                    .strokeBorder(color, lineWidth: 2)
-                    .background(color.opacity(0.15))
+                    .fill(color.opacity(mark.included ? 0.35 : 0.12))
+                    .overlay(
+                        Rectangle().strokeBorder(
+                            color,
+                            style: StrokeStyle(lineWidth: 2, dash: mark.estimated ? [5, 3] : [])
+                        )
+                    )
                     .frame(width: mark.rect.width * scale, height: mark.rect.height * scale)
                     .offset(x: mark.rect.x * scale, y: mark.rect.y * scale)
             }

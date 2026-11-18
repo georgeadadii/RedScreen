@@ -69,8 +69,11 @@ observation ID and UTF-16 range (see [Developer secret detection](SECRET_DETECTI
 copies the matched OCR string. This is sufficient to explain which observations and rule produced a
 candidate while keeping one copy of sensitive text in the document.
 
+A candidate holds one or more `RedactionRegion`s (a wrapped value is one candidate with a
+rectangle per line), the combined `evidence` and `detectionIDs` of every merged finding, and a
+`geometry` quality flag (see [Redaction candidate composition](CANDIDATE_COMPOSITION.md)).
 Generated candidates transition among `pending`, `included`, and `excluded` while preserving their
-identity, region, and evidence. Manual candidates use the same `RedactionCandidate` and
+identity, regions, and evidence. Manual candidates use the same `RedactionCandidate` and
 `RedactionRegion` review/render model with disposition `manual` and no detector evidence. Manual
 candidates cannot masquerade as detector output, and generated candidates cannot transition to
 manual.
