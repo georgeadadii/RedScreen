@@ -168,10 +168,15 @@ final class SolidFillRedactionRendererTests: XCTestCase {
 
     private func pixels(_ dimensions: PixelDimensions, colorSpace: RenderingColorSpace) -> DecodedPixels {
         let layout = PixelBufferLayout(dimensions: dimensions, colorSpace: colorSpace)
-        let bytes = (0..<(dimensions.width * dimensions.height)).flatMap { i -> [UInt8] in
-            [UInt8(i % 61 + 1), UInt8(i % 47 + 1), UInt8(i % 31 + 1), 128]
+        var bytes = Data()
+        bytes.reserveCapacity(layout.byteCount)
+        for index in 0..<(dimensions.width * dimensions.height) {
+            bytes.append(UInt8(index % 61 + 1))
+            bytes.append(UInt8(index % 47 + 1))
+            bytes.append(UInt8(index % 31 + 1))
+            bytes.append(128)
         }
-        return DecodedPixels(bytes: Data(bytes), layout: layout)
+        return DecodedPixels(bytes: bytes, layout: layout)
     }
 
     private func document(_ dimensions: PixelDimensions, manual: [ImageRect] = []) throws -> RedactionDocument {
