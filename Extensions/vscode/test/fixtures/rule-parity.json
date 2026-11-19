@@ -1,0 +1,32 @@
+{
+  "description": "Synthetic cases both detectors must agree on by rule ID. Every value carries an RSFAKE or EXAMPLE marker. Lines and values are arrays of parts joined at runtime, so no file contains a contiguous credential shape. Lines are separated by newlines when a case has several.",
+  "positives": [
+    { "id": "github-token", "lines": [["export GITHUB_TOKEN=", "gh", "p_RSFAKE0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c"]], "value": ["gh", "p_RSFAKE0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c"], "rule": "provider.github-token" },
+    { "id": "gitlab-token", "lines": [["deploy token ", "gl", "pat-RSFAKE-a1b2c3d4e5f6g7h8i9"]], "value": ["gl", "pat-RSFAKE-a1b2c3d4e5f6g7h8i9"], "rule": "provider.gitlab-token" },
+    { "id": "slack-token", "lines": [["slack: ", "xo", "xb-RSFAKEonly-tokentext"]], "value": ["xo", "xb-RSFAKEonly-tokentext"], "rule": "provider.slack-token" },
+    { "id": "stripe-live-key", "lines": [["STRIPE=", "sk", "_live_RSFAKE0123456789abcd"]], "value": ["sk", "_live_RSFAKE0123456789abcd"], "rule": "provider.stripe-live-key" },
+    { "id": "npm-token", "lines": [["//registry.example.com/:_authToken ", "np", "m_RSFAKE0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c"]], "value": ["np", "m_RSFAKE0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c"], "rule": "provider.npm-token" },
+    { "id": "anthropic-key", "lines": [["key ", "sk", "-ant-RSFAKE-api03-abcdefghijklmnop"]], "value": ["sk", "-ant-RSFAKE-api03-abcdefghijklmnop"], "rule": "provider.anthropic-key" },
+    { "id": "google-api-key", "lines": [["maps ", "AI", "zaRSFAKE0123456789abcdefghijklmnopqrs"]], "value": ["AI", "zaRSFAKE0123456789abcdefghijklmnopqrs"], "rule": "provider.google-api-key" },
+    { "id": "aws-access-key-id-exported", "lines": [["export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"]], "value": ["AKIAIOSFODNN7EXAMPLE"], "rule": "provider.aws-access-key-id" },
+    { "id": "jwt", "lines": [["  ", "ey", "JhbGciOiJSUzI1NiJ9.", "ey", "JSU0ZBS0VfdXNlcl9pZCJ9.RSFAKEsignature0123"]], "value": ["ey", "JhbGciOiJSUzI1NiJ9.", "ey", "JSU0ZBS0VfdXNlcl9pZCJ9.RSFAKEsignature0123"], "rule": "provider.jwt" },
+    { "id": "connection-string-password", "lines": [["DATABASE_URL=postgres://app:", "RSFAKE-pg-pass-42", "@db.example.com:5432/app"]], "value": ["RSFAKE-pg-pass-42"], "rule": "connection-string.password" },
+    { "id": "bearer-token", "lines": [["Authorization: Bearer ", "RSFAKEbearer0123456789abc"]], "value": ["RSFAKEbearer0123456789abc"], "rule": "bearer.token" },
+    { "id": "env-password", "lines": [["DATABASE_PASSWORD=RSFAKE-pg-7d1c9a42"]], "value": ["RSFAKE-pg-7d1c9a42"], "rule": "assignment.env" },
+    { "id": "json-client-secret", "lines": [["  \"client_secret\": \"RSFAKE-cs-9f8e7d6c5b4a\","]], "value": ["RSFAKE-cs-9f8e7d6c5b4a"], "rule": "assignment.credential" },
+    {
+      "id": "private-key-block",
+      "lines": [["-----BEGIN RSA PRIV", "ATE KEY-----"], ["RSFAKEkeybodyline0123456789abcdefABCDEF"], ["-----END RSA PRIV", "ATE KEY-----"]],
+      "value": ["-----BEGIN RSA PRIV", "ATE KEY-----", "RSFAKEkeybodyline0123456789abcdefABCDEF", "-----END RSA PRIV", "ATE KEY-----"],
+      "rule": "private-key.block"
+    }
+  ],
+  "negatives": [
+    { "id": "placeholder-changeme", "lines": [["API_KEY=changeme"]] },
+    { "id": "template-reference", "lines": [["PASSWORD=${DB_PASSWORD}"]] },
+    { "id": "angle-placeholder", "lines": [["token: <your-token>"]] },
+    { "id": "masked-token", "lines": [["  Token: ", "gh", "p_************************************"]] },
+    { "id": "url-without-password", "lines": [["git clone https://git@git.example.com/team/repo.git"]] },
+    { "id": "plain-prose", "lines": [["Rotate the signing key every ninety days."]] }
+  ]
+}
