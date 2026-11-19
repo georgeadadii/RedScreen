@@ -14,7 +14,9 @@ struct ProfileSettings: View {
     private var profiles: DetectionProfileLibrary { model.profiles }
 
     var body: some View {
-        Picker("Profile", selection: Binding(get: { profiles.selected.name }, set: choose)) {
+        // An explicit closure, not `set: choose`: Swift 6.3 (Xcode 26.6, used by CI) crashes while
+        // converting a main-actor method reference to the setter's function type.
+        Picker("Profile", selection: Binding(get: { profiles.selected.name }, set: { name in choose(name) })) {
             ForEach(profiles.allProfiles, id: \.name) { profile in
                 Text(profile.isBuiltIn ? "\(profile.name) (built-in)" : profile.name).tag(profile.name)
             }
