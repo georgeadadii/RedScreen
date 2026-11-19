@@ -17,6 +17,8 @@ public enum WorkflowFailure: Equatable, Sendable {
     /// Import failed and no document is open. With a document open, the failure is shown as
     /// `lastError` and the document keeps its own state.
     case importFailed(ImageImportError)
+    /// Capture failed and no document is open.
+    case captureFailed(CaptureError)
     case recognitionFailed(TextRecognitionError)
     case detectionFailed
 }
@@ -60,6 +62,8 @@ public final class ScreenshotImportController {
     public private(set) var document: ImportedDocumentSummary?
     public private(set) var isImporting = false
     public private(set) var lastError: ImageImportError?
+    /// The last recoverable capture failure. Cancellation is never reported here.
+    public private(set) var lastCaptureError: CaptureError?
     public private(set) var recognitionStatus: TextRecognitionStatus = .idle
     public private(set) var detectionStatus: SecretDetectionStatus = .idle
 
@@ -70,6 +74,7 @@ public final class ScreenshotImportController {
 
     @ObservationIgnored private let lifecycle: SecureImageSessionLifecycle
     @ObservationIgnored private let importer: any ImageImporter
+    @ObservationIgnored private let screenCapturer: (any ScreenCaptureService)?
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
     @ObservationIgnored private let secretDetector: (any SecretDetector)?
     @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
@@ -90,6 +95,7 @@ public final class ScreenshotImportController {
     public init(
         lifecycle: SecureImageSessionLifecycle,
         importer: any ImageImporter,
+        screenCapturer: (any ScreenCaptureService)? = nil,
         textRecognizer: (any TextRecognizer)? = nil,
         secretDetector: (any SecretDetector)? = nil,
         candidateComposer: (any CandidateComposer)? = nil,
@@ -104,6 +110,7 @@ public final class ScreenshotImportController {
         self.clipboard = clipboard
         self.lifecycle = lifecycle
         self.importer = importer
+        self.screenCapturer = screenCapturer
         self.textRecognizer = textRecognizer
         self.secretDetector = secretDetector
         self.logger = logger
@@ -113,6 +120,7 @@ public final class ScreenshotImportController {
         if isImporting { return .loading }
         guard document != nil else {
             if let lastError { return .failed(.importFailed(lastError)) }
+            if let lastCaptureError { return .failed(.captureFailed(lastCaptureError)) }
             return processingCanceled ? .canceled : .idle
         }
         if activeExports > 0 { return .exporting }
@@ -309,22 +317,51 @@ public final class ScreenshotImportController {
     /// been applied or discarded.
     @discardableResult
     public func importImage(from url: URL) -> Task<Void, Never> {
+        let importer = importer
+        return startLoading(.imported) { try await importer.importImage(from: url) }
+    }
+
+    public var canCaptureScreenshots: Bool { screenCapturer != nil }
+
+    /// Captures a user-chosen region, window, or display into a new document, through the same
+    /// path as an import: the open document is replaced only on success, a canceled capture
+    /// leaves everything as it was, and a newer import or capture supersedes this one.
+    @discardableResult
+    public func captureScreenshot(_ target: CaptureTarget) -> Task<Void, Never>? {
+        guard let screenCapturer else { return nil }
+        return startLoading(.captured) { try await screenCapturer.capture(target) }
+    }
+
+    /// Records a capture that ended before the capture service ran, such as an empty region
+    /// selection or a display change during selection. Cancellation is not reported.
+    public func reportCaptureFailure(_ error: CaptureError) {
+        guard error != .canceled else { return }
+        lastCaptureError = error
+        logger.record(.captureFailed)
+    }
+
+    private enum LoadSource { case imported, captured }
+
+    private func startLoading(
+        _ source: LoadSource,
+        _ work: @escaping @Sendable () async throws -> ImportedImage
+    ) -> Task<Void, Never> {
         importTask?.cancel()
         generation &+= 1
         let token = generation
         isImporting = true
         lastError = nil
+        lastCaptureError = nil
         if document == nil { processingCanceled = false }
 
-        let importer = importer
         let task = Task { [weak self] in
             let result: Result<ImportedImage, any Error>
             do {
-                result = .success(try await importer.importImage(from: url))
+                result = .success(try await work())
             } catch {
                 result = .failure(error)
             }
-            self?.finishImport(result, token: token)
+            self?.finishImport(result, source: source, token: token)
         }
         importTask = task
         return task
@@ -352,6 +389,7 @@ public final class ScreenshotImportController {
         cancelRecognition()
         isImporting = false
         lastError = nil
+        lastCaptureError = nil
         processingCanceled = false
         document = nil
         lifecycle.closeDocument()
@@ -359,6 +397,7 @@ public final class ScreenshotImportController {
 
     public func dismissError() {
         lastError = nil
+        lastCaptureError = nil
     }
 
     /// Runs text recognition again on the open document, for example after a failure.
@@ -370,7 +409,7 @@ public final class ScreenshotImportController {
         return startRecognition(for: session)
     }
 
-    private func finishImport(_ result: Result<ImportedImage, any Error>, token: Int) {
+    private func finishImport(_ result: Result<ImportedImage, any Error>, source: LoadSource, token: Int) {
         // A newer import or a close superseded this one; drop the result and its pixels.
         guard token == generation else { return }
         isImporting = false
@@ -386,13 +425,17 @@ public final class ScreenshotImportController {
                     pixelDimensions: imported.pixelDimensions,
                     colorSpace: imported.pixels.layout?.colorSpace ?? .sRGB
                 )
-                logger.record(.imageImported)
+                logger.record(source == .captured ? .screenCaptured : .imageImported)
                 startRecognition(for: session)
             } catch {
                 reject(error as? ImageImportError ?? .corruptImage)
             }
         case .failure(let error):
             if error is CancellationError { return }
+            if source == .captured {
+                reportCaptureFailure(error as? CaptureError ?? .failed)
+                return
+            }
             reject(error as? ImageImportError ?? .unreadable)
         }
     }

@@ -66,6 +66,10 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    pasteboard. Do not retain export destinations after the operation ends. Output accepts only a
    `FlattenedRedactedImage` from the current review revision, encoded with a PNG chunk allowlist
    and saved atomically. See [Saving and copying redacted images](IMAGE_EXPORT.md).
+11. Screen capture is user-initiated only and requires only Screen Recording permission. It
+   captures exactly the chosen region, window, or display as a single frame, excludes
+   RedScreen's own windows, writes no file, and never stores or logs window titles, app names,
+   or thumbnails. See [Native screen capture](SCREEN_CAPTURE.md).
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.
