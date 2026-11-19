@@ -6,6 +6,10 @@ import SwiftUI
 /// Using AppKit here keeps the menu bar app window-free at launch and lets the window opt out of
 /// state restoration, so no screenshot-bearing window state is written by the system. Closing the
 /// window closes the document and clears its session.
+///
+/// While the window is open RedScreen becomes a regular app, so its menu bar (including the
+/// Capture menu and Settings) is available from the keyboard; it returns to a menu bar utility
+/// when the window closes.
 @MainActor
 final class DocumentWindowController: NSObject, NSWindowDelegate {
     let window: NSWindow
@@ -34,11 +38,13 @@ final class DocumentWindowController: NSObject, NSWindowDelegate {
     }
 
     func present() {
+        NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
 
     func windowWillClose(_ notification: Notification) {
         model?.closeDocument()
+        NSApplication.shared.setActivationPolicy(.accessory)
     }
 }

@@ -83,7 +83,7 @@ final class CaptureGeometryTests: XCTestCase {
     }
 
     func testCaptureMessagesAreActionableAndNonIdentifying() {
-        let cases: [CaptureError] = [.canceled, .permissionDenied, .targetUnavailable, .protectedContent,
+        let cases: [CaptureError] = [.canceled, .permissionDenied, .permissionRestricted, .targetUnavailable, .protectedContent,
                                      .displayConfigurationChanged, .emptyRegion, .tooLarge, .failed]
         for error in cases {
             XCTAssertFalse(error.userMessage.isEmpty)

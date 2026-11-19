@@ -1,11 +1,15 @@
 # Native screen capture
 
-Choose **Capture Screenshot** in the menu bar, or **Capture** in the document window, then pick
-**Region…**, **Window…**, or **Display**. The captured pixels go straight into the Phase 1 review
-flow. No screenshot file is written.
+Choose **Capture Screenshot** in the menu bar, **Capture** in the document window, or the
+**Capture** menu in the app menu bar (Region ⌥⌘1, Window ⌥⌘2, Display ⌥⌘3), then pick **Region…**,
+**Window…**, or **Display**. The optional [global shortcut](CAPTURE_SHORTCUT.md) starts a region
+selection from any app. The captured pixels go straight into the Phase 1 review flow. No
+screenshot file is written.
 
-- **Region:** the document window hides, and every display is dimmed. Drag a rectangle, then
-  release to capture. Press Escape or right-click to cancel.
+- **Region:** the document window hides, every display is dimmed, and a hint shows the modes.
+  Drag a rectangle, then release to capture. Press Return (or D) to capture the whole display
+  under the pointer, W to choose a window instead, or Escape (or right-click) to cancel. The
+  overlay is live dimming only: nothing on screen is captured or kept to draw it.
 - **Window:** pick an on-screen window of another app from a menu at the pointer. Window titles
   and app names appear only in that menu and are never stored or logged.
 - **Display:** captures the only display directly. With several displays, it offers a menu of
@@ -48,9 +52,9 @@ in sRGB.
 
 ## Permission and privacy
 
-- **Permission:** only Screen Recording permission is needed. RedScreen checks it when the user
-  starts a capture, and macOS shows its prompt once. If access is denied, the error banner offers
-  **Open Settings**.
+- **Permission:** only Screen Recording permission is needed. It is requested only when the user
+  starts a capture, at most once, and guidance is shown for each state. See
+  [Capture shortcut and permission](CAPTURE_SHORTCUT.md#screen-recording-permission).
 - **What is captured:** RedScreen's own windows are always excluded, and the selection panels set
   `sharingType = .none`. The cursor is not captured.
 - **No disk or logs:** the frame is normalized in memory and handed to the session. The capture
@@ -62,7 +66,8 @@ in sRGB.
 | Case | Result |
 | --- | --- |
 | Escape, right-click, dismissed menu, or task canceled | Nothing changes and no message is shown. |
-| Permission not granted | `permissionDenied`, with a Settings link. |
+| Permission not granted | `permissionDenied`, with **Open System Settings** and **Check Again**. |
+| Capture refused although access is granted, as a policy does | `permissionRestricted`, with no Settings link. |
 | Window closed or display removed | `targetUnavailable` |
 | Displays change during region selection | `displayConfigurationChanged` |
 | Protected window, which returns no visible pixels | `protectedContent` |

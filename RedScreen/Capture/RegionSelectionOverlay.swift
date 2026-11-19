@@ -1,22 +1,38 @@
 import AppKit
 import RedScreenCore
 
-/// Lets the user drag out a capture region across any display.
+/// What the user chose in the selection overlay.
+enum CaptureSelection: Equatable {
+    /// A dragged rectangle in Core Graphics global points.
+    case region(CGRect)
+    /// Return or D: the whole display under the pointer.
+    case display(id: UInt32)
+    /// W: switch to choosing a window from a menu.
+    case chooseWindow
+}
+
+/// Lets the user drag out a capture region across any display, or pick another mode by key.
 ///
-/// One borderless panel covers each screen. The panels are excluded from capture
+/// One borderless panel covers each screen and shows the mode hint. The panels are live dimming
+/// only: nothing on screen is captured or kept to draw them, they are excluded from capture
 /// (`sharingType = .none`), never become the main window, and close as soon as the selection
 /// ends. Escape or a right-click cancels; a display change ends the selection with
-/// `.displayConfigurationChanged`. The result is in Core Graphics global points.
+/// `.displayConfigurationChanged`.
+///
+/// Return (or D) captures the display under the pointer and W switches to window choice, so a
+/// capture can be made entirely from the keyboard and with VoiceOver.
 @MainActor
 final class RegionSelectionOverlay {
+    static let hint = "Drag to capture a region. Return: whole display · W: choose a window · Esc: cancel"
+
     private var panels: [NSPanel] = []
-    private var continuation: CheckedContinuation<Result<CGRect, CaptureError>, Never>?
+    private var continuation: CheckedContinuation<Result<CaptureSelection, CaptureError>, Never>?
     private var screenObserver: (any NSObjectProtocol)?
     private var previousActivationPolicy: NSApplication.ActivationPolicy?
     fileprivate var anchor: NSPoint?
     fileprivate var current: NSPoint?
 
-    static func select() async -> Result<CGRect, CaptureError> {
+    static func select() async -> Result<CaptureSelection, CaptureError> {
         let overlay = RegionSelectionOverlay()
         return await withCheckedContinuation { continuation in
             overlay.begin(continuation)
@@ -30,7 +46,7 @@ final class RegionSelectionOverlay {
                       width: abs(anchor.x - current.x), height: abs(anchor.y - current.y))
     }
 
-    private func begin(_ continuation: CheckedContinuation<Result<CGRect, CaptureError>, Never>) {
+    private func begin(_ continuation: CheckedContinuation<Result<CaptureSelection, CaptureError>, Never>) {
         self.continuation = continuation
         guard !NSScreen.screens.isEmpty else {
             finish(.failure(.targetUnavailable))
@@ -48,7 +64,7 @@ final class RegionSelectionOverlay {
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             panel.setFrame(screen.frame, display: false)
             panel.contentView = SelectionView(overlay: self)
-            panel.setAccessibilityLabel("Screen region selection. Drag to select an area. Press Escape to cancel.")
+            panel.setAccessibilityLabel("Screen capture selection. \(Self.hint)")
             panels.append(panel)
             panel.orderFrontRegardless()
         }
@@ -75,14 +91,28 @@ final class RegionSelectionOverlay {
             return
         }
         let rect = CaptureGeometry.coreGraphicsRect(fromAppKit: selection, mainDisplayHeight: main.frame.height)
-        finish(.success(rect))
+        finish(.success(.region(rect)))
+    }
+
+    fileprivate func captureDisplayUnderPointer() {
+        let pointer = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(pointer, $0.frame, false) } ?? NSScreen.main
+        guard let id = screen?.displayID else {
+            finish(.failure(.targetUnavailable))
+            return
+        }
+        finish(.success(.display(id: id)))
+    }
+
+    fileprivate func chooseWindow() {
+        finish(.success(.chooseWindow))
     }
 
     fileprivate func cancel() {
         finish(.failure(.canceled))
     }
 
-    private func finish(_ result: Result<CGRect, CaptureError>) {
+    private func finish(_ result: Result<CaptureSelection, CaptureError>) {
         guard let continuation else { return }
         self.continuation = nil
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
@@ -105,6 +135,20 @@ private final class SelectionView: NSView {
     init(overlay: RegionSelectionOverlay) {
         self.overlay = overlay
         super.init(frame: .zero)
+
+        let hint = NSTextField(labelWithString: RegionSelectionOverlay.hint)
+        hint.textColor = .white
+        hint.font = .systemFont(ofSize: NSFont.systemFontSize + 1, weight: .medium)
+        hint.drawsBackground = true
+        hint.backgroundColor = NSColor.black.withAlphaComponent(0.72)
+        hint.alignment = .center
+        hint.translatesAutoresizingMaskIntoConstraints = false
+        hint.setAccessibilityIdentifier("capture-selection-hint")
+        addSubview(hint)
+        NSLayoutConstraint.activate([
+            hint.centerXAnchor.constraint(equalTo: centerXAnchor),
+            hint.topAnchor.constraint(equalTo: topAnchor, constant: 64),
+        ])
     }
 
     @available(*, unavailable)
@@ -131,7 +175,12 @@ private final class SelectionView: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53 { overlay?.cancel() } else { super.keyDown(with: event) }
+        switch event.keyCode {
+        case 53: overlay?.cancel()  // Escape
+        case 36, 76, 2: overlay?.captureDisplayUnderPointer()  // Return, Enter, D
+        case 13: overlay?.chooseWindow()  // W
+        default: super.keyDown(with: event)
+        }
     }
 
     override func cancelOperation(_ sender: Any?) {

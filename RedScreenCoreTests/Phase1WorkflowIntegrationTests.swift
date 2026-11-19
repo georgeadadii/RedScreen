@@ -244,11 +244,20 @@ final class Phase1WorkflowIntegrationTests: XCTestCase {
         let forbidden = ["URLSession", "URLRequest", "NWConnection", "import Network", "CFNetwork", "WKWebView",
                          "UserDefaults", "NSUbiquitous", "CloudKit", "NSDocumentController", "noteNewRecentDocument",
                          "NSKeyedArchiver", "JSONEncoder", "print(", "NSLog("]
+        // The one exception: CapturePreferenceStore keeps two capture preferences (see
+        // testCapturePreferencesAreTheOnlyPersistedState).
+        let preferenceStore = "CapturePreferenceStore.swift"
         for source in sources {
             let text = try String(contentsOf: source, encoding: .utf8)
-            for token in forbidden {
+            for token in forbidden where !(token == "UserDefaults" && source.lastPathComponent == preferenceStore) {
                 XCTAssertFalse(text.contains(token), "\(source.lastPathComponent) uses \(token)")
             }
+        }
+
+        let store = try XCTUnwrap(sources.first { $0.lastPathComponent == preferenceStore })
+        let storeText = try String(contentsOf: store, encoding: .utf8)
+        for token in ["Data", "CGImage", "URL", "ImportedImage", "Observation", "Codable", "archive"] {
+            XCTAssertFalse(storeText.contains(token), "\(preferenceStore) must store only primitive preferences")
         }
 
         let entitlements = try XCTUnwrap(NSDictionary(contentsOf:

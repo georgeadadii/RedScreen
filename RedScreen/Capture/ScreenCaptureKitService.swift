@@ -6,7 +6,8 @@ import RedScreenCore
 /// Captures one user-chosen region, window, or display with ScreenCaptureKit's single-frame
 /// screenshot API. ScreenCaptureKit and permission types stay in the app target.
 ///
-/// - Only Screen Recording access is requested, and only when the user starts a capture.
+/// - Access is only checked here, never requested; `CapturePermissionModel` asks macOS once,
+///   when the user starts a capture.
 /// - RedScreen's own windows (document, popover, selection overlay) are always excluded.
 /// - `SCScreenshotManager` produces one frame and holds no stream open afterwards.
 /// - The frame is normalized in memory; nothing is written to disk and nothing identifying
@@ -112,11 +113,10 @@ struct ScreenCaptureKitService: ScreenCaptureService {
 
     // MARK: - Permission and errors
 
+    /// Checks access without prompting. The prompt is requested only by
+    /// `CapturePermissionModel.authorizeCapture()` when the user starts a capture.
     private static func requireScreenRecordingAccess() async throws {
-        if CGPreflightScreenCaptureAccess() { return }
-        // Shows the system prompt the first time; afterwards the user must allow it in Settings.
-        _ = CGRequestScreenCaptureAccess()
-        throw CaptureError.permissionDenied
+        guard CGPreflightScreenCaptureAccess() else { throw CaptureError.permissionDenied }
     }
 
     private static func map(_ error: any Error) -> CaptureError {
@@ -124,7 +124,9 @@ struct ScreenCaptureKitService: ScreenCaptureService {
         if let capture = error as? CaptureError { return capture }
         if let stream = error as? SCStreamError {
             switch stream.code {
-            case .userDeclined, .missingEntitlements: return .permissionDenied
+            // Refused although access is granted: a policy is blocking capture.
+            case .userDeclined: return CGPreflightScreenCaptureAccess() ? .permissionRestricted : .permissionDenied
+            case .missingEntitlements: return .permissionDenied
             case .userStopped: return .canceled
             case .noCaptureSource, .noDisplayList, .noWindowList: return .targetUnavailable
             default: return .failed
@@ -153,6 +155,13 @@ struct ScreenCaptureKitService: ScreenCaptureService {
         }
         return ids[0]
     }
+}
+
+/// macOS's Screen Recording check (never prompts) and request (prompts at most once per app).
+@MainActor
+final class SystemScreenRecordingAuthorizer: ScreenRecordingAuthorizing {
+    func isGranted() -> Bool { CGPreflightScreenCaptureAccess() }
+    func requestAccess() -> Bool { CGRequestScreenCaptureAccess() }
 }
 
 extension NSScreen {

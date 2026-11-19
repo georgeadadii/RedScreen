@@ -70,6 +70,13 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    captures exactly the chosen region, window, or display as a single frame, excludes
    RedScreen's own windows, writes no file, and never stores or logs window titles, app names,
    or thumbnails. See [Native screen capture](SCREEN_CAPTURE.md).
+12. Screen Recording access is requested only from a capture the user starts, and at most once;
+   after that RedScreen shows guidance instead of prompting. The optional global shortcut uses
+   Carbon hot keys, so it needs no Accessibility or Input Monitoring permission, is never
+   registered until the user turns it on, and never takes a combination macOS or another app
+   uses. The only persisted app state is `CapturePreferenceStore`: whether access was requested,
+   and the shortcut choice. A security test enforces that it is the only `UserDefaults` use. See
+   [Capture shortcut and permission](CAPTURE_SHORTCUT.md).
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.
