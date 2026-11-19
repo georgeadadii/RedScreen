@@ -113,6 +113,10 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue((app.staticTexts["permission-message"].value as? String ?? "").contains("Screen & System Audio Recording"))
         XCTAssertTrue(app.buttons["permission-open-settings"].exists)
         XCTAssertTrue(app.buttons["permission-check-again"].exists)
+        let askAgain = app.buttons["permission-request-again"]
+        XCTAssertTrue(askAgain.exists)
+        askAgain.click()
+        XCTAssertTrue(guidance.waitForExistence(timeout: 2), "Still denied: the guidance stays")
         XCTAssertFalse(app.descendants(matching: .any)["capture-selection-hint"].exists,
                        "No selection overlay without permission")
         XCTAssertFalse(app.descendants(matching: .any)["document-image"].exists)
@@ -127,6 +131,7 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue(guidance.waitForExistence(timeout: 10))
         XCTAssertTrue((app.staticTexts["permission-message"].value as? String ?? "").contains("administrator"))
         XCTAssertFalse(app.buttons["permission-open-settings"].exists)
+        XCTAssertFalse(app.buttons["permission-request-again"].exists, "Asking again cannot lift a policy")
     }
 
     @MainActor

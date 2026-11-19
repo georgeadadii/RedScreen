@@ -213,6 +213,22 @@ final class ScreenCaptureControllerTests: XCTestCase {
         XCTAssertEqual(sink.events.filter { $0 == .captureFailed }.count, 3)
     }
 
+    /// Once access is granted, the permission banner clears itself; other errors stay.
+    func testPermissionFailureClearsWhenAccessIsGranted() {
+        let controller = ScreenshotImportController(lifecycle: SecureImageSessionLifecycle(),
+                                                    importer: ImageIOImageImporter())
+        for error in [CaptureError.permissionDenied, .permissionRestricted] {
+            controller.reportCaptureFailure(error)
+            XCTAssertEqual(controller.workflowState, .failed(.captureFailed(error)))
+            controller.clearPermissionFailure()
+            XCTAssertNil(controller.lastCaptureError)
+            XCTAssertEqual(controller.workflowState, .idle)
+        }
+        controller.reportCaptureFailure(.targetUnavailable)
+        controller.clearPermissionFailure()
+        XCTAssertEqual(controller.lastCaptureError, .targetUnavailable, "Unrelated errors are kept")
+    }
+
     func testSelectionTimeFailuresAreReported() {
         let (controller, _) = makeController(FakeCapturer())
         controller.reportCaptureFailure(.displayConfigurationChanged)

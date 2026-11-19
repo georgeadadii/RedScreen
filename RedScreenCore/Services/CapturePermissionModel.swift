@@ -12,6 +12,9 @@ import Observation
 @Observable
 public final class CapturePermissionModel {
     public private(set) var state: ScreenRecordingPermission
+    /// Called when access becomes granted after not being granted, for example after the user
+    /// allows RedScreen in System Settings and returns or chooses Check Again.
+    @ObservationIgnored public var onGranted: (@MainActor () -> Void)?
 
     @ObservationIgnored private let authorizer: any ScreenRecordingAuthorizing
     @ObservationIgnored private let record: any PermissionRequestRecord
@@ -28,8 +31,10 @@ public final class CapturePermissionModel {
     public func refresh() {
         let granted = authorizer.isGranted()
         if granted { record.hasRequestedScreenRecording = true }
+        let previous = state
         state = Self.state(granted: granted, requested: record.hasRequestedScreenRecording,
                            restricted: isRestricted)
+        if state == .granted, previous != .granted { onGranted?() }
     }
 
     /// Called when the user starts a capture. Returns true if the capture may proceed.
@@ -49,6 +54,19 @@ public final class CapturePermissionModel {
         case .denied, .restricted:
             return false
         }
+    }
+
+    /// The user's explicit "Ask macOS Again". After the permission was reset or RedScreen was
+    /// removed from System Settings, macOS lists an app again only when it requests access, so
+    /// this asks once per click. macOS shows its prompt only if it has no decision on record;
+    /// otherwise nothing appears. Never called automatically. Returns whether access is granted.
+    @discardableResult
+    public func requestAgain() -> Bool {
+        guard state == .denied else { return state == .granted }
+        record.hasRequestedScreenRecording = true
+        let granted = authorizer.requestAccess()
+        refresh()
+        return granted && state == .granted
     }
 
     /// Records that capture was refused even though access looks granted, as a management

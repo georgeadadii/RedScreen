@@ -55,13 +55,21 @@ macOS only reports whether access is granted. RedScreen derives four states:
 | State | Meaning | What RedScreen shows |
 | --- | --- | --- |
 | Not determined | RedScreen has never asked. | Starting a capture asks macOS once, and macOS shows its prompt. |
-| Denied | RedScreen asked, and access is still off. | What is blocked, **Open System Settings** (the Screen & System Audio Recording pane), and **Check Again**. RedScreen doesn't prompt again. |
+| Denied | RedScreen asked, and access is still off. | What is blocked, **Open System Settings** (the Screen & System Audio Recording pane), **Ask macOS Again**, and **Check Again**. Starting a capture doesn't prompt again. |
 | Restricted | Access looks granted, but ScreenCaptureKit still refuses, as a management policy does. | An explanation that System Settings can't change this, and to ask an administrator. There is no Settings link. |
 | Granted | Capture proceeds. | Nothing in the capture flow. Settings shows the state. |
 
 - **When access is requested:** only from a capture the user starts, through the menu bar item, a
   menu command, or the shortcut. It is never requested at launch, from Settings, or from **Check
-  Again**. A test checks that only one file can request it.
+  Again**. The one exception is **Ask macOS Again**, which asks once per click. A test checks that
+  only one file can request it.
+- **After a reset:** if the permission is reset (`tccutil reset ScreenCapture`) or RedScreen is
+  removed from the list, macOS adds it back only when RedScreen asks. **Ask macOS Again** does
+  that. macOS shows its prompt only if it has no decision on record. You can also add the app
+  with **+** in that pane.
+- **Development builds:** an ad-hoc signed ("Sign to Run Locally") build is identified by its
+  exact binary, so each rebuild needs the permission granted again. Sign with an Apple
+  Development team to keep it across rebuilds.
 - **How a change is noticed:** RedScreen re-reads the state without prompting when it becomes
   active, when Settings opens, and on **Check Again**. A change made in System Settings is picked
   up when you return. macOS may ask you to reopen RedScreen first.

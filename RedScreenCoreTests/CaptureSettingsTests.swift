@@ -121,6 +121,60 @@ final class CapturePermissionModelTests: XCTestCase {
         XCTAssertEqual(authorizer.promptCount, 0)
     }
 
+    /// After a reset or removal from System Settings, the user can ask again: once per click,
+    /// never automatically, and only when it can help.
+    func testAskAgainRequestsOncePerClickOnlyWhenDenied() {
+        record.hasRequestedScreenRecording = true  // Asked before, then removed from the list.
+        let model = CapturePermissionModel(authorizer: authorizer, record: record)
+        XCTAssertEqual(model.state, .denied)
+        XCTAssertFalse(model.authorizeCapture())
+        XCTAssertEqual(authorizer.promptCount, 0, "Starting a capture still never re-prompts")
+
+        XCTAssertFalse(model.requestAgain())
+        XCTAssertEqual(authorizer.promptCount, 1)
+        XCTAssertEqual(model.state, .denied)
+
+        authorizer.grantsWhenPrompted = true
+        var grants = 0
+        model.onGranted = { grants += 1 }
+        XCTAssertTrue(model.requestAgain())
+        XCTAssertEqual(model.state, .granted)
+        XCTAssertEqual(grants, 1, "The banner clears when asking again succeeds")
+        XCTAssertTrue(model.requestAgain(), "Already granted: nothing to ask")
+        XCTAssertEqual(authorizer.promptCount, 2)
+
+        model.noteRestricted()
+        XCTAssertFalse(model.requestAgain(), "A policy restriction is not fixed by asking")
+        XCTAssertEqual(authorizer.promptCount, 2)
+    }
+
+    func testAskAgainIsNotOfferedBeforeTheFirstRequest() {
+        let model = CapturePermissionModel(authorizer: authorizer, record: record)
+        XCTAssertEqual(model.state, .notDetermined)
+        XCTAssertFalse(model.requestAgain())
+        XCTAssertEqual(authorizer.promptCount, 0, "The first request belongs to a capture")
+    }
+
+    func testBecomingGrantedIsReportedOnceAndOnlyOnTheTransition() {
+        record.hasRequestedScreenRecording = true
+        let model = CapturePermissionModel(authorizer: authorizer, record: record)
+        var grants = 0
+        model.onGranted = { grants += 1 }
+        model.refresh()
+        XCTAssertEqual(grants, 0, "Still denied")
+
+        authorizer.granted = true  // Allowed in System Settings.
+        model.checkAgain()
+        XCTAssertEqual(grants, 1)
+        model.refresh()
+        model.checkAgain()
+        XCTAssertEqual(grants, 1, "Not repeated while it stays granted")
+
+        model.noteRestricted()
+        model.checkAgain()
+        XCTAssertEqual(grants, 2, "Restricted back to granted is a new transition")
+    }
+
     func testGrantedOutsideRedScreenIsRemembered() {
         authorizer.granted = true
         let model = CapturePermissionModel(authorizer: authorizer, record: record)
@@ -153,6 +207,11 @@ final class CapturePermissionModelTests: XCTestCase {
             XCTAssertFalse(guidance.message.contains("/"))
         }
         XCTAssertTrue(ScreenRecordingPermission.denied.guidance.offersSystemSettings)
+        XCTAssertTrue(ScreenRecordingPermission.denied.guidance.offersRequestAgain)
+        XCTAssertTrue(ScreenRecordingPermission.denied.guidance.message.contains("Ask macOS Again"))
+        for state in [ScreenRecordingPermission.notDetermined, .restricted, .granted] {
+            XCTAssertFalse(state.guidance.offersRequestAgain, "\(state)")
+        }
         XCTAssertTrue(ScreenRecordingPermission.denied.guidance.message.contains("Screen & System Audio Recording"))
         XCTAssertFalse(ScreenRecordingPermission.restricted.guidance.offersSystemSettings,
                        "System Settings cannot lift a policy restriction")
