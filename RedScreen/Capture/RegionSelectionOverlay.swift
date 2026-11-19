@@ -27,7 +27,7 @@ final class RegionSelectionOverlay {
 
     private var panels: [NSPanel] = []
     private var continuation: CheckedContinuation<Result<CaptureSelection, CaptureError>, Never>?
-    private var screenObserver: (any NSObjectProtocol)?
+    private var observers: [(NotificationCenter, any NSObjectProtocol)] = []
     private var previousActivationPolicy: NSApplication.ActivationPolicy?
     fileprivate var anchor: NSPoint?
     fileprivate var current: NSPoint?
@@ -71,11 +71,21 @@ final class RegionSelectionOverlay {
         NSApp.activate()
         panels.first?.makeKey()
         NSCursor.crosshair.push()
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.finish(.failure(.displayConfigurationChanged)) }
+        observe(NotificationCenter.default, NSApplication.didChangeScreenParametersNotification,
+                .displayConfigurationChanged)
+        // Leaving RedScreen (for example with ⌘-Tab), the screens sleeping, or a switch to
+        // another user ends the selection instead of leaving the overlay over the screen.
+        observe(NotificationCenter.default, NSApplication.didResignActiveNotification, .canceled)
+        let workspace = NSWorkspace.shared.notificationCenter
+        observe(workspace, NSWorkspace.screensDidSleepNotification, .canceled)
+        observe(workspace, NSWorkspace.sessionDidResignActiveNotification, .canceled)
+    }
+
+    private func observe(_ center: NotificationCenter, _ name: Notification.Name, _ error: CaptureError) {
+        let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.finish(.failure(error)) }
         }
+        observers.append((center, token))
     }
 
     fileprivate func update(to point: NSPoint, starting: Bool) {
@@ -115,8 +125,8 @@ final class RegionSelectionOverlay {
     private func finish(_ result: Result<CaptureSelection, CaptureError>) {
         guard let continuation else { return }
         self.continuation = nil
-        if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
-        screenObserver = nil
+        for (center, token) in observers { center.removeObserver(token) }
+        observers.removeAll()
         NSCursor.pop()
         panels.forEach { $0.orderOut(nil); $0.close() }
         panels.removeAll()

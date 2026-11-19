@@ -30,6 +30,10 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case processingCanceled = "processing_canceled"
     case screenCaptured = "screen_captured"
     case captureFailed = "capture_failed"
+    /// Count is the time from starting a capture to its document being reviewable, in ms.
+    case captureToReviewDuration = "capture_to_review_duration_ms"
+    /// Count is the process's physical memory footprint in MiB, sampled when a capture is reviewable.
+    case memoryFootprint = "memory_footprint_mb"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -114,6 +118,10 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("screen_captured count=\(entry.count)")
         case .captureFailed:
             logger.info("capture_failed count=\(entry.count)")
+        case .captureToReviewDuration:
+            logger.info("capture_to_review_duration_ms count=\(entry.count)")
+        case .memoryFootprint:
+            logger.info("memory_footprint_mb count=\(entry.count)")
         }
     }
 }
