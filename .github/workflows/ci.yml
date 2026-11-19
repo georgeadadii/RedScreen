@@ -60,3 +60,23 @@ jobs:
         run: make build
       - name: Run core tests
         run: make test-core
+
+  vscode-extension:
+    name: VS Code extension unit tests
+    runs-on: macos-26
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Extensions/vscode
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Show Node version
+        run: node --version
+      # The integration suite launches VS Code and runs locally (npm run test:integration).
+      - name: Install pinned dev dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run unit, protocol, and package tests
+        run: npm test

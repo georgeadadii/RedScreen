@@ -77,6 +77,11 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    uses. The only persisted app state is `CapturePreferenceStore`: whether access was requested,
    and the shortcut choice. A security test enforces that it is the only `UserDefaults` use. See
    [Capture shortcut and permission](CAPTURE_SHORTCUT.md).
+13. The optional VS Code extension sends RedScreen only rule IDs, confidences, and digests keyed
+   by a per-session secret, over an owner-only Unix socket after mutual HMAC authentication. It
+   never sends values, document text, file names, or paths. It scans only the active editor on
+   request, reports usage nowhere, and fails closed. RedScreen must behave identically when it is
+   absent. See [VS Code hint protocol](VSCODE_HINT_PROTOCOL.md).
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.

@@ -196,5 +196,8 @@ with no screenshot file written. Issue #14 (RED-10) adds the app-menu Capture co
 [global capture shortcut](docs/CAPTURE_SHORTCUT.md) with conflict detection, Settings, and
 Screen Recording permission guidance for every permission state. Issue #15 (RED-11) hardens the capture path
 with end-to-end, stress, memory, and lifecycle tests, logs capture-to-review latency and memory as
-numbers only, and records the [Phase 2 readiness checklist](docs/PHASE2_READINESS.md).
+numbers only, and records the [Phase 2 readiness checklist](docs/PHASE2_READINESS.md). Issue #16 (RED-12) adds the optional
+[VS Code secret-hint extension](Extensions/vscode/README.md) and its authenticated, local-only
+[hint protocol](docs/VSCODE_HINT_PROTOCOL.md). It sends rule IDs and keyed digests, never values or
+document text. RedScreen does not consume hints yet; that is RED-13.
 

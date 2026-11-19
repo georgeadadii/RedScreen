@@ -1,0 +1,93 @@
+{
+  "name": "redscreen-secret-hints",
+  "displayName": "RedScreen Secret Hints",
+  "description": "Optional, local-only secret hints for RedScreen. Sends keyed digests of secrets in the active editor to RedScreen on this Mac, never values or document text.",
+  "version": "0.1.0",
+  "publisher": "georgeadadi",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/src/extension.js",
+  "activationEvents": [],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "Reads only the active editor's text in memory, and only after you enable it. It runs no workspace code."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Hints go to RedScreen on this Mac through a local socket."
+    }
+  },
+  "extensionKind": [
+    "ui"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "redscreenHints.scanActiveEditor",
+        "title": "Scan Active Editor Once",
+        "category": "RedScreen Hints"
+      },
+      {
+        "command": "redscreenHints.enable",
+        "title": "Turn On Hints for the Active Editor",
+        "category": "RedScreen Hints"
+      },
+      {
+        "command": "redscreenHints.disable",
+        "title": "Turn Off Hints",
+        "category": "RedScreen Hints"
+      },
+      {
+        "command": "redscreenHints.connect",
+        "title": "Connect to RedScreen",
+        "category": "RedScreen Hints"
+      },
+      {
+        "command": "redscreenHints.disconnect",
+        "title": "Disconnect from RedScreen",
+        "category": "RedScreen Hints"
+      },
+      {
+        "command": "redscreenHints.showStatus",
+        "title": "Show Status",
+        "category": "RedScreen Hints"
+      }
+    ],
+    "configuration": {
+      "title": "RedScreen Secret Hints",
+      "properties": {
+        "redscreenHints.rendezvousFile": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "Path of the pairing file RedScreen publishes while it accepts hints. Leave empty for the default location. Only read when you run **Connect to RedScreen**."
+        },
+        "redscreenHints.debounceMilliseconds": {
+          "type": "number",
+          "default": 500,
+          "minimum": 100,
+          "maximum": 5000,
+          "description": "How long to wait after you stop typing before rescanning the active editor, while hints are on."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "test": "npm run compile && node --test out/test/unit/*.test.js",
+    "test:integration": "npm run compile && node out/test/integration/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/vscode": "1.90.0",
+    "@vscode/test-electron": "3.1.0",
+    "typescript": "5.9.3"
+  }
+}
