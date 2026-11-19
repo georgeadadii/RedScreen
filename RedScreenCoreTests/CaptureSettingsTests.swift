@@ -383,6 +383,9 @@ final class GlobalShortcutControllerTests: XCTestCase {
         store.hasRequestedScreenRecording = true
         store.shortcutPreference = GlobalShortcutPreference(isEnabled: false, shortcut: .documentedDefault)
         store.acceptsEditorHints = true
+        store.savedProfileDocuments = [String(decoding: try DetectionProfileCodec.encode(
+            DetectionProfile(name: "Stored", likelyThreshold: 70, reviewThreshold: 35)), as: UTF8.self)]
+        store.selectedProfileName = "Stored"
 
         let written = try XCTUnwrap(defaults.persistentDomain(forName: suite))
         XCTAssertEqual(Set(written.keys), CapturePreferenceStore.allKeys)

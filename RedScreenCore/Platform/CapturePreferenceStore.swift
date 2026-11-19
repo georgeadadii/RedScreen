@@ -1,26 +1,40 @@
 import Foundation
 
 /// The only persistent app state outside files the user saves, and the only production use of
-/// `UserDefaults` (a security test enforces both). It holds exactly three preferences:
+/// `UserDefaults` (a security test enforces both). It holds exactly five preferences:
 ///
 /// - `capture.screenRecordingRequested`: whether RedScreen has asked for Screen Recording access,
 ///   so it never asks twice.
 /// - `capture.globalShortcut`: whether the global shortcut is on, and its key code, modifiers,
 ///   and key label.
 /// - `hints.acceptFromVSCode`: whether the user turned on VS Code hints.
+/// - `detection.profiles`: the user's own detection profiles, each as plain-text profile JSON.
+/// - `detection.selectedProfile`: the name of the profile in use.
 ///
 /// Nothing about screen content, images, text, windows, apps, or files is stored.
 public final class CapturePreferenceStore: PermissionRequestRecord, GlobalShortcutPreferenceStore,
-    EditorHintPreferenceStore {
+    EditorHintPreferenceStore, DetectionProfileStore {
     static let requestedKey = "capture.screenRecordingRequested"
     static let shortcutKey = "capture.globalShortcut"
     static let editorHintsKey = "hints.acceptFromVSCode"
-    static let allKeys: Set<String> = [requestedKey, shortcutKey, editorHintsKey]
+    static let profilesKey = "detection.profiles"
+    static let selectedProfileKey = "detection.selectedProfile"
+    static let allKeys: Set<String> = [requestedKey, shortcutKey, editorHintsKey, profilesKey, selectedProfileKey]
 
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    public var savedProfileDocuments: [String] {
+        get { defaults.stringArray(forKey: Self.profilesKey) ?? [] }
+        set { defaults.set(newValue, forKey: Self.profilesKey) }
+    }
+
+    public var selectedProfileName: String? {
+        get { defaults.string(forKey: Self.selectedProfileKey) }
+        set { defaults.set(newValue, forKey: Self.selectedProfileKey) }
     }
 
     public var acceptsEditorHints: Bool {

@@ -15,6 +15,9 @@ struct SettingsView: View {
             Section("Screen Recording") {
                 PermissionGuidanceView(model: model, style: .settings)
             }
+            Section("Detection Profile") {
+                ProfileSettings(model: model)
+            }
             Section("VS Code Hints") {
                 EditorHintSettings(model: model, bridge: model.editorHints)
             }

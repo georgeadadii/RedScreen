@@ -188,6 +188,67 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue(waitForText(of: status, containing: "Off"))
     }
 
+    /// RED-14: choosing a profile that may expose content needs confirmation; cancelling keeps
+    /// the current one. Profiles that only add coverage switch directly.
+    @MainActor
+    func testProfileThatReducesCoverageNeedsConfirmation() {
+        launch(permission: "granted", extra: ["-RedScreenUITestProfiles", "YES"])
+        openSettings()
+        let picker = app.popUpButtons["profile-picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10))
+        XCTAssertEqual(picker.value as? String, "Balanced (built-in)")
+
+        choose("Fewer Findings", in: picker)
+        let alert = app.sheets.firstMatch.exists ? app.sheets.firstMatch : app.dialogs.firstMatch
+        XCTAssertTrue(app.buttons["Keep Balanced"].waitForExistence(timeout: 5), "A reducing profile asks first")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "value CONTAINS 'high-entropy.contextual' OR label CONTAINS 'high-entropy.contextual'")).firstMatch.exists
+                      || alert.debugDescription.contains("high-entropy.contextual"), "The warning lists what is hidden")
+        app.buttons["Keep Balanced"].click()
+        XCTAssertTrue(waitForText(of: picker, containing: "Balanced"))
+        XCTAssertFalse(app.staticTexts["profile-coverage-warning"].exists)
+
+        choose("Fewer Findings", in: picker)
+        app.buttons["Use Fewer Findings"].click()
+        XCTAssertTrue(waitForText(of: picker, containing: "Fewer Findings"))
+        XCTAssertTrue(app.descendants(matching: .any)["profile-coverage-warning"].waitForExistence(timeout: 5))
+
+        choose("Conservative (built-in)", in: picker)
+        XCTAssertTrue(waitForText(of: picker, containing: "Conservative"), "Conservative switches without asking")
+        XCTAssertFalse(app.buttons["Keep Conservative"].exists)
+    }
+
+    /// RED-14: changing profile re-evaluates the open document and keeps manual rectangles.
+    @MainActor
+    func testProfileChangeReevaluatesTheOpenDocumentAndKeepsManualRectangles() {
+        launch(permission: "granted")
+        chooseFromPopoverCaptureMenu("capture-display-button")
+        let profileLabel = app.staticTexts["document-profile"]
+        XCTAssertTrue(waitForText(of: profileLabel, containing: "Profile: Balanced", timeout: 15))
+        app.buttons["review-add"].click()
+        let manual = app.buttons["review-candidate-0"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5))
+
+        openSettings()
+        let picker = app.popUpButtons["profile-picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10))
+        choose("Conservative (built-in)", in: picker)
+        XCTAssertTrue(waitForText(of: profileLabel, containing: "Profile: Conservative", timeout: 10),
+                      "The open document was re-evaluated with the new profile")
+        XCTAssertTrue(manual.exists, "The manual rectangle is kept")
+    }
+
+    private func openSettings() {
+        openMenuBarPopover()
+        app.buttons["settings-button"].click()
+    }
+
+    private func choose(_ title: String, in picker: XCUIElement) {
+        picker.click()
+        let item = app.menuItems[title]
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "\(title) not in the profile picker")
+        item.click()
+    }
+
     // MARK: - Helpers
 
     /// SwiftUI exposes text as the element's value or label depending on the control.

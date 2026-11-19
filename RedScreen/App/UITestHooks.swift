@@ -32,6 +32,12 @@ enum UITestHooks {
 
     static var usesFakeCapture: Bool { value("RedScreenUITestFakeCapture") == "YES" }
     static var usesFakeShortcuts: Bool { value("RedScreenUITestFakeShortcuts") == "YES" }
+    static var seedsProfiles: Bool { value("RedScreenUITestProfiles") == "YES" }
+    static let reducingProfileJSON = """
+        {"format":"redscreen-detection-profile","version":1,"name":"Fewer Findings",
+         "thresholds":{"likely":80,"review":50},"disabledRules":["high-entropy.contextual"],
+         "placeholders":[],"customRules":[]}
+        """
 }
 
 /// Reports a fixed state and never shows a prompt.
@@ -48,10 +54,13 @@ final class FakeScreenRecordingAuthorizer: ScreenRecordingAuthorizing {
 }
 
 final class InMemoryCapturePreferences: PermissionRequestRecord, GlobalShortcutPreferenceStore,
-    EditorHintPreferenceStore {
+    EditorHintPreferenceStore, DetectionProfileStore {
     var hasRequestedScreenRecording: Bool
     var shortcutPreference: GlobalShortcutPreference?
     var acceptsEditorHints = false
+    /// `-RedScreenUITestProfiles YES` seeds one profile that reduces coverage, for warning tests.
+    var savedProfileDocuments: [String] = UITestHooks.seedsProfiles ? [UITestHooks.reducingProfileJSON] : []
+    var selectedProfileName: String?
 
     init(hasRequested: Bool) { hasRequestedScreenRecording = hasRequested }
 }

@@ -416,6 +416,7 @@ struct DocumentView: View {
         let rule = evidence.ruleID.rawValue
         return "\(status) · \(confidence)%\n\(rule)" + (candidate.needsGeometryReview ? " · Check bounds" : "")
             + (candidate.isConfirmedByEditorHint ? "\nConfirmed by VS Code hint" : "")
+            + (rule.hasPrefix("custom.") ? "\nCustom rule" : "")
     }
 
     private func manualControls(_ id: UUID, rect: ImageRect, dimensions: PixelDimensions) -> some View {
@@ -672,6 +673,7 @@ struct DocumentView: View {
                 }
                 recognitionStatusLabel
                 detectionStatusLabel
+                profileLabel
             }
             HStack(spacing: 12) {
                 if controller.document != nil {
@@ -711,6 +713,23 @@ struct DocumentView: View {
             .controlSize(.small)
             .keyboardShortcut(.cancelAction)
             .accessibilityIdentifier("processing-cancel")
+    }
+
+    /// Which profile produced the findings, and how many it hid, so exclusions are never invisible.
+    @ViewBuilder
+    private var profileLabel: some View {
+        if controller.document != nil, let report = controller.profileReport {
+            let hidden = report.hiddenTotal
+            Text("Profile: \(report.profileName)" + (hidden > 0 ? " · \(hidden) hidden" : ""))
+                .font(.callout)
+                .foregroundStyle(hidden > 0 ? Color.orange : .secondary)
+                .help(hidden > 0
+                      ? "Hidden by this profile: \(report.hiddenByDisabledRules) by turned-off rules, "
+                        + "\(report.hiddenByPlaceholders) by placeholders, \(report.hiddenByThreshold) below its review "
+                        + "threshold. Switch to Balanced in Settings to show them."
+                      : "Detection profile in use. Change it in Settings › Detection Profile.")
+                .accessibilityIdentifier("document-profile")
+        }
     }
 
     @ViewBuilder

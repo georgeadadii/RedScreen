@@ -80,7 +80,11 @@ public final class ScreenshotImportController {
     /// The session opened by the most recent capture, which may use fresh editor hints once.
     @ObservationIgnored private var capturedSessionID: UUID?
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
-    @ObservationIgnored private let secretDetector: (any SecretDetector)?
+    @ObservationIgnored private var secretDetector: (any SecretDetector)?
+    /// What the active detection profile hid or added in the last detection pass.
+    public private(set) var profileReport: DetectionProfileReport?
+    /// Manual rectangles to put back after a re-evaluation of the same session.
+    @ObservationIgnored private var preservedManualCandidates: (sessionID: UUID, candidates: [RedactionCandidate])?
     @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
     public private(set) var processingCanceled = false
     private var activeRenders = 0
@@ -311,6 +315,24 @@ public final class ScreenshotImportController {
         reviewRevision &+= 1
     }
 
+    /// Switches the secret detector, for example to a new detection profile, and re-evaluates
+    /// the open document from its existing OCR text. The result is deterministic, OCR does not
+    /// run again, manual rectangles are kept exactly, and generated candidates are recomputed
+    /// (their earlier review decisions and the undo history are reset).
+    @discardableResult
+    public func applySecretDetector(_ detector: any SecretDetector) -> Task<Void, Never>? {
+        secretDetector = detector
+        guard let session = lifecycle.activeSession, session.id == document?.sessionID,
+              case .recognized = recognitionStatus,
+              let current = session.redactionDocument else {
+            return nil
+        }
+        detectionTask?.cancel()
+        preservedManualCandidates = (session.id, current.candidates.filter(\.isManual))
+        startDetection(current.observations, token: recognitionGeneration, sessionID: session.id)
+        return detectionTask
+    }
+
     /// The task running OCR for the open document, if any. Exposed so tests can await it.
     public var currentRecognition: Task<Void, Never>? { recognitionTask }
 
@@ -405,6 +427,8 @@ public final class ScreenshotImportController {
         document = nil
         capturedSessionID = nil
         editorHints?.discardHints()
+        profileReport = nil
+        preservedManualCandidates = nil
         lifecycle.closeDocument()
     }
 
@@ -569,9 +593,14 @@ public final class ScreenshotImportController {
             lifecycle.storeDocument(detecting, for: sessionID)
         }
         detectionTask = Task { [weak self] in
-            let result: Result<[SecretDetection], any Error>
+            let result: Result<([SecretDetection], DetectionProfileReport?), any Error>
             do {
-                result = .success(try await secretDetector.detectSecrets(in: observations))
+                if let reporting = secretDetector as? any ReportingSecretDetector {
+                    let (detections, report) = try await reporting.detectSecretsWithReport(in: observations)
+                    result = .success((detections, report))
+                } else {
+                    result = .success((try await secretDetector.detectSecrets(in: observations), nil))
+                }
             } catch {
                 result = .failure(error)
             }
@@ -580,7 +609,7 @@ public final class ScreenshotImportController {
     }
 
     private func finishDetection(
-        _ result: Result<[SecretDetection], any Error>,
+        _ result: Result<([SecretDetection], DetectionProfileReport?), any Error>,
         token: Int,
         sessionID: UUID
     ) {
@@ -591,7 +620,9 @@ public final class ScreenshotImportController {
         }
         detectionTask = nil
         switch result {
-        case .success(var detections):
+        case .success(let (found, report)):
+            var detections = found
+            profileReport = report
             if let editorHints, capturedSessionID == sessionID {
                 // Fresh, matching hints can only confirm findings. They are used by this one
                 // capture and then dropped.
@@ -618,6 +649,17 @@ public final class ScreenshotImportController {
                 }
                 detected = composed
                 logger.record(.candidatesComposed, count: UInt(candidates.count))
+            }
+            if let preserved = preservedManualCandidates, preserved.sessionID == sessionID {
+                // A re-evaluation keeps the user's manual rectangles exactly, with their IDs.
+                for manual in preserved.candidates {
+                    if let region = manual.regions.first,
+                       let restored = try? detected.addingManualRegion(region, candidateID: manual.id) {
+                        detected = restored
+                    }
+                }
+                preservedManualCandidates = nil
+                resetReviewHistory()
             }
             lifecycle.storeDocument(detected, for: sessionID)
             let likely = detections.filter { $0.assessment == .likely }.count

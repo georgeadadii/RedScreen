@@ -12,6 +12,8 @@ final class AppModel {
     let permission: CapturePermissionModel
     /// The optional VS Code hint listener. Off unless the user turns it on in Settings.
     let editorHints: EditorHintBridge
+    /// Built-in and user detection profiles, and the one in use.
+    let profiles: DetectionProfileLibrary
     /// Created in `init`; never nil afterwards.
     private(set) var shortcut: GlobalShortcutController!
 
@@ -34,6 +36,7 @@ final class AppModel {
         var permissionRecord: any PermissionRequestRecord = preferences
         var shortcutStore: any GlobalShortcutPreferenceStore = preferences
         var hintPreference: any EditorHintPreferenceStore = preferences
+        var profileStore: any DetectionProfileStore = preferences
         #if DEBUG
         if UITestHooks.usesFakeCapture { capturer = FakeScreenCaptureService() }
         if let state = UITestHooks.permission {
@@ -46,12 +49,14 @@ final class AppModel {
             let inMemory = InMemoryCapturePreferences(hasRequested: false)
             shortcutStore = inMemory
             hintPreference = inMemory
+            profileStore = inMemory
         }
         #endif
 
         // In the sandbox this is RedScreen's own container (…/Containers/<id>/Data/tmp/rsh), so
         // the listener needs no extra entitlement. The path stays short for Unix socket limits.
         let hintStore = EditorHintStore()
+        profiles = DetectionProfileLibrary(store: profileStore)
         editorHints = EditorHintBridge(
             configuration: .init(directory: FileManager.default.temporaryDirectory.appendingPathComponent("rsh", isDirectory: true)),
             store: hintStore
@@ -63,7 +68,7 @@ final class AppModel {
             screenCapturer: capturer,
             editorHints: hintStore,
             textRecognizer: VisionTextRecognizer(),
-            secretDetector: ContextualSecretDetector(),
+            secretDetector: ProfiledSecretDetector(profile: profiles.selected),
             candidateComposer: GeometricCandidateComposer(),
             imageExporter: AtomicFileImageExporter(),
             clipboard: PasteboardImageWriter()
@@ -99,6 +104,56 @@ final class AppModel {
         }
         observeSessionChangesForEditorHints()
         if hintPreference.acceptsEditorHints { editorHints.start() }
+    }
+
+    // MARK: - Detection profiles
+
+    /// Switches profile and re-evaluates the open document from its OCR text, keeping manual
+    /// rectangles. Callers confirm a profile that reduces coverage before calling this.
+    func useProfile(_ profile: DetectionProfile) {
+        profiles.select(profile)
+        importController.applySecretDetector(ProfiledSecretDetector(profile: profiles.selected))
+    }
+
+    /// Re-applies the selected profile after it was edited.
+    func refreshSelectedProfile() {
+        importController.applySecretDetector(ProfiledSecretDetector(profile: profiles.selected))
+    }
+
+    /// Asks for a profile file and reads it. Nothing is added until the user saves it.
+    func chooseProfileToImport() -> Result<DetectionProfile, ProfileError>? {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.prompt = "Import"
+        panel.message = "Choose a RedScreen detection profile (.json). Profiles contain settings only."
+        NSApp.activate()
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        guard let data = try? Data(contentsOf: url, options: [.uncached]),
+              data.count <= DetectionProfileCodec.maximumBytes else {
+            return .failure(ProfileError(["The file couldn't be read, or it is too large to be a profile."]))
+        }
+        do {
+            return .success(try profiles.importProfile(from: data))
+        } catch let error as ProfileError {
+            return .failure(error)
+        } catch {
+            return .failure(ProfileError(["The file is not a valid profile."]))
+        }
+    }
+
+    /// Writes the profile's settings, and only its settings, to a file the user chooses.
+    func exportProfile(_ profile: DetectionProfile) throws {
+        let data = try profiles.exportProfile(profile)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "\(profile.name).json"
+        panel.prompt = "Export"
+        panel.message = "Exports this profile's settings as plain text. No screenshots, text, or values are included."
+        NSApp.activate()
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try data.write(to: url, options: .atomic)
     }
 
     // MARK: - VS Code hints
