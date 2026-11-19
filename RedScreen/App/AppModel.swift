@@ -3,25 +3,76 @@ import Observation
 import RedScreenCore
 import UniformTypeIdentifiers
 
-/// Composition root: owns the single secure lifecycle, the importer, and the document window.
+/// Composition root: owns the single secure lifecycle, the importer, the capture permission and
+/// shortcut state, and the document window.
 @MainActor
 @Observable
 final class AppModel {
     let importController: ScreenshotImportController
+    let permission: CapturePermissionModel
+    /// Created in `init`; never nil afterwards.
+    private(set) var shortcut: GlobalShortcutController!
+
+    /// True while the user records a new shortcut, so pressing the current one does not capture.
+    var isRecordingShortcut = false
 
     @ObservationIgnored private var documentWindowController: DocumentWindowController?
+    @ObservationIgnored private var isChoosingTarget = false
+    @ObservationIgnored private var activationObserver: (any NSObjectProtocol)?
 
     init() {
+        var capturer: any ScreenCaptureService = ScreenCaptureKitService()
+        var authorizer: any ScreenRecordingAuthorizing = SystemScreenRecordingAuthorizer()
+        var registrar: any GlobalHotKeyRegistering = CarbonHotKeyRegistrar()
+        var systemShortcuts: any SystemShortcutCatalog = SymbolicHotKeyCatalog()
+        let preferences = CapturePreferenceStore()
+        var permissionRecord: any PermissionRequestRecord = preferences
+        var shortcutStore: any GlobalShortcutPreferenceStore = preferences
+        #if DEBUG
+        if UITestHooks.usesFakeCapture { capturer = FakeScreenCaptureService() }
+        if let state = UITestHooks.permission {
+            authorizer = FakeScreenRecordingAuthorizer(state)
+            permissionRecord = InMemoryCapturePreferences(hasRequested: state != .notDetermined)
+        }
+        if UITestHooks.usesFakeShortcuts {
+            registrar = FakeHotKeyRegistrar()
+            systemShortcuts = FakeSystemShortcutCatalog()
+            shortcutStore = InMemoryCapturePreferences(hasRequested: false)
+        }
+        #endif
+
         importController = ScreenshotImportController(
             lifecycle: SecureImageSessionLifecycle(),
             importer: ImageIOImageImporter(),
-            screenCapturer: ScreenCaptureKitService(),
+            screenCapturer: capturer,
             textRecognizer: VisionTextRecognizer(),
             secretDetector: ContextualSecretDetector(),
             candidateComposer: GeometricCandidateComposer(),
             imageExporter: AtomicFileImageExporter(),
             clipboard: PasteboardImageWriter()
         )
+        permission = CapturePermissionModel(authorizer: authorizer, record: permissionRecord)
+        #if DEBUG
+        if UITestHooks.permission == .restricted { permission.noteRestricted() }
+        #endif
+        shortcut = GlobalShortcutController(
+            registrar: registrar, systemShortcuts: systemShortcuts, store: shortcutStore
+        ) { [weak self] in
+            self?.captureFromShortcut()
+        }
+        // Registers nothing unless the user turned the shortcut on in an earlier launch.
+        shortcut.restore()
+
+        // Picks up a change the user made in System Settings, without prompting.
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.permission.refresh() }
+        }
+    }
+
+    func openScreenRecordingSettings() {
+        NSWorkspace.shared.open(ScreenRecordingPermission.systemSettingsURL)
     }
 
     /// Asks for a destination and saves exactly `image`. Returns false if the user cancels.
@@ -76,52 +127,87 @@ final class AppModel {
     /// Starts a user-initiated capture. Choosing a target happens here, in the app target;
     /// canceling at any point leaves the open document as it was.
     func capture(_ kind: CaptureKind) {
+        guard !isChoosingTarget else { return }
+        isChoosingTarget = true
         Task { await runCapture(kind) }
     }
 
+    /// The global shortcut starts a region selection, whose overlay also offers the whole
+    /// display (Return) and window choice (W).
+    private func captureFromShortcut() {
+        guard !isRecordingShortcut else { return }
+        capture(.region)
+    }
+
     private func runCapture(_ kind: CaptureKind) async {
-        let target: CaptureTarget
+        guard let target = await chooseTarget(kind) else {
+            isChoosingTarget = false
+            return
+        }
+        isChoosingTarget = false
+        showDocumentWindow()
+        await importController.captureScreenshot(target)?.value
+        switch importController.lastCaptureError {
+        case .permissionRestricted: permission.noteRestricted()
+        case .permissionDenied: permission.refresh()
+        default: break
+        }
+    }
+
+    /// Returns the target to capture, or nil after reporting a failure or a cancellation.
+    private func chooseTarget(_ kind: CaptureKind) async -> CaptureTarget? {
+        // The only place the Screen Recording prompt can be requested, and only once ever.
+        guard permission.authorizeCapture() else {
+            showDocumentWindow()
+            importController.reportCaptureFailure(permission.blockedCaptureError)
+            return nil
+        }
         switch kind {
         case .region:
             // Hide the document window so the user selects what is actually on screen.
             let wasVisible = documentWindowController?.window.isVisible == true
             documentWindowController?.window.orderOut(nil)
-            let selection = await RegionSelectionOverlay.select()
-            switch selection {
-            case .success(let rect):
-                target = .region(rect)
+            switch await RegionSelectionOverlay.select() {
+            case .success(.region(let rect)):
+                return .region(rect)
+            case .success(.display(let id)):
+                return .display(id: id)
+            case .success(.chooseWindow):
+                return await chooseWindowTarget(restoringWindow: wasVisible)
             case .failure(let error):
                 if wasVisible || error != .canceled { showDocumentWindow() }
                 importController.reportCaptureFailure(error)
-                return
+                return nil
             }
         case .window:
-            do {
-                let choices = try await ScreenCaptureKitService.windowChoices()
-                guard !choices.isEmpty else { throw CaptureError.targetUnavailable }
-                guard let id = choose(from: choices, title: "Capture Window") else { return }
-                target = .window(id: id)
-            } catch {
-                showDocumentWindow()
-                importController.reportCaptureFailure(error as? CaptureError ?? .failed)
-                return
-            }
+            return await chooseWindowTarget(restoringWindow: false)
         case .display:
             let displays = ScreenCaptureKitService.currentDisplays()
-            if displays.count == 1, let only = displays.first {
-                target = .display(id: only.id)
-            } else {
-                let mainID = CGMainDisplayID()
-                let choices = displays.enumerated().map { index, display in
-                    (display.id, "Display \(index + 1)\(display.id == mainID ? " (main)" : "") — "
-                        + "\(Int(display.frame.width)) × \(Int(display.frame.height)) pt @\(Int(display.scale))x")
-                }
-                guard let id = choose(from: choices, title: "Capture Display") else { return }
-                target = .display(id: id)
+            if displays.count == 1, let only = displays.first { return .display(id: only.id) }
+            let mainID = CGMainDisplayID()
+            let choices = displays.enumerated().map { index, display in
+                (display.id, "Display \(index + 1)\(display.id == mainID ? " (main)" : "") — "
+                    + "\(Int(display.frame.width)) × \(Int(display.frame.height)) pt @\(Int(display.scale))x")
             }
+            guard let id = choose(from: choices, title: "Capture Display") else { return nil }
+            return .display(id: id)
         }
-        showDocumentWindow()
-        importController.captureScreenshot(target)
+    }
+
+    private func chooseWindowTarget(restoringWindow: Bool) async -> CaptureTarget? {
+        do {
+            let choices = try await ScreenCaptureKitService.windowChoices()
+            guard !choices.isEmpty else { throw CaptureError.targetUnavailable }
+            guard let id = choose(from: choices, title: "Capture Window") else {
+                if restoringWindow { showDocumentWindow() }
+                return nil
+            }
+            return .window(id: id)
+        } catch {
+            showDocumentWindow()
+            importController.reportCaptureFailure(error as? CaptureError ?? .failed)
+            return nil
+        }
     }
 
     /// Shows a menu of targets at the pointer and returns the chosen ID, or nil if dismissed.

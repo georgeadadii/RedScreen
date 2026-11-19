@@ -33,6 +33,8 @@ public enum CaptureError: Error, Equatable, Sendable {
     case canceled
     /// Screen Recording permission has not been granted.
     case permissionDenied
+    /// Access appears granted but capture is still refused, as a management policy does.
+    case permissionRestricted
     /// The chosen window or display closed, moved off screen, or cannot be found.
     case targetUnavailable
     /// The target returned no visible content, as macOS does for protected windows.
@@ -52,6 +54,9 @@ public enum CaptureError: Error, Equatable, Sendable {
         case .permissionDenied:
             "RedScreen needs Screen Recording permission to capture. Allow it in System Settings › "
                 + "Privacy & Security › Screen & System Audio Recording, then try again."
+        case .permissionRestricted:
+            "Screen capture is restricted on this Mac, for example by your organization's policy. "
+                + "Ask your administrator, or import a screenshot instead."
         case .targetUnavailable:
             "That window or display is no longer available. Choose another target and try again."
         case .protectedContent:

@@ -1,14 +1,18 @@
 import AppKit
+import RedScreenCore
 import SwiftUI
 
 struct MenuBarContentView: View {
     let importScreenshot: () -> Void
     let capture: (AppModel.CaptureKind) -> Void
     let importDroppedItems: ([URL]) -> Void
+    /// The active global shortcut, shown next to Capture so it is discoverable.
+    let shortcutHint: GlobalShortcut?
     let showAbout: () -> Void
     let quit: () -> Void
 
     @State private var isDropTargeted = false
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -43,12 +47,18 @@ struct MenuBarContentView: View {
             Divider()
 
             VStack(spacing: 6) {
-                unavailableAction(
-                    title: "Settings",
+                actionButton(
+                    title: "Settings…",
                     systemImage: "gearshape",
                     identifier: "settings-button",
-                    availabilityText: "Not available"
+                    action: {
+                        dismissPopover()
+                        NSApplication.shared.activate()
+                        openSettings()
+                    }
                 )
+                .keyboardShortcut(",")
+                .help("Capture shortcut and Screen Recording permission.")
 
                 actionButton(
                     title: "About",
@@ -72,7 +82,9 @@ struct MenuBarContentView: View {
 
     private var captureMenu: some View {
         Menu {
-            Button("Region…") { dismissPopover(); capture(.region) }
+            Button(shortcutHint.map { "Region…  \($0.displayString)" } ?? "Region…") {
+                dismissPopover(); capture(.region)
+            }
                 .accessibilityIdentifier("capture-region-button")
             Button("Window…") { dismissPopover(); capture(.window) }
                 .accessibilityIdentifier("capture-window-button")
@@ -113,29 +125,6 @@ struct MenuBarContentView: View {
                     .accessibilityIdentifier("redscreen-description")
             }
         }
-    }
-
-    private func unavailableAction(
-        title: String,
-        systemImage: String,
-        identifier: String,
-        availabilityText: String = "Coming soon"
-    ) -> some View {
-        Button(action: {}) {
-            HStack {
-                Label(title, systemImage: systemImage)
-                Spacer()
-                Text(availabilityText)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(true)
-        .accessibilityIdentifier(identifier)
-        .help("\(title) will be added in a later phase.")
-        .padding(.vertical, 5)
     }
 
     private func actionButton(

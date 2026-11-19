@@ -684,9 +684,13 @@ struct DocumentView: View {
                 Spacer()
                 Menu("Capture") {
                     Button("Region…") { model.capture(.region) }
+                        .accessibilityIdentifier("document-capture-region")
                     Button("Window…") { model.capture(.window) }
+                        .accessibilityIdentifier("document-capture-window")
                     Button("Display") { model.capture(.display) }
+                        .accessibilityIdentifier("document-capture-display")
                 }
+                .help("Capture a region (⌥⌘1), window (⌥⌘2), or display (⌥⌘3).")
                 .fixedSize()
                 .accessibilityIdentifier("document-capture-menu")
                 Button("Import…", action: model.chooseScreenshot)
@@ -778,30 +782,36 @@ struct DocumentView: View {
         .background(Color.orange.opacity(0.12))
     }
 
+    @ViewBuilder
     private func captureErrorBanner(_ error: CaptureError) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-                .accessibilityHidden(true)
-            Text(error.userMessage)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("capture-error-message")
-            Spacer()
-            if error == .permissionDenied {
-                Button("Open Settings") {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-                .buttonStyle(.borderless)
+        if error == .permissionDenied || error == .permissionRestricted {
+            HStack(alignment: .top, spacing: 10) {
+                PermissionGuidanceView(model: model, style: .banner)
+                Spacer()
+                Button("Dismiss", action: controller.dismissError)
+                    .buttonStyle(.borderless)
+                    .accessibilityIdentifier("capture-error-dismiss")
             }
-            Button("Dismiss", action: controller.dismissError)
-                .buttonStyle(.borderless)
-                .accessibilityIdentifier("capture-error-dismiss")
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color.yellow.opacity(0.15))
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.yellow)
+                    .accessibilityHidden(true)
+                Text(error.userMessage)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("capture-error-message")
+                Spacer()
+                Button("Dismiss", action: controller.dismissError)
+                    .buttonStyle(.borderless)
+                    .accessibilityIdentifier("capture-error-dismiss")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color.yellow.opacity(0.15))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color.yellow.opacity(0.15))
     }
 
     private func errorBanner(_ error: ImageImportError) -> some View {

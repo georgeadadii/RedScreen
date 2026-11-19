@@ -5,8 +5,9 @@ information from screenshots. Processing is designed to remain entirely on the M
 
 This repository contains screenshot import, on-device OCR, developer-secret detection, reviewable
 redaction candidates, and a tested solid-pixel renderer, backed by an in-memory image lifecycle
-and privacy-safe logging. The app supports manual redaction review and a flattened on-device preview. Saving and copying
-redacted images and native screenshot capture are planned.
+and privacy-safe logging. The app supports manual redaction review, a flattened on-device preview, saving and copying the
+redacted result, and native screen capture from the menu bar, the app menu, or an optional global
+shortcut.
 
 `main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
 required checks, and local validation commands.
@@ -191,5 +192,7 @@ metadata-scrubbed PNG. Issue #12 (RED-8) joins these stages into an explicit, ca
 [workflow state machine](docs/WORKFLOW.md) with end-to-end, privacy, and timing gates, and records
 the [Phase 1 readiness checklist](docs/PHASE1_READINESS.md). Issue #13 (RED-9) adds
 [native region, window, and display capture](docs/SCREEN_CAPTURE.md) straight into the review flow,
-with no screenshot file written. Global shortcuts and settings remain for later issues.
+with no screenshot file written. Issue #14 (RED-10) adds the app-menu Capture commands, an optional
+[global capture shortcut](docs/CAPTURE_SHORTCUT.md) with conflict detection, Settings, and
+Screen Recording permission guidance for every permission state.
 
