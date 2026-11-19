@@ -15,6 +15,9 @@ struct SettingsView: View {
             Section("Screen Recording") {
                 PermissionGuidanceView(model: model, style: .settings)
             }
+            Section("VS Code Hints") {
+                EditorHintSettings(model: model, bridge: model.editorHints)
+            }
             Section("Without the Shortcut") {
                 Text("Capture from the RedScreen menu bar item, or from the Capture menu while a "
                      + "RedScreen window is open: Region ⌥⌘1, Window ⌥⌘2, Display ⌥⌘3. In the region "
@@ -101,6 +104,47 @@ private struct ShortcutSettings: View {
     private func stopRecording() {
         recorder.stop()
         model.isRecordingShortcut = false
+    }
+}
+
+/// The optional VS Code hint listener: off by default, with its status and what it shares.
+private struct EditorHintSettings: View {
+    @Bindable var model: AppModel
+    let bridge: EditorHintBridge
+
+    var body: some View {
+        Toggle("Accept hints from the RedScreen VS Code extension", isOn: $model.acceptsEditorHints)
+            .accessibilityIdentifier("editor-hints-toggle")
+        LabeledContent("Status") {
+            Text(statusText)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("editor-hints-status")
+        }
+        if bridge.isRunning {
+            LabeledContent("Pairing file") {
+                Text(bridge.pairingURL.path)
+                    .font(.caption.monospaced())
+                    .textSelection(.enabled)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
+        }
+        Text("When on, the extension can tell RedScreen which secrets are in your active editor, so "
+             + "matching findings in your next capture are confirmed. It sends only keyed fingerprints, "
+             + "never values, text, or file names, over a private connection on this Mac. Hints can only "
+             + "confirm findings, never hide them, and RedScreen works the same without them.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var statusText: String {
+        switch bridge.status {
+        case .off: "Off"
+        case .waiting: "Waiting for VS Code"
+        case .connected(let count): count == 1 ? "Connected to VS Code" : "Connected to \(count) VS Code windows"
+        case .unavailable: "Couldn't start. Turn it off and on again."
+        }
     }
 }
 

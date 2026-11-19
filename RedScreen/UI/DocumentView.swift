@@ -415,6 +415,7 @@ struct DocumentView: View {
         let confidence = Int((evidence.confidence.value * 100).rounded())
         let rule = evidence.ruleID.rawValue
         return "\(status) · \(confidence)%\n\(rule)" + (candidate.needsGeometryReview ? " · Check bounds" : "")
+            + (candidate.isConfirmedByEditorHint ? "\nConfirmed by VS Code hint" : "")
     }
 
     private func manualControls(_ id: UUID, rect: ImageRect, dimensions: PixelDimensions) -> some View {

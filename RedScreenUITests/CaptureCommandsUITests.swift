@@ -168,6 +168,26 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["settings-capture-alternatives"].exists)
     }
 
+    /// RED-13: VS Code hints are off by default; turning them on starts the listener in the
+    /// sandboxed app, and turning them off stops it and removes the pairing file.
+    @MainActor
+    func testEditorHintsToggleStartsAndStopsTheListener() {
+        launch(permission: "granted")
+        openMenuBarPopover()
+        app.buttons["settings-button"].click()
+        let toggle = app.checkBoxes["editor-hints-toggle"].exists
+            ? app.checkBoxes["editor-hints-toggle"] : app.switches["editor-hints-toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        XCTAssertEqual(toggle.value as? Int, 0, "Hints are off until the user turns them on")
+        let status = app.staticTexts["editor-hints-status"]
+        XCTAssertEqual(status.value as? String, "Off")
+
+        toggle.click()
+        XCTAssertTrue(waitForText(of: status, containing: "Waiting for VS Code"))
+        toggle.click()
+        XCTAssertTrue(waitForText(of: status, containing: "Off"))
+    }
+
     // MARK: - Helpers
 
     /// SwiftUI exposes text as the element's value or label depending on the control.

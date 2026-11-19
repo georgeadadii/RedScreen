@@ -89,7 +89,8 @@ public struct GeometricCandidateComposer: CandidateComposer {
                 detectionIDs: [detection.id],
                 geometry: geometry,
                 assessment: detection.assessment,
-                severity: detection.severity
+                severity: detection.severity,
+                editorHints: detection.editorHint.map { [$0] } ?? []
             ))
         }
 
@@ -102,7 +103,8 @@ public struct GeometricCandidateComposer: CandidateComposer {
                 geometry: draft.geometry,
                 assessment: draft.assessment,
                 severity: draft.severity,
-                disposition: draft.assessment == .likely ? .included : .pending
+                disposition: draft.assessment == .likely ? .included : .pending,
+                editorHints: draft.editorHints
             )
         }
     }
@@ -322,6 +324,7 @@ public struct GeometricCandidateComposer: CandidateComposer {
         var geometry: CandidateGeometry
         var assessment: DetectionAssessment
         var severity: SecretSeverity
+        var editorHints: [EditorHintConfirmation]
 
         /// Overlap on the same line only: padded rectangles on adjacent lines can touch, but they
         /// belong to different values and must never be joined.
@@ -336,6 +339,7 @@ public struct GeometricCandidateComposer: CandidateComposer {
             geometry = max(geometry, other.geometry)
             if other.assessment == .likely { assessment = .likely }
             severity = max(severity, other.severity)
+            for hint in other.editorHints where !editorHints.contains(hint) { editorHints.append(hint) }
         }
 
         static func readingOrder(_ a: Draft, _ b: Draft) -> Bool {

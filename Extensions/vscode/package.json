@@ -82,7 +82,8 @@
   "scripts": {
     "compile": "tsc -p .",
     "test": "npm run compile && node --test out/test/unit/*.test.js",
-    "test:integration": "npm run compile && node out/test/integration/runTest.js"
+    "test:integration": "npm run compile && node out/test/integration/runTest.js",
+    "vectors": "npm run compile && node out/test/support/vectors.js"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

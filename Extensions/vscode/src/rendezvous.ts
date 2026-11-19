@@ -12,11 +12,12 @@ import {
 } from './protocol';
 
 /**
- * The provisional default pairing-file location. RedScreen's listener (RED-13) owns the final
- * location; the setting overrides it.
+ * Where RedScreen publishes its pairing file while it accepts hints: a private directory in its
+ * own sandbox container, so the app needs no extra entitlement. macOS may ask once whether VS
+ * Code may access another app's data. The setting overrides it.
  */
 export function defaultRendezvousPath(): string {
-  return join(homedir(), 'Library', 'Group Containers', 'com.georgeadadi.RedScreen.hints', 'rendezvous.json');
+  return join(homedir(), 'Library', 'Containers', 'com.georgeadadii.RedScreen', 'Data', 'tmp', 'rsh', 'rendezvous.json');
 }
 
 export interface Rendezvous extends SessionSecrets {

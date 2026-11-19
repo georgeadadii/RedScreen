@@ -146,6 +146,9 @@ public struct SecretDetection: Identifiable, Equatable, Sendable, CustomStringCo
     public let severity: SecretSeverity
     public let assessment: DetectionAssessment
     public let spans: [DetectedTextSpan]
+    /// Set when a fresh, authenticated VS Code hint matched this finding's value. The native
+    /// `evidence` is unchanged; this records the extra confirmation separately.
+    public let editorHint: EditorHintConfirmation?
 
     public init(
         id: UUID = UUID(),
@@ -153,7 +156,8 @@ public struct SecretDetection: Identifiable, Equatable, Sendable, CustomStringCo
         family: SecretFamily,
         severity: SecretSeverity,
         assessment: DetectionAssessment,
-        spans: [DetectedTextSpan]
+        spans: [DetectedTextSpan],
+        editorHint: EditorHintConfirmation? = nil
     ) throws {
         guard !spans.isEmpty else { throw DomainModelError.emptyEvidence }
         guard Set(spans.map(\.observationID)).isSubset(of: Set(evidence.observationIDs)) else {
@@ -165,6 +169,17 @@ public struct SecretDetection: Identifiable, Equatable, Sendable, CustomStringCo
         self.severity = severity
         self.assessment = assessment
         self.spans = spans
+        self.editorHint = editorHint
+    }
+
+    /// This finding confirmed by an editor hint. The assessment can only rise, to `likely` when
+    /// the hint's own confidence reaches the likely threshold; it never falls.
+    public func confirmed(by hint: EditorHintConfirmation, likelyConfidence: Double = 0.8) throws -> SecretDetection {
+        let raised: DetectionAssessment = hint.confidence.value >= likelyConfidence ? .likely : assessment
+        return try SecretDetection(
+            id: id, evidence: evidence, family: family, severity: severity,
+            assessment: assessment == .likely ? .likely : raised, spans: spans, editorHint: hint
+        )
     }
 
     public var description: String {
@@ -227,6 +242,9 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
     public let assessment: DetectionAssessment?
     public let severity: SecretSeverity?
     public let disposition: RedactionDisposition
+    /// VS Code hints that confirmed findings in this candidate. Shown in review; they never
+    /// replace native evidence and never exclude a candidate.
+    public let editorHints: [EditorHintConfirmation]
 
     public init(
         id: UUID = UUID(),
@@ -236,7 +254,8 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
         geometry: CandidateGeometry = .wordAligned,
         assessment: DetectionAssessment = .likely,
         severity: SecretSeverity = .high,
-        disposition: RedactionDisposition = .pending
+        disposition: RedactionDisposition = .pending,
+        editorHints: [EditorHintConfirmation] = []
     ) throws {
         guard disposition != .manual, geometry != .manual else {
             throw DomainModelError.invalidCandidateDisposition
@@ -250,7 +269,11 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
         self.assessment = assessment
         self.severity = severity
         self.disposition = disposition
+        self.editorHints = editorHints
     }
+
+    /// Whether a VS Code hint influenced this candidate.
+    public var isConfirmedByEditorHint: Bool { !editorHints.isEmpty }
 
     /// Convenience for a single-region generated candidate.
     public init(
@@ -275,6 +298,7 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
         assessment = nil
         severity = nil
         disposition = .manual
+        editorHints = []
     }
 
     public var isManual: Bool { disposition == .manual }
@@ -295,7 +319,8 @@ public struct RedactionCandidate: Identifiable, Equatable, Sendable, CustomStrin
             geometry: geometry,
             assessment: assessment,
             severity: severity,
-            disposition: disposition
+            disposition: disposition,
+            editorHints: editorHints
         )
     }
 

@@ -7,7 +7,8 @@ import RedScreenCore
 /// release build can never be told to skip the real permission check or shortcut registration.
 ///
 /// - `-RedScreenUITestPermission notDetermined|denied|restricted|granted`
-/// - `-RedScreenUITestFakeCapture YES`: captures return a synthetic grey image.
+/// - `-RedScreenUITestFakeCapture YES`: captures return a synthetic grey image, and Display capture
+///   skips the multi-display picker.
 /// - `-RedScreenUITestFakeShortcuts YES`: in-memory preferences, a fake registrar, and a fake
 ///   system catalog. ⌃⌥⌘K acts as held by another app and ⌃⌥⌘J as reserved by macOS, so the
 ///   tests never type a real system shortcut.
@@ -46,9 +47,11 @@ final class FakeScreenRecordingAuthorizer: ScreenRecordingAuthorizing {
     func requestAccess() -> Bool { granted }
 }
 
-final class InMemoryCapturePreferences: PermissionRequestRecord, GlobalShortcutPreferenceStore {
+final class InMemoryCapturePreferences: PermissionRequestRecord, GlobalShortcutPreferenceStore,
+    EditorHintPreferenceStore {
     var hasRequestedScreenRecording: Bool
     var shortcutPreference: GlobalShortcutPreference?
+    var acceptsEditorHints = false
 
     init(hasRequested: Bool) { hasRequestedScreenRecording = hasRequested }
 }

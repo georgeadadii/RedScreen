@@ -160,3 +160,11 @@ test('the rate limiter allows a burst, then refills over time', () => {
   assert.ok(limiter.tryTake());
   assert.ok(!limiter.tryTake());
 });
+
+test('the committed cross-language vectors match this implementation', () => {
+  const { readFileSync } = require('node:fs') as typeof import('node:fs');
+  const { join } = require('node:path') as typeof import('node:path');
+  const { generateVectors } = require('../support/vectors') as typeof import('../support/vectors');
+  const committed = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'test', 'fixtures', 'protocol-vectors.json'), 'utf8'));
+  assert.deepEqual(committed, JSON.parse(JSON.stringify(generateVectors())), 'run `npm run vectors` after a deliberate protocol change');
+});

@@ -4,9 +4,14 @@ The optional [RedScreen Secret Hints](../Extensions/vscode/README.md) extension 
 which secrets are in the active editor. It sends no values, document text, file names, or paths.
 RedScreen works the same without it, and Phase 1 and 2 behaviour doesn't depend on it.
 
-RED-12 defines the protocol and builds the extension. The reference server is
-`Extensions/vscode/test/support/fakePeer.ts`. RedScreen's own listener, and matching hints
-against OCR text, are RED-13.
+RED-12 defined the protocol and built the extension. RED-13 implements the native side:
+- `HintProtocol` and `HintBridgeServer` (the listener)
+- `EditorHintStore` (matching)
+- `EditorHintBridge` (lifecycle)
+
+`Extensions/vscode/test/support/fakePeer.ts` remains the TypeScript reference server.
+`test/fixtures/protocol-vectors.json` holds cross-language vectors that both implementations must
+reproduce byte for byte (`npm test` and `HintProtocolVectorTests`).
 
 ## Goals and non-goals
 
@@ -21,9 +26,19 @@ against OCR text, are RED-13.
 
 ## Pairing and endpoint
 
-While the user has hints turned on in RedScreen, it publishes a **pairing file**. The default
-location is provisional and is settled in RED-13; the `redscreenHints.rendezvousFile` setting
-overrides it:
+While **Settings › VS Code Hints** is on, RedScreen publishes a **pairing file** in a private
+directory in its own sandbox container:
+`~/Library/Containers/com.georgeadadii.RedScreen/Data/tmp/rsh/rendezvous.json`. The socket
+`hints.sock` is beside it. The extension uses this path by default, and the
+`redscreenHints.rendezvousFile` setting overrides it.
+
+The container location needs **no extra entitlement**: the app keeps exactly sandbox plus
+user-selected files. A shared app-group container was rejected, because it needs a provisioned
+Developer team and an entitlement change. macOS may ask once whether VS Code may access data
+from another app. Allow it to use hints, or deny it and nothing is shared. The directory path is
+kept short, because Unix socket paths are limited to 103 bytes.
+
+The file has this form:
 
 ```json
 {"protocol":"redscreen-hints","version":1,"socket":"/abs/path/hints.sock",
@@ -113,12 +128,70 @@ After `ready`, every message carries:
 scan replaces any unsent pending one. RedScreen should close a connection that exceeds
 10 messages a second.
 
-## How RedScreen uses a hint (RED-13)
+## How RedScreen uses a hint
 
-For each native candidate, RedScreen computes the digest of its OCR value under each live
-session's digest key, and looks for a hint with the same `rule` and `digest`. A match can raise
-confidence or confirm the finding. A missing hint never lowers confidence and never hides a
-native finding. Without hints, every Phase 1 and 2 result is unchanged.
+**Matching.** After OCR and native detection of a **capture**, RedScreen rebuilds each finding's
+value from its OCR spans. Spans on one line are concatenated, and lines are joined with `\n`.
+RedScreen normalizes that value and computes its digest under the session's digest key. A hint
+matches only when both `rule` and `digest` are equal. RedScreen never asks for or receives the
+editor's value.
+
+**Effect.** A match can only *confirm* a finding:
+- It is recorded as an `EditorHintConfirmation` beside the native `DetectionEvidence`, which is
+  left unchanged.
+- If the hint's confidence is at least 80, a `needsReview` finding becomes `likely`. Likely
+  findings are included for redaction by default.
+- A lower-confidence hint only marks the finding.
+- Nothing is ever lowered, excluded, or removed, and unmatched hints are ignored.
+- Confirmed candidates show "Confirmed by VS Code hint" in review. They are still reviewed,
+  edited, and rendered with solid pixels like any other candidate.
+- Hints never authorize export: an unresolved candidate still blocks rendering.
+
+**Expiry.** Hints are dropped when any of these happens:
+- their `expires` passes (at most 30 s)
+- their connection withdraws them (`clear`) or disconnects
+- one capture has used them (capture completion)
+- a screenshot is imported or the document closes
+- the listener stops
+
+The listener stops when hints are turned off, at quit, and when the Mac sleeps, the screens
+lock, or the user session switches. That is how "app backgrounding" is handled: RedScreen is a
+menu bar app that is usually in the background while you capture, so ordinary deactivation
+does not count. Each start is a new session with a new key, so the extension must connect again.
+
+**Imports.** Imported screenshots never use hints, because a file on disk may be from any time.
+
+**Logs.** Only fixed events with counts are logged:
+- `hint_bridge_started`
+- `hint_bridge_stopped`
+- `hint_peer_authenticated`
+- `hint_peer_rejected`
+- `editor_hints_confirmed`, whose count is the number of confirmed findings
+
+Digests, values, document nonces, and payloads are never logged or stored.
+
+## Native listener
+
+- **Peers:** only same-user peers are accepted, checked with `getpeereid`. There are at most
+  four connections, and a peer that hasn't authenticated within 3 s is disconnected.
+- **Validation:** every message is checked as described above. The first violation closes the
+  connection, and a rejection is logged as a count only.
+- **Session lifetime:** a session lasts at most 8 hours, the pairing file's `expires`.
+- **Stopping:** stopping removes the socket and pairing file and zeroes the session and
+  connection keys held by the listener.
+
+## Compatibility policy
+
+- **Exact version.** Both sides speak exactly version 1. Any other version is refused
+  (`incompatible`) in the pairing file or the handshake, and neither side falls back.
+- **Additive changes need a new version.** That includes new message types, fields, or rule IDs.
+  Both implementations, the vectors, and this document change in one pull request, and the
+  vectors are regenerated with `npm run vectors`.
+- **Rule IDs.** The rule-ID list is shared. `HintProtocolVectorTests` checks that the native list
+  equals the extension's, and `VSCodeHintRuleParityTests` checks that both detectors agree on the
+  parity fixture.
+- **What users see.** An extension that is newer or older than the app reports "uses a different
+  hint protocol version", and RedScreen behaves exactly as without the extension.
 
 ## Threat notes
 

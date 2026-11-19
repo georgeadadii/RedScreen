@@ -382,6 +382,7 @@ final class GlobalShortcutControllerTests: XCTestCase {
         let store = CapturePreferenceStore(defaults: defaults)
         store.hasRequestedScreenRecording = true
         store.shortcutPreference = GlobalShortcutPreference(isEnabled: false, shortcut: .documentedDefault)
+        store.acceptsEditorHints = true
 
         let written = try XCTUnwrap(defaults.persistentDomain(forName: suite))
         XCTAssertEqual(Set(written.keys), CapturePreferenceStore.allKeys)

@@ -75,6 +75,10 @@ public final class ScreenshotImportController {
     @ObservationIgnored private let lifecycle: SecureImageSessionLifecycle
     @ObservationIgnored private let importer: any ImageImporter
     @ObservationIgnored private let screenCapturer: (any ScreenCaptureService)?
+    /// Optional VS Code hints. Applied only to captured screenshots; `nil` means native only.
+    @ObservationIgnored private let editorHints: EditorHintStore?
+    /// The session opened by the most recent capture, which may use fresh editor hints once.
+    @ObservationIgnored private var capturedSessionID: UUID?
     @ObservationIgnored private let textRecognizer: (any TextRecognizer)?
     @ObservationIgnored private let secretDetector: (any SecretDetector)?
     @ObservationIgnored private let candidateComposer: (any CandidateComposer)?
@@ -100,6 +104,7 @@ public final class ScreenshotImportController {
         lifecycle: SecureImageSessionLifecycle,
         importer: any ImageImporter,
         screenCapturer: (any ScreenCaptureService)? = nil,
+        editorHints: EditorHintStore? = nil,
         textRecognizer: (any TextRecognizer)? = nil,
         secretDetector: (any SecretDetector)? = nil,
         candidateComposer: (any CandidateComposer)? = nil,
@@ -115,6 +120,7 @@ public final class ScreenshotImportController {
         self.lifecycle = lifecycle
         self.importer = importer
         self.screenCapturer = screenCapturer
+        self.editorHints = editorHints
         self.textRecognizer = textRecognizer
         self.secretDetector = secretDetector
         self.logger = logger
@@ -397,6 +403,8 @@ public final class ScreenshotImportController {
         lastCaptureError = nil
         processingCanceled = false
         document = nil
+        capturedSessionID = nil
+        editorHints?.discardHints()
         lifecycle.closeDocument()
     }
 
@@ -439,6 +447,9 @@ public final class ScreenshotImportController {
                 )
                 logger.record(source == .captured ? .screenCaptured : .imageImported)
                 pendingReviewTiming = source == .captured ? loadStartedAt.map { (session.id, $0) } : nil
+                capturedSessionID = source == .captured ? session.id : nil
+                // Hints describe the editor at capture time; an import is a different document.
+                if source == .imported { editorHints?.discardHints() }
                 startRecognition(for: session)
             } catch {
                 reject(error as? ImageImportError ?? .corruptImage)
@@ -580,7 +591,16 @@ public final class ScreenshotImportController {
         }
         detectionTask = nil
         switch result {
-        case .success(let detections):
+        case .success(var detections):
+            if let editorHints, capturedSessionID == sessionID {
+                // Fresh, matching hints can only confirm findings. They are used by this one
+                // capture and then dropped.
+                let result = editorHints.confirm(detections, observations: current.observations)
+                detections = result.detections
+                editorHints.discardHints()
+                capturedSessionID = nil
+                if result.confirmed > 0 { logger.record(.editorHintsConfirmed, count: UInt(result.confirmed)) }
+            }
             guard var detected = try? current.replacingDetections(detections) else {
                 failDetection(current: current, sessionID: sessionID)
                 return
