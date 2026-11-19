@@ -1,23 +1,31 @@
 import Foundation
 
 /// The only persistent app state outside files the user saves, and the only production use of
-/// `UserDefaults` (a security test enforces both). It holds exactly two preferences:
+/// `UserDefaults` (a security test enforces both). It holds exactly three preferences:
 ///
 /// - `capture.screenRecordingRequested`: whether RedScreen has asked for Screen Recording access,
 ///   so it never asks twice.
 /// - `capture.globalShortcut`: whether the global shortcut is on, and its key code, modifiers,
 ///   and key label.
+/// - `hints.acceptFromVSCode`: whether the user turned on VS Code hints.
 ///
 /// Nothing about screen content, images, text, windows, apps, or files is stored.
-public final class CapturePreferenceStore: PermissionRequestRecord, GlobalShortcutPreferenceStore {
+public final class CapturePreferenceStore: PermissionRequestRecord, GlobalShortcutPreferenceStore,
+    EditorHintPreferenceStore {
     static let requestedKey = "capture.screenRecordingRequested"
     static let shortcutKey = "capture.globalShortcut"
-    static let allKeys: Set<String> = [requestedKey, shortcutKey]
+    static let editorHintsKey = "hints.acceptFromVSCode"
+    static let allKeys: Set<String> = [requestedKey, shortcutKey, editorHintsKey]
 
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    public var acceptsEditorHints: Bool {
+        get { defaults.bool(forKey: Self.editorHintsKey) }
+        set { defaults.set(newValue, forKey: Self.editorHintsKey) }
     }
 
     public var hasRequestedScreenRecording: Bool {

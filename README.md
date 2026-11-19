@@ -199,5 +199,7 @@ with end-to-end, stress, memory, and lifecycle tests, logs capture-to-review lat
 numbers only, and records the [Phase 2 readiness checklist](docs/PHASE2_READINESS.md). Issue #16 (RED-12) adds the optional
 [VS Code secret-hint extension](Extensions/vscode/README.md) and its authenticated, local-only
 [hint protocol](docs/VSCODE_HINT_PROTOCOL.md). It sends rule IDs and keyed digests, never values or
-document text. RedScreen does not consume hints yet; that is RED-13.
+document text. Issue #17 (RED-13) adds RedScreen's side: an opt-in, same-user listener in the
+app's own container, and matching that lets fresh hints confirm, but never hide, findings in a
+capture.
 

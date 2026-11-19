@@ -81,7 +81,11 @@ Later import, OCR, detection, rendering, clipboard, and export work must preserv
    by a per-session secret, over an owner-only Unix socket after mutual HMAC authentication. It
    never sends values, document text, file names, or paths. It scans only the active editor on
    request, reports usage nowhere, and fails closed. RedScreen must behave identically when it is
-   absent. See [VS Code hint protocol](VSCODE_HINT_PROTOCOL.md).
+   absent. RedScreen listens only while the user turns hints on and the Mac is awake and
+   unlocked. It accepts only same-user peers on an owner-only socket in its own container, uses
+   fresh hints only to confirm findings in the next capture, and never logs or stores digests. A
+   hint cannot remove, lower, exclude, or export anything. See
+   [VS Code hint protocol](VSCODE_HINT_PROTOCOL.md).
 
 `ImageLifecyclePolicy` mirrors the policy choices that can be expressed in code. It is not a
 substitute for design review when adding a new processing component.

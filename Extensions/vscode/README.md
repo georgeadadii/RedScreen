@@ -20,6 +20,16 @@ extension.
 - **Fails closed.** If RedScreen isn't running, uses another protocol version, or can't
   authenticate, the extension disconnects and sends nothing.
 
+## Getting connected
+
+1. In RedScreen, turn on **Settings › VS Code Hints**.
+2. In VS Code, run **RedScreen Hints: Connect to RedScreen**. macOS may ask once whether VS Code
+   may access data from other apps. Allow it to use hints.
+3. Run **Turn On Hints for the Active Editor**, or **Scan Active Editor Once**, then capture.
+
+RedScreen uses fresh hints only for the next capture, and only to confirm findings it already
+made. Sleeping, locking, or quitting RedScreen ends the session, so connect again afterwards.
+
 ## Commands
 
 Run these from the Command Palette, under **RedScreen Hints**:
@@ -36,7 +46,7 @@ Run these from the Command Palette, under **RedScreen Hints**:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| `redscreenHints.rendezvousFile` | (empty: RedScreen's default) | The path of RedScreen's pairing file. It is read only when you connect. |
+| `redscreenHints.rendezvousFile` | (empty: RedScreen's default) | The path of RedScreen's pairing file, read only when you connect. By default it is in RedScreen's container: `~/Library/Containers/com.georgeadadii.RedScreen/Data/tmp/rsh/rendezvous.json`. |
 | `redscreenHints.debounceMilliseconds` | 500 | How long after you stop typing to rescan, while hints are on. |
 
 ## Detection

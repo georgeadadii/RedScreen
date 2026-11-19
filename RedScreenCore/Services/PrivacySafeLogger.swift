@@ -34,6 +34,12 @@ public enum PrivacyLogEvent: String, CaseIterable, Equatable, Sendable {
     case captureToReviewDuration = "capture_to_review_duration_ms"
     /// Count is the process's physical memory footprint in MiB, sampled when a capture is reviewable.
     case memoryFootprint = "memory_footprint_mb"
+    case hintBridgeStarted = "hint_bridge_started"
+    case hintBridgeStopped = "hint_bridge_stopped"
+    case hintPeerAuthenticated = "hint_peer_authenticated"
+    case hintPeerRejected = "hint_peer_rejected"
+    /// Count is the number of findings confirmed by VS Code hints in one capture.
+    case editorHintsConfirmed = "editor_hints_confirmed"
 }
 
 /// The only payload accepted by the privacy-safe logging boundary.
@@ -122,6 +128,16 @@ public struct OSPrivacyLogSink: PrivacyLogSink {
             logger.info("capture_to_review_duration_ms count=\(entry.count)")
         case .memoryFootprint:
             logger.info("memory_footprint_mb count=\(entry.count)")
+        case .hintBridgeStarted:
+            logger.info("hint_bridge_started count=\(entry.count)")
+        case .hintBridgeStopped:
+            logger.info("hint_bridge_stopped count=\(entry.count)")
+        case .hintPeerAuthenticated:
+            logger.info("hint_peer_authenticated count=\(entry.count)")
+        case .hintPeerRejected:
+            logger.info("hint_peer_rejected count=\(entry.count)")
+        case .editorHintsConfirmed:
+            logger.info("editor_hints_confirmed count=\(entry.count)")
         }
     }
 }

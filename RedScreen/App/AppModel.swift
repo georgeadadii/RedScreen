@@ -10,6 +10,8 @@ import UniformTypeIdentifiers
 final class AppModel {
     let importController: ScreenshotImportController
     let permission: CapturePermissionModel
+    /// The optional VS Code hint listener. Off unless the user turns it on in Settings.
+    let editorHints: EditorHintBridge
     /// Created in `init`; never nil afterwards.
     private(set) var shortcut: GlobalShortcutController!
 
@@ -20,6 +22,8 @@ final class AppModel {
     @ObservationIgnored private var isChoosingTarget = false
     @ObservationIgnored private var activationObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var terminationObserver: (any NSObjectProtocol)?
+    @ObservationIgnored private var workspaceObservers: [any NSObjectProtocol] = []
+    @ObservationIgnored private let hintPreference: any EditorHintPreferenceStore
 
     init() {
         var capturer: any ScreenCaptureService = ScreenCaptureKitService()
@@ -29,6 +33,7 @@ final class AppModel {
         let preferences = CapturePreferenceStore()
         var permissionRecord: any PermissionRequestRecord = preferences
         var shortcutStore: any GlobalShortcutPreferenceStore = preferences
+        var hintPreference: any EditorHintPreferenceStore = preferences
         #if DEBUG
         if UITestHooks.usesFakeCapture { capturer = FakeScreenCaptureService() }
         if let state = UITestHooks.permission {
@@ -38,14 +43,25 @@ final class AppModel {
         if UITestHooks.usesFakeShortcuts {
             registrar = FakeHotKeyRegistrar()
             systemShortcuts = FakeSystemShortcutCatalog()
-            shortcutStore = InMemoryCapturePreferences(hasRequested: false)
+            let inMemory = InMemoryCapturePreferences(hasRequested: false)
+            shortcutStore = inMemory
+            hintPreference = inMemory
         }
         #endif
 
+        // In the sandbox this is RedScreen's own container (…/Containers/<id>/Data/tmp/rsh), so
+        // the listener needs no extra entitlement. The path stays short for Unix socket limits.
+        let hintStore = EditorHintStore()
+        editorHints = EditorHintBridge(
+            configuration: .init(directory: FileManager.default.temporaryDirectory.appendingPathComponent("rsh", isDirectory: true)),
+            store: hintStore
+        )
+        self.hintPreference = hintPreference
         importController = ScreenshotImportController(
             lifecycle: SecureImageSessionLifecycle(),
             importer: ImageIOImageImporter(),
             screenCapturer: capturer,
+            editorHints: hintStore,
             textRecognizer: VisionTextRecognizer(),
             secretDetector: ContextualSecretDetector(),
             candidateComposer: GeometricCandidateComposer(),
@@ -76,7 +92,50 @@ final class AppModel {
         terminationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.importController.closeDocument() }
+            MainActor.assumeIsolated {
+                self?.editorHints.stop()
+                self?.importController.closeDocument()
+            }
+        }
+        observeSessionChangesForEditorHints()
+        if hintPreference.acceptsEditorHints { editorHints.start() }
+    }
+
+    // MARK: - VS Code hints
+
+    var acceptsEditorHints: Bool {
+        get { hintPreference.acceptsEditorHints && editorHints.status != .off }
+        set {
+            hintPreference.acceptsEditorHints = newValue
+            if newValue { editorHints.start() } else { editorHints.stop() }
+        }
+    }
+
+    /// The listener runs only while the Mac is awake, unlocked, and in this user's session.
+    /// Sleeping, locking, or switching users ends the session (new key, hints forgotten); it
+    /// starts again afterwards if the user still has hints turned on.
+    private func observeSessionChangesForEditorHints() {
+        let center = NSWorkspace.shared.notificationCenter
+        let ending: [Notification.Name] = [
+            NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification,
+            NSWorkspace.sessionDidResignActiveNotification,
+        ]
+        let resuming: [Notification.Name] = [
+            NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification,
+            NSWorkspace.sessionDidBecomeActiveNotification,
+        ]
+        for name in ending {
+            workspaceObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.editorHints.stop() }
+            })
+        }
+        for name in resuming {
+            workspaceObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.hintPreference.acceptsEditorHints else { return }
+                    self.editorHints.start()
+                }
+            })
         }
     }
 
@@ -191,6 +250,11 @@ final class AppModel {
         case .window:
             return await chooseWindowTarget(restoringWindow: false)
         case .display:
+            #if DEBUG
+            // The fake capture ignores the display, so UI tests skip the picker that would
+            // otherwise appear on Macs with several displays.
+            if UITestHooks.usesFakeCapture { return .display(id: 1) }
+            #endif
             let displays = ScreenCaptureKitService.currentDisplays()
             if displays.count == 1, let only = displays.first { return .display(id: only.id) }
             let mainID = CGMainDisplayID()

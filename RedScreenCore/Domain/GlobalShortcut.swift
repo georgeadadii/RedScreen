@@ -114,3 +114,8 @@ public struct GlobalShortcutPreference: Equatable, Sendable {
 public protocol GlobalShortcutPreferenceStore: AnyObject {
     var shortcutPreference: GlobalShortcutPreference? { get set }
 }
+
+/// Whether the user turned on the optional VS Code hint listener. Off by default.
+public protocol EditorHintPreferenceStore: AnyObject {
+    var acceptsEditorHints: Bool { get set }
+}
