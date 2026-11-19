@@ -23,15 +23,18 @@ public enum ScreenRecordingPermission: Equatable, Sendable {
                 title: "Screen Recording not set up yet",
                 message: "macOS asks once, the first time you start a capture. RedScreen captures only "
                     + "the region, window, or display you choose, and never records continuously.",
-                offersSystemSettings: false
+                offersSystemSettings: false,
+                offersRequestAgain: false
             )
         case .denied:
             ScreenRecordingGuidance(
                 title: "Screen Recording is off for RedScreen",
                 message: "Capturing is blocked until you allow RedScreen in System Settings › Privacy & "
-                    + "Security › Screen & System Audio Recording. macOS may ask you to reopen RedScreen "
-                    + "afterwards. Importing screenshots still works.",
-                offersSystemSettings: true
+                    + "Security › Screen & System Audio Recording. If RedScreen isn't in that list, choose "
+                    + "Ask macOS Again to add it. macOS may ask you to reopen RedScreen afterwards. "
+                    + "Importing screenshots still works.",
+                offersSystemSettings: true,
+                offersRequestAgain: true
             )
         case .restricted:
             ScreenRecordingGuidance(
@@ -39,13 +42,15 @@ public enum ScreenRecordingPermission: Equatable, Sendable {
                 message: "A policy on this Mac, such as one set by your organization, blocks screen "
                     + "capture. System Settings can't change this; ask your administrator. Importing "
                     + "screenshots still works.",
-                offersSystemSettings: false
+                offersSystemSettings: false,
+                offersRequestAgain: false
             )
         case .granted:
             ScreenRecordingGuidance(
                 title: "Screen Recording is allowed",
                 message: "RedScreen captures only when you start a capture, and only the target you choose.",
-                offersSystemSettings: false
+                offersSystemSettings: false,
+                offersRequestAgain: false
             )
         }
     }
@@ -61,6 +66,9 @@ public struct ScreenRecordingGuidance: Equatable, Sendable {
     public let message: String
     /// Whether opening System Settings can resolve this state.
     public let offersSystemSettings: Bool
+    /// Whether asking macOS again can help: after the permission was reset or RedScreen was
+    /// removed from the list, only a new request puts it back there.
+    public let offersRequestAgain: Bool
 }
 
 /// The operating system's Screen Recording check and prompt.

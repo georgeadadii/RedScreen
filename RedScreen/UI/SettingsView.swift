@@ -160,6 +160,12 @@ struct PermissionGuidanceView: View {
                     Button("Open System Settings", action: model.openScreenRecordingSettings)
                         .accessibilityIdentifier("permission-open-settings")
                 }
+                if guidance.offersRequestAgain {
+                    Button("Ask macOS Again") { model.permission.requestAgain() }
+                        .help("Asks macOS for Screen Recording access again, which adds RedScreen back to "
+                              + "the list in System Settings if it was removed.")
+                        .accessibilityIdentifier("permission-request-again")
+                }
                 if state != .granted {
                     Button("Check Again", action: model.permission.checkAgain)
                         .accessibilityIdentifier("permission-check-again")

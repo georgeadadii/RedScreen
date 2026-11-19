@@ -56,6 +56,19 @@ public final class CapturePermissionModel {
         }
     }
 
+    /// The user's explicit "Ask macOS Again". After the permission was reset or RedScreen was
+    /// removed from System Settings, macOS lists an app again only when it requests access, so
+    /// this asks once per click. macOS shows its prompt only if it has no decision on record;
+    /// otherwise nothing appears. Never called automatically. Returns whether access is granted.
+    @discardableResult
+    public func requestAgain() -> Bool {
+        guard state == .denied else { return state == .granted }
+        record.hasRequestedScreenRecording = true
+        let granted = authorizer.requestAccess()
+        refresh()
+        return granted && state == .granted
+    }
+
     /// Records that capture was refused even though access looks granted, as a management
     /// policy does. Cleared by `checkAgain()`.
     public func noteRestricted() {
