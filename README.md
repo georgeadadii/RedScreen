@@ -194,5 +194,7 @@ the [Phase 1 readiness checklist](docs/PHASE1_READINESS.md). Issue #13 (RED-9) a
 [native region, window, and display capture](docs/SCREEN_CAPTURE.md) straight into the review flow,
 with no screenshot file written. Issue #14 (RED-10) adds the app-menu Capture commands, an optional
 [global capture shortcut](docs/CAPTURE_SHORTCUT.md) with conflict detection, Settings, and
-Screen Recording permission guidance for every permission state.
+Screen Recording permission guidance for every permission state. Issue #15 (RED-11) hardens the capture path
+with end-to-end, stress, memory, and lifecycle tests, logs capture-to-review latency and memory as
+numbers only, and records the [Phase 2 readiness checklist](docs/PHASE2_READINESS.md).
 

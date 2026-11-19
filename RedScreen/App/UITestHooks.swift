@@ -75,16 +75,22 @@ final class FakeSystemShortcutCatalog: SystemShortcutCatalog {
     }
 }
 
-/// Synthetic capture: a flat grey frame, no screen content.
+/// Synthetic capture: a flat grey frame, no screen content. The size identifies the target kind
+/// (display 320×200, region 240×160, window 280×180) so tests can tell which capture opened.
 struct FakeScreenCaptureService: ScreenCaptureService {
     func capture(_ target: CaptureTarget) async throws -> ImportedImage {
+        let (width, height) = switch target {
+        case .display: (320, 200)
+        case .region: (240, 160)
+        case .window: (280, 180)
+        }
         guard let context = CGContext(
-            data: nil, width: 320, height: 200, bitsPerComponent: 8, bytesPerRow: 0,
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpace(name: CGColorSpace.sRGB)!,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { throw CaptureError.failed }
         context.setFillColor(gray: 0.6, alpha: 1)
-        context.fill(CGRect(x: 0, y: 0, width: 320, height: 200))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         guard let image = context.makeImage() else { throw CaptureError.failed }
         return try CapturedImageNormalizer.normalize(image, treatsTransparentAsProtected: false)
     }

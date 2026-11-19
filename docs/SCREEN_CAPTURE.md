@@ -88,6 +88,13 @@ workflow is `failed(.captureFailed(...))`.
   capture, and file-system checks.
 - Confining ScreenCaptureKit to the app target.
 
+`Phase2CaptureIntegrationTests` covers each target kind through save and copy, rapid and
+interleaved captures, memory release, and latency. See [Phase 2 readiness](PHASE2_READINESS.md),
+which also has the multi-display, Spaces, full-screen, and permission-revocation matrix.
+
+The region selection also ends when RedScreen is deactivated, the screens sleep, or the user
+session switches.
+
 Real capture needs Screen Recording permission, so it is verified manually:
 
 | Case | 1x display | 2x display | Mixed 1x + 2x |

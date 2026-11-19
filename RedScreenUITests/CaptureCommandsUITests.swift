@@ -56,6 +56,53 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["permission-guidance"].exists)
     }
 
+    /// RED-11: the region path end to end with the overlay: dragging captures a region, and Return
+    /// captures the display instead. Each replaces the open document.
+    @MainActor
+    func testRegionDragAndReturnEachOpenANewCapture() {
+        launch(permission: "granted")
+        chooseFromPopoverCaptureMenu("capture-display-button")
+        let dimensions = app.staticTexts["document-dimensions"]
+        XCTAssertTrue(dimensions.waitForExistence(timeout: 10))
+        XCTAssertEqual(dimensions.value as? String, "320 × 200 px")
+
+        app.typeKey("1", modifierFlags: [.command, .option])
+        let hint = app.descendants(matching: .any)["capture-selection-hint"].firstMatch
+        XCTAssertTrue(hint.waitForExistence(timeout: 5))
+        let start = hint.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0)).withOffset(CGVector(dx: 0, dy: 120))
+        let end = start.withOffset(CGVector(dx: 160, dy: 110))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(hint.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(waitForText(of: dimensions, containing: "240 × 160 px", timeout: 10), "Region capture did not open")
+
+        app.typeKey("1", modifierFlags: [.command, .option])
+        XCTAssertTrue(hint.waitForExistence(timeout: 5))
+        app.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(hint.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(waitForText(of: dimensions, containing: "320 × 200 px", timeout: 10), "Return did not capture the display")
+    }
+
+    /// Switching to another app during a selection ends it, without capturing or losing the
+    /// open document.
+    @MainActor
+    func testDeactivationEndsTheSelectionAndKeepsTheDocument() {
+        launch(permission: "granted")
+        chooseFromPopoverCaptureMenu("capture-display-button")
+        let dimensions = app.staticTexts["document-dimensions"]
+        XCTAssertTrue(dimensions.waitForExistence(timeout: 10))
+
+        app.typeKey("1", modifierFlags: [.command, .option])
+        let hint = app.descendants(matching: .any)["capture-selection-hint"].firstMatch
+        XCTAssertTrue(hint.waitForExistence(timeout: 5))
+        XCUIApplication(bundleIdentifier: "com.apple.finder").activate()
+        XCTAssertTrue(hint.waitForNonExistence(timeout: 5), "The overlay stayed up after RedScreen lost focus")
+
+        app.activate()
+        XCTAssertTrue(dimensions.waitForExistence(timeout: 5))
+        XCTAssertEqual(dimensions.value as? String, "320 × 200 px", "The open document must be kept")
+        XCTAssertFalse(app.staticTexts["capture-error-message"].exists, "Leaving the selection is not an error")
+    }
+
     @MainActor
     func testDeniedPermissionShowsSettingsRecoveryWithoutCapturing() {
         launch(permission: "denied")

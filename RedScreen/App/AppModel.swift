@@ -19,6 +19,7 @@ final class AppModel {
     @ObservationIgnored private var documentWindowController: DocumentWindowController?
     @ObservationIgnored private var isChoosingTarget = false
     @ObservationIgnored private var activationObserver: (any NSObjectProtocol)?
+    @ObservationIgnored private var terminationObserver: (any NSObjectProtocol)?
 
     init() {
         var capturer: any ScreenCaptureService = ScreenCaptureKitService()
@@ -68,6 +69,12 @@ final class AppModel {
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.permission.refresh() }
+        }
+        // Clears the open document's in-memory pixels and text before the process exits.
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.importController.closeDocument() }
         }
     }
 

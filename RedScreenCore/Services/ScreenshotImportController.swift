@@ -91,6 +91,10 @@ public final class ScreenshotImportController {
     @ObservationIgnored private let logger: PrivacySafeLogger
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var importTask: Task<Void, Never>?
+    /// When the current load started, for the capture-to-review measurement.
+    @ObservationIgnored private var loadStartedAt: ContinuousClock.Instant?
+    /// The captured session whose time to review has not been recorded yet.
+    @ObservationIgnored private var pendingReviewTiming: (sessionID: UUID, startedAt: ContinuousClock.Instant)?
 
     public init(
         lifecycle: SecureImageSessionLifecycle,
@@ -352,6 +356,7 @@ public final class ScreenshotImportController {
         isImporting = true
         lastError = nil
         lastCaptureError = nil
+        loadStartedAt = ContinuousClock.now
         if document == nil { processingCanceled = false }
 
         let task = Task { [weak self] in
@@ -426,6 +431,7 @@ public final class ScreenshotImportController {
                     colorSpace: imported.pixels.layout?.colorSpace ?? .sRGB
                 )
                 logger.record(source == .captured ? .screenCaptured : .imageImported)
+                pendingReviewTiming = source == .captured ? loadStartedAt.map { (session.id, $0) } : nil
                 startRecognition(for: session)
             } catch {
                 reject(error as? ImageImportError ?? .corruptImage)
@@ -592,6 +598,7 @@ public final class ScreenshotImportController {
             detectionStatus = .detected(likely: likely, needsReview: review)
             logger.record(.sensitiveInformationDetected, count: UInt(likely))
             logger.record(.detectionsNeedingReview, count: UInt(review))
+            recordCaptureToReview(sessionID: sessionID)
         case .failure(let error):
             if error is CancellationError {
                 detectionStatus = .idle
@@ -599,6 +606,17 @@ public final class ScreenshotImportController {
             }
             failDetection(current: current, sessionID: sessionID)
         }
+    }
+
+    /// Records how long a capture took to become reviewable, and the process memory footprint at
+    /// that moment, as numbers only. Recorded once per captured session.
+    private func recordCaptureToReview(sessionID: UUID) {
+        guard let pending = pendingReviewTiming, pending.sessionID == sessionID else { return }
+        pendingReviewTiming = nil
+        let elapsed = ContinuousClock.now - pending.startedAt
+        let milliseconds = elapsed.components.seconds * 1_000 + elapsed.components.attoseconds / 1_000_000_000_000_000
+        logger.record(.captureToReviewDuration, count: UInt(max(0, milliseconds)))
+        logger.record(.memoryFootprint, count: UInt(ProcessMemory.footprintBytes() / 1_048_576))
     }
 
     private func failDetection(current: RedactionDocument, sessionID: UUID) {
