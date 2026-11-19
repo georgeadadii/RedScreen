@@ -121,6 +121,26 @@ final class CapturePermissionModelTests: XCTestCase {
         XCTAssertEqual(authorizer.promptCount, 0)
     }
 
+    func testBecomingGrantedIsReportedOnceAndOnlyOnTheTransition() {
+        record.hasRequestedScreenRecording = true
+        let model = CapturePermissionModel(authorizer: authorizer, record: record)
+        var grants = 0
+        model.onGranted = { grants += 1 }
+        model.refresh()
+        XCTAssertEqual(grants, 0, "Still denied")
+
+        authorizer.granted = true  // Allowed in System Settings.
+        model.checkAgain()
+        XCTAssertEqual(grants, 1)
+        model.refresh()
+        model.checkAgain()
+        XCTAssertEqual(grants, 1, "Not repeated while it stays granted")
+
+        model.noteRestricted()
+        model.checkAgain()
+        XCTAssertEqual(grants, 2, "Restricted back to granted is a new transition")
+    }
+
     func testGrantedOutsideRedScreenIsRemembered() {
         authorizer.granted = true
         let model = CapturePermissionModel(authorizer: authorizer, record: record)

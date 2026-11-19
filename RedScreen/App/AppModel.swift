@@ -53,6 +53,8 @@ final class AppModel {
             clipboard: PasteboardImageWriter()
         )
         permission = CapturePermissionModel(authorizer: authorizer, record: permissionRecord)
+        // A granted permission makes any "Screen Recording is off" banner obsolete.
+        permission.onGranted = { [weak importController] in importController?.clearPermissionFailure() }
         #if DEBUG
         if UITestHooks.permission == .restricted { permission.noteRestricted() }
         #endif

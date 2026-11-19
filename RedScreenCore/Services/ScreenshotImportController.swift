@@ -405,6 +405,13 @@ public final class ScreenshotImportController {
         lastCaptureError = nil
     }
 
+    /// Clears a Screen Recording permission failure once access is granted, so its banner does
+    /// not linger. Other errors stay until the user dismisses them.
+    public func clearPermissionFailure() {
+        guard lastCaptureError == .permissionDenied || lastCaptureError == .permissionRestricted else { return }
+        lastCaptureError = nil
+    }
+
     /// Runs text recognition again on the open document, for example after a failure.
     @discardableResult
     public func retryRecognition() -> Task<Void, Never>? {
