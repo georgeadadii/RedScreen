@@ -113,6 +113,9 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue((app.staticTexts["permission-message"].value as? String ?? "").contains("Screen & System Audio Recording"))
         XCTAssertTrue(app.buttons["permission-open-settings"].exists)
         XCTAssertTrue(app.buttons["permission-check-again"].exists)
+        XCTAssertTrue(app.buttons["permission-relaunch"].exists, "Quit & Reopen is offered while denied")
+        XCTAssertTrue(app.descendants(matching: .any)["permission-build-advice"].exists,
+                      "A development build explains why permission may not stick")
         let askAgain = app.buttons["permission-request-again"]
         XCTAssertTrue(askAgain.exists)
         askAgain.click()
@@ -120,6 +123,23 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["capture-selection-hint"].exists,
                        "No selection overlay without permission")
         XCTAssertFalse(app.descendants(matching: .any)["document-image"].exists)
+    }
+
+    /// Quit & Reopen ends this instance and starts a fresh one, which is what makes macOS apply a
+    /// newly granted Screen Recording permission.
+    @MainActor
+    func testQuitAndReopenStartsAFreshInstance() {
+        launch(permission: "denied")
+        chooseFromPopoverCaptureMenu("capture-region-button")
+        let relaunch = app.buttons["permission-relaunch"]
+        XCTAssertTrue(relaunch.waitForExistence(timeout: 10))
+        relaunch.click()
+
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: 10), "The old instance quits")
+        let reopened = XCUIApplication(bundleIdentifier: "com.georgeadadii.RedScreen")
+        XCTAssertTrue(reopened.wait(for: .runningBackground, timeout: 10) || reopened.state == .runningForeground,
+                      "A new instance starts")
+        reopened.terminate()
     }
 
     @MainActor
@@ -132,6 +152,7 @@ final class CaptureCommandsUITests: XCTestCase {
         XCTAssertTrue((app.staticTexts["permission-message"].value as? String ?? "").contains("administrator"))
         XCTAssertFalse(app.buttons["permission-open-settings"].exists)
         XCTAssertFalse(app.buttons["permission-request-again"].exists, "Asking again cannot lift a policy")
+        XCTAssertFalse(app.buttons["permission-relaunch"].exists, "Reopening cannot lift a policy")
     }
 
     @MainActor

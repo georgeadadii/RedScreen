@@ -35,10 +35,19 @@ test-core:
 		-only-testing:RedScreenCoreTests \
 		test
 
+# Installs one stable copy in /Applications. Grant Screen Recording to this copy: development
+# builds and test runs never replace it, so it keeps its permission until you reinstall (and,
+# with a signing team in Config/Local.xcconfig, across reinstalls too).
+INSTALLED_APP := /Applications/RedScreen.app
+
 install:
 	$(MAKE) build CONFIGURATION=Release
-	/usr/bin/ditto "$(DERIVED_DATA)/Build/Products/Release/RedScreen.app" \
-		/Applications/RedScreen.app
+	@# Quit a running copy so the replaced app is the one that launches next.
+	-@/usr/bin/pkill -x RedScreen && sleep 1 || true
+	/bin/rm -rf "$(INSTALLED_APP)"
+	/usr/bin/ditto "$(DERIVED_DATA)/Build/Products/Release/RedScreen.app" "$(INSTALLED_APP)"
+	@/usr/bin/codesign -dv "$(INSTALLED_APP)" 2>&1 | /usr/bin/grep -E '^(Signature|TeamIdentifier)=' || true
+	@echo "Installed $(INSTALLED_APP). Open it from there and allow Screen Recording for that copy."
 
 clean:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \

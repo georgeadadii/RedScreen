@@ -325,6 +325,21 @@ final class GlobalShortcutControllerTests: XCTestCase {
         XCTAssertEqual(relaunched.status, .active(other))
     }
 
+    /// Quit & Reopen: the old instance releases the hot key without changing the saved choice,
+    /// so the new instance registers the same shortcut.
+    func testReleaseForRelaunchHandsTheShortcutToTheNextInstance() {
+        let old = makeController()
+        old.enable(other)
+        old.releaseForRelaunch()
+        XCTAssertNil(registrar.registered)
+        XCTAssertEqual(old.status, .off)
+        XCTAssertEqual(store.shortcutPreference, GlobalShortcutPreference(isEnabled: true, shortcut: other))
+
+        let next = makeController()
+        next.restore()
+        XCTAssertEqual(next.status, .active(other))
+    }
+
     func testRelaunchRestoresAnEnabledShortcut() {
         makeController().enable(other)
         registrar.unregister()  // The process ended.

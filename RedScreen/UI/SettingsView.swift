@@ -217,6 +217,18 @@ struct PermissionGuidanceView: View {
                     Button("Check Again", action: model.permission.checkAgain)
                         .accessibilityIdentifier("permission-check-again")
                 }
+                if state == .denied {
+                    Button("Quit & Reopen", action: model.relaunch)
+                        .help("macOS often applies a new Screen Recording permission only after RedScreen reopens.")
+                        .accessibilityIdentifier("permission-relaunch")
+                }
+            }
+            if state != .granted, let advice = model.signingStatus.permissionAdvice {
+                Label(advice, systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("permission-build-advice")
             }
         }
         .accessibilityElement(children: .contain)

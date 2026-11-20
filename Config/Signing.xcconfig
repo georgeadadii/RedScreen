@@ -1,0 +1,16 @@
+// Signing for every RedScreen target.
+//
+// With no Config/Local.xcconfig (CI, fresh clones) builds are ad-hoc signed ("Sign to Run
+// Locally"). macOS then ties Screen Recording permission to the exact binary, so every rebuild
+// loses it. To keep permission across rebuilds, copy Local.xcconfig.example to Local.xcconfig
+// and set your Apple Development team; see docs/CAPTURE_SHORTCUT.md#development-builds.
+// Local.xcconfig is git-ignored, so no personal team ID is committed.
+
+#include? "Local.xcconfig"
+
+// The hardened runtime's library validation requires the app and its embedded RedScreenCore
+// framework to be signed by the same team. Ad-hoc builds have no team, so with it on the app
+// cannot load its framework and aborts at launch. It is therefore on in Release only when a
+// team is set (in Local.xcconfig), and off for ad-hoc local builds. Debug keeps it off.
+RS_HARDENED_RUNTIME_FOR_TEAM_NONE = NO
+RS_HARDENED_RUNTIME = $(RS_HARDENED_RUNTIME_FOR_TEAM_$(DEVELOPMENT_TEAM:default=NONE):default=YES)

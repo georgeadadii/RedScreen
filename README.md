@@ -9,6 +9,10 @@ and privacy-safe logging. The app supports manual redaction review, a flattened 
 redacted result, and native screen capture from the menu bar, the app menu, or an optional global
 shortcut.
 
+To use RedScreen day to day, run `make install` and open `/Applications/RedScreen.app`. Grant
+Screen Recording to that copy. To keep the permission across rebuilds, sign with your team; see
+[Keeping the permission](docs/CAPTURE_SHORTCUT.md#keeping-the-permission).
+
 `main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
 required checks, and local validation commands.
 

@@ -106,6 +106,13 @@ public final class GlobalShortcutController {
         store.shortcutPreference = GlobalShortcutPreference(isEnabled: false, shortcut: shortcut)
     }
 
+    /// Releases the system-wide registration without changing the saved choice, so a new
+    /// instance of RedScreen (after Quit & Reopen) can register the same shortcut.
+    public func releaseForRelaunch() {
+        registrar.unregister()
+        status = .off
+    }
+
     private func register(_ shortcut: GlobalShortcut) throws {
         guard shortcut.isAllowedAsGlobalShortcut else { throw ShortcutRegistrationError.needsModifier }
         guard !systemShortcuts.isReservedBySystem(shortcut) else {
