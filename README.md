@@ -201,5 +201,9 @@ numbers only, and records the [Phase 2 readiness checklist](docs/PHASE2_READINES
 [hint protocol](docs/VSCODE_HINT_PROTOCOL.md). It sends rule IDs and keyed digests, never values or
 document text. Issue #17 (RED-13) adds RedScreen's side: an opt-in, same-user listener in the
 app's own container, and matching that lets fresh hints confirm, but never hide, findings in a
-capture.
+capture. Issue #18 (RED-14) adds [detection profiles](docs/DETECTION_PROFILES.md):
+Balanced (the default, unchanged) and Conservative built-ins, plus validated user profiles with
+thresholds, rule toggles, placeholder exclusions, and custom rules in a bounded pattern language.
+Profiles can be imported and exported as plain-text settings, and anything that may hide findings
+needs confirmation and stays visible during review.
 

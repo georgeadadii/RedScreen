@@ -414,8 +414,17 @@ struct DocumentView: View {
         guard let evidence = candidate.evidence.first else { return status }
         let confidence = Int((evidence.confidence.value * 100).rounded())
         let rule = evidence.ruleID.rawValue
-        return "\(status) · \(confidence)%\n\(rule)" + (candidate.needsGeometryReview ? " · Check bounds" : "")
-            + (candidate.isConfirmedByEditorHint ? "\nConfirmed by VS Code hint" : "")
+        var details = "\(status) · \(confidence)%\n\(rule)"
+        if candidate.needsGeometryReview {
+            details += " · Check bounds"
+        }
+        if candidate.isConfirmedByEditorHint {
+            details += "\nConfirmed by VS Code hint"
+        }
+        if rule.hasPrefix("custom.") {
+            details += "\nCustom rule"
+        }
+        return details
     }
 
     private func manualControls(_ id: UUID, rect: ImageRect, dimensions: PixelDimensions) -> some View {
@@ -672,6 +681,7 @@ struct DocumentView: View {
                 }
                 recognitionStatusLabel
                 detectionStatusLabel
+                profileLabel
             }
             HStack(spacing: 12) {
                 if controller.document != nil {
@@ -711,6 +721,39 @@ struct DocumentView: View {
             .controlSize(.small)
             .keyboardShortcut(.cancelAction)
             .accessibilityIdentifier("processing-cancel")
+    }
+
+    /// Which profile produced the findings, and how many it hid, so exclusions are never invisible.
+    @ViewBuilder
+    private var profileLabel: some View {
+        if controller.document != nil, let report = controller.profileReport {
+            Text(profileSummary(report))
+                .font(.callout)
+                .foregroundStyle(report.hiddenTotal > 0 ? Color.orange : .secondary)
+                .help(profileHelp(report))
+                .accessibilityIdentifier("document-profile")
+        }
+    }
+
+    // Built step by step: long `+` chains with `? :` exceed the type checker's time limit on
+    // the Xcode version CI uses.
+    private func profileSummary(_ report: DetectionProfileReport) -> String {
+        var summary = "Profile: \(report.profileName)"
+        if report.hiddenTotal > 0 {
+            summary += " · \(report.hiddenTotal) hidden"
+        }
+        return summary
+    }
+
+    private func profileHelp(_ report: DetectionProfileReport) -> String {
+        guard report.hiddenTotal > 0 else {
+            return "Detection profile in use. Change it in Settings › Detection Profile."
+        }
+        let rules = report.hiddenByDisabledRules
+        let placeholders = report.hiddenByPlaceholders
+        let threshold = report.hiddenByThreshold
+        return "Hidden by this profile: \(rules) by turned-off rules, \(placeholders) by placeholders, "
+            + "\(threshold) below its review threshold. Switch to Balanced in Settings to show them."
     }
 
     @ViewBuilder

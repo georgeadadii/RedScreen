@@ -98,7 +98,7 @@ public final class EditorHintStore {
 
     /// The finding's text as OCR read it: spans on one line are concatenated, and lines are
     /// joined with "\n", which normalization reduces exactly as the extension does.
-    static func value(of detection: SecretDetection, in observations: [OCRObservation.ID: OCRObservation]) -> String? {
+    nonisolated static func value(of detection: SecretDetection, in observations: [OCRObservation.ID: OCRObservation]) -> String? {
         var lines: [String] = []
         var lastObservation: OCRObservation.ID?
         for span in detection.spans {
