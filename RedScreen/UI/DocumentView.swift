@@ -414,9 +414,17 @@ struct DocumentView: View {
         guard let evidence = candidate.evidence.first else { return status }
         let confidence = Int((evidence.confidence.value * 100).rounded())
         let rule = evidence.ruleID.rawValue
-        return "\(status) · \(confidence)%\n\(rule)" + (candidate.needsGeometryReview ? " · Check bounds" : "")
-            + (candidate.isConfirmedByEditorHint ? "\nConfirmed by VS Code hint" : "")
-            + (rule.hasPrefix("custom.") ? "\nCustom rule" : "")
+        var details = "\(status) · \(confidence)%\n\(rule)"
+        if candidate.needsGeometryReview {
+            details += " · Check bounds"
+        }
+        if candidate.isConfirmedByEditorHint {
+            details += "\nConfirmed by VS Code hint"
+        }
+        if rule.hasPrefix("custom.") {
+            details += "\nCustom rule"
+        }
+        return details
     }
 
     private func manualControls(_ id: UUID, rect: ImageRect, dimensions: PixelDimensions) -> some View {
@@ -719,17 +727,33 @@ struct DocumentView: View {
     @ViewBuilder
     private var profileLabel: some View {
         if controller.document != nil, let report = controller.profileReport {
-            let hidden = report.hiddenTotal
-            Text("Profile: \(report.profileName)" + (hidden > 0 ? " · \(hidden) hidden" : ""))
+            Text(profileSummary(report))
                 .font(.callout)
-                .foregroundStyle(hidden > 0 ? Color.orange : .secondary)
-                .help(hidden > 0
-                      ? "Hidden by this profile: \(report.hiddenByDisabledRules) by turned-off rules, "
-                        + "\(report.hiddenByPlaceholders) by placeholders, \(report.hiddenByThreshold) below its review "
-                        + "threshold. Switch to Balanced in Settings to show them."
-                      : "Detection profile in use. Change it in Settings › Detection Profile.")
+                .foregroundStyle(report.hiddenTotal > 0 ? Color.orange : .secondary)
+                .help(profileHelp(report))
                 .accessibilityIdentifier("document-profile")
         }
+    }
+
+    // Built step by step: long `+` chains with `? :` exceed the type checker's time limit on
+    // the Xcode version CI uses.
+    private func profileSummary(_ report: DetectionProfileReport) -> String {
+        var summary = "Profile: \(report.profileName)"
+        if report.hiddenTotal > 0 {
+            summary += " · \(report.hiddenTotal) hidden"
+        }
+        return summary
+    }
+
+    private func profileHelp(_ report: DetectionProfileReport) -> String {
+        guard report.hiddenTotal > 0 else {
+            return "Detection profile in use. Change it in Settings › Detection Profile."
+        }
+        let rules = report.hiddenByDisabledRules
+        let placeholders = report.hiddenByPlaceholders
+        let threshold = report.hiddenByThreshold
+        return "Hidden by this profile: \(rules) by turned-off rules, \(placeholders) by placeholders, "
+            + "\(threshold) below its review threshold. Switch to Balanced in Settings to show them."
     }
 
     @ViewBuilder
