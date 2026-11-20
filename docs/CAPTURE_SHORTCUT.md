@@ -67,15 +67,72 @@ macOS only reports whether access is granted. RedScreen derives four states:
   removed from the list, macOS adds it back only when RedScreen asks. **Ask macOS Again** does
   that. macOS shows its prompt only if it has no decision on record. You can also add the app
   with **+** in that pane.
-- **Development builds:** an ad-hoc signed ("Sign to Run Locally") build is identified by its
-  exact binary, so each rebuild needs the permission granted again. Sign with an Apple
-  Development team to keep it across rebuilds.
+- **Development builds:** see [Keeping the permission](#keeping-the-permission). If the
+  running copy is ad-hoc signed or runs from a build folder, the guidance says so.
 - **How a change is noticed:** RedScreen re-reads the state without prompting when it becomes
-  active, when Settings opens, and on **Check Again**. A change made in System Settings is picked
-  up when you return. macOS may ask you to reopen RedScreen first.
+  active, when Settings opens, and on **Check Again**. macOS usually applies a newly granted
+  permission only to a fresh process, so the denied guidance offers **Quit & Reopen**. That
+  releases the global shortcut and the VS Code hint listener, starts a new instance, and quits
+  this one.
 - **No previews:** no guidance view shows a preview or thumbnail of the screen or of other windows.
 - **What is stored:** `CapturePreferenceStore` keeps whether access was requested and the shortcut
-  choice. Nothing else is stored.
+  choice, among its allowlisted preferences. Nothing about the screen is stored.
+
+## Keeping the permission
+
+macOS records Screen Recording permission against an app's **code signature**:
+- **Ad-hoc signed** (no developer certificate, "Sign to Run Locally"): the permission belongs
+  to that exact binary, so every rebuild or reinstall loses it.
+- **Signed with a team** (Apple Development or Developer ID): the permission follows the
+  certificate and bundle ID, and survives rebuilds.
+
+Several copies also share the name "RedScreen":
+- the `make` build in `.build/DerivedData`
+- Xcode's build in `~/Library/Developer/Xcode/DerivedData`
+- the installed app
+
+System Settings shows a single entry, but the permission belongs to whichever copy you allowed.
+
+### One-time setup for a reliable copy
+
+1. **Sign with your team.** In Xcode › Settings › Accounts, add your Apple ID; a free Personal
+   Team works. Then copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set
+   `DEVELOPMENT_TEAM` to your **team ID**: the `OU` field of your certificate, *not* the code in
+   parentheses in its name. To print the certificate's fields, run:
+
+   ```bash
+   security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject
+   ```
+
+   `Local.xcconfig` is git-ignored, and builds without it (CI, fresh clones) stay ad-hoc.
+   - **0 valid identities:** if `security find-identity -v -p codesigning` reports that,
+     your keychain is missing Apple's **WWDR G3** intermediate, which issues current development
+     certificates. Install `AppleWWDRCAG3.cer` from https://www.apple.com/certificateauthority/
+     into your login keychain.
+   - **Debugger access:** Release builds drop the debugger-attach entitlement
+     (`get-task-allow`) that development signing would otherwise add.
+2. **Install one copy:** run `make install`. It builds Release, quits any running RedScreen,
+   replaces `/Applications/RedScreen.app`, and prints how the copy is signed (`TeamIdentifier`).
+3. **Grant it once:** open `/Applications/RedScreen.app`, start a capture, and allow it in System
+   Settings › Privacy & Security › Screen & System Audio Recording. If the list shows a stale
+   entry, remove it with **−** first, or add the installed app with **+**.
+4. **Reopen:** choose **Quit & Reopen** in the banner.
+
+Use the installed copy day to day. Development builds and test runs never replace it. With a
+team it keeps its permission across reinstalls; without one, allow it again after each `make install`.
+
+**Hardened runtime.** It is on in Release only when a team is set. Its library validation
+requires the app and its embedded `RedScreenCore` framework to be signed by the same team, so an
+ad-hoc Release build with it on cannot load its own framework and aborts at launch. Before this
+change, that is what happened to every `make install`.
+
+**Starting over.** Quit RedScreen, then run:
+
+```bash
+tccutil reset ScreenCapture com.georgeadadii.RedScreen
+```
+
+Open the installed copy again and allow it once.
 
 ## Verification
 

@@ -9,6 +9,10 @@ and privacy-safe logging. The app supports manual redaction review, a flattened 
 redacted result, and native screen capture from the menu bar, the app menu, or an optional global
 shortcut.
 
+To use RedScreen, build it on your own Mac by following
+[Set up RedScreen on your Mac](#set-up-redscreen-on-your-mac). It takes about 15 minutes the
+first time, and everything is free.
+
 `main` is the integration branch. See [Contributing](CONTRIBUTING.md) for the branch workflow,
 required checks, and local validation commands.
 
@@ -20,15 +24,152 @@ required checks, and local validation commands.
 - Native Xcode project with no third-party dependencies
 - Minimum deployment target: macOS 14.0
 
-## Prerequisites
+## Set up RedScreen on your Mac
 
-- macOS 14 or later
-- Xcode 16 or later with the macOS platform and required system components installed
-- Xcode Command Line Tools selected (`xcode-select -p` should point into Xcode)
-- GNU Make (included with Apple's developer tools)
+RedScreen isn't distributed as a download. Each person builds it from this repository and signs
+it with their own free Apple account. Signing is what lets macOS remember the Screen Recording
+permission: without it, every rebuild looks like a new app and the permission is lost (see
+[why](docs/CAPTURE_SHORTCUT.md#keeping-the-permission)). You do steps 1–7 once; updating is
+step 8.
 
-The initial project was authored with Xcode 27.0 and Apple Swift 6.4. No package resolution or
-network access is required.
+### What you need
+
+| | Requirement |
+| --- | --- |
+| Mac | Any Mac with Apple silicon or Intel. RedScreen builds as a universal app. |
+| macOS | 14 Sonoma or later to run RedScreen. Building also needs a macOS version that runs the Xcode below. |
+| Xcode | Tested with Xcode 26.6 (used by CI) and 27.2. Older versions are untested. |
+| Apple Account | A free one is enough. You do **not** need the paid Apple Developer Program. |
+
+### 1. Install Xcode
+
+Install Xcode from the App Store, open it once, and let it install its components. Then check
+that the command-line tools use it:
+
+```bash
+xcode-select -p
+```
+
+It should print a path inside `Xcode.app`. If it prints `/Library/Developer/CommandLineTools`,
+switch it (this asks for your password):
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+### 2. Get the code
+
+```bash
+git clone https://github.com/georgeadadii/RedScreen.git
+```
+
+```bash
+cd RedScreen
+```
+
+### 3. Create your free signing certificate
+
+1. Open **Xcode › Settings › Apple Accounts** (called **Accounts** in older versions), click
+   **+**, and sign in with your Apple Account.
+2. Select your **Personal Team**, click **Manage Certificates…**, then **+ › Apple
+   Development**, and click **Done**.
+
+### 4. Check that macOS trusts it
+
+```bash
+security find-identity -v -p codesigning
+```
+
+You should see `1 valid identities found`, with an `Apple Development: …` line.
+
+If it says **0 valid identities found**, your keychain is missing Apple's intermediate
+certificate (WWDR G3), which issues development certificates. Add it, then run the check again:
+
+```bash
+curl -fsSLo ~/Downloads/AppleWWDRCAG3.cer https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
+```
+
+```bash
+security add-certificates -k ~/Library/Keychains/login.keychain-db ~/Downloads/AppleWWDRCAG3.cer
+```
+
+### 5. Tell the build your team ID
+
+This writes your team ID to `Config/Local.xcconfig`:
+
+```bash
+printf 'DEVELOPMENT_TEAM = %s\n' "$(security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject -nameopt multiline | awk -F'= ' '/organizationalUnitName/ {print $2}')" > Config/Local.xcconfig
+```
+
+Check it:
+
+```bash
+cat Config/Local.xcconfig
+```
+
+It should show `DEVELOPMENT_TEAM =` followed by a 10-character ID. That is the `OU` field of
+your certificate, which is **not** the similar-looking code in parentheses in the certificate's
+name. The file is git-ignored, so your team ID stays on your Mac.
+
+### 6. Build and install
+
+```bash
+make install
+```
+
+This builds a Release copy, quits RedScreen if it's running, and installs
+`/Applications/RedScreen.app`. At the end it prints how the copy is signed:
+- **`TeamIdentifier=` with your team ID:** signing worked.
+- **`Signature=adhoc`:** step 5 didn't take effect. Check `Config/Local.xcconfig`.
+
+If macOS asks whether `codesign` may use your key, choose **Always Allow**.
+
+### 7. Allow screen capture, once
+
+1. Open **`/Applications/RedScreen.app`**. A shield icon appears in the menu bar; RedScreen has
+   no Dock icon.
+2. Click the shield, then **Capture Screenshot › Display**. macOS asks for Screen Recording
+   permission.
+3. Choose **Open System Settings**, then turn on **RedScreen** under **Privacy & Security ›
+   Screen & System Audio Recording**.
+4. Back in RedScreen, click **Quit & Reopen** in the banner. macOS applies the permission to the
+   reopened app.
+
+Capture now works. Try it on a window with some text, review the highlighted findings, then save
+or copy the redacted image.
+
+### 8. Update later
+
+```bash
+git pull
+```
+
+```bash
+make install
+```
+
+Your permission and settings carry over. Always use the copy in `/Applications`: other copies,
+such as one run from Xcode or from the build folder, are separate apps to macOS.
+
+### If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| "Screen Recording is off" right after you allowed it | Click **Quit & Reopen**. macOS often applies a new permission only after the app restarts. |
+| The banner says this copy is a development build or isn't signed | You are running a copy other than `/Applications/RedScreen.app`, or it was built without step 5. Quit it and open the installed copy. |
+| `0 valid identities found` | Install the WWDR G3 certificate (step 4). |
+| Build error "No signing certificate … found" | `Config/Local.xcconfig` has the wrong ID. Use the `OU` value from step 5, not the code in parentheses. |
+| RedScreen isn't in the Screen Recording list | Click **Ask macOS Again** in the banner, or add `/Applications/RedScreen.app` with **+** in that list. |
+| Still stuck | Quit RedScreen and reset its permission with the command below. Then open `/Applications/RedScreen.app` and repeat step 7. |
+
+```bash
+tccutil reset ScreenCapture com.georgeadadii.RedScreen
+```
+
+## Developing
+
+The rest of this README is for working on RedScreen itself. The build needs no package
+resolution or network access.
 
 ## Clone and build
 
@@ -75,23 +216,12 @@ dashed: whole word covered, needs review). **Show Text Regions** outlines all re
 
 ## Install into Applications
 
-Build the Release configuration and copy it into `/Applications`:
-
-```sh
-make install
-```
-
-If the current user cannot write to `/Applications`, run the final copy explicitly with
-administrator privileges:
-
-```sh
-make build CONFIGURATION=Release
-sudo ditto .build/DerivedData/Build/Products/Release/RedScreen.app \
-  /Applications/RedScreen.app
-```
-
-Local builds use Xcode's normal development/ad-hoc signing behavior. Distribution outside the local
-Mac will eventually require Developer ID signing and notarization.
+`make install` builds Release, signs it with the team in `Config/Local.xcconfig` (ad-hoc if
+there is none), and replaces `/Applications/RedScreen.app`. See
+[Set up RedScreen on your Mac](#set-up-redscreen-on-your-mac) for first-time signing and
+permission setup, and [Keeping the permission](docs/CAPTURE_SHORTCUT.md#keeping-the-permission)
+for how signing affects it. RedScreen is not notarized, so it is meant to be built by each user,
+not downloaded.
 
 ## Run tests
 

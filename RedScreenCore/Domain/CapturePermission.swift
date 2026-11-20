@@ -31,7 +31,8 @@ public enum ScreenRecordingPermission: Equatable, Sendable {
                 title: "Screen Recording is off for RedScreen",
                 message: "Capturing is blocked until you allow RedScreen in System Settings › Privacy & "
                     + "Security › Screen & System Audio Recording. If RedScreen isn't in that list, choose "
-                    + "Ask macOS Again to add it. macOS may ask you to reopen RedScreen afterwards. "
+                    + "Ask macOS Again to add it. After allowing it, choose Quit & Reopen: macOS usually "
+                    + "applies the change only when RedScreen reopens. "
                     + "Importing screenshots still works.",
                 offersSystemSettings: true,
                 offersRequestAgain: true

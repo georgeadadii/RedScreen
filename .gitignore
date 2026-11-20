@@ -17,3 +17,6 @@ Package.resolved
 # Xcode user-specific settings
 **/xcuserdata/
 *.xcuserstate
+
+# Personal signing team (see Config/Local.xcconfig.example)
+Config/Local.xcconfig

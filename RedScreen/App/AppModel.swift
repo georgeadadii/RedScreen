@@ -194,6 +194,33 @@ final class AppModel {
         }
     }
 
+    /// How this copy is signed and installed, which decides whether macOS keeps its permission.
+    let signingStatus = AppSigningStatus.current()
+
+    /// Quits and reopens RedScreen. macOS often applies a newly granted Screen Recording
+    /// permission only to a fresh process. Exclusive resources (the global shortcut and the hint
+    /// listener) are released first, so the new instance can take them over.
+    func relaunch() {
+        shortcut.releaseForRelaunch()
+        editorHints.stop()
+        importController.closeDocument()
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, error in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    if error == nil {
+                        NSApp.terminate(nil)
+                    } else {
+                        // Reopening failed: keep running, with the shortcut and hints as they were.
+                        self.shortcut.restore()
+                        if self.hintPreference.acceptsEditorHints { self.editorHints.start() }
+                    }
+                }
+            }
+        }
+    }
+
     func openScreenRecordingSettings() {
         NSWorkspace.shared.open(ScreenRecordingPermission.systemSettingsURL)
     }
