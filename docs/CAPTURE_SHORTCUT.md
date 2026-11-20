@@ -97,14 +97,20 @@ System Settings shows a single entry, but the permission belongs to whichever co
 
 1. **Sign with your team.** In Xcode › Settings › Accounts, add your Apple ID; a free Personal
    Team works. Then copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set
-   `DEVELOPMENT_TEAM` to your team ID. To see your Apple Development identity and its team ID,
-   run:
+   `DEVELOPMENT_TEAM` to your **team ID**: the `OU` field of your certificate, *not* the code in
+   parentheses in its name. To print the certificate's fields, run:
 
    ```bash
-   security find-identity -v -p codesigning
+   security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject
    ```
 
    `Local.xcconfig` is git-ignored, and builds without it (CI, fresh clones) stay ad-hoc.
+   - **0 valid identities:** if `security find-identity -v -p codesigning` reports that,
+     your keychain is missing Apple's **WWDR G3** intermediate, which issues current development
+     certificates. Install `AppleWWDRCAG3.cer` from https://www.apple.com/certificateauthority/
+     into your login keychain.
+   - **Debugger access:** Release builds drop the debugger-attach entitlement
+     (`get-task-allow`) that development signing would otherwise add.
 2. **Install one copy:** run `make install`. It builds Release, quits any running RedScreen,
    replaces `/Applications/RedScreen.app`, and prints how the copy is signed (`TeamIdentifier`).
 3. **Grant it once:** open `/Applications/RedScreen.app`, start a capture, and allow it in System

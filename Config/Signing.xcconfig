@@ -14,3 +14,7 @@
 // team is set (in Local.xcconfig), and off for ad-hoc local builds. Debug keeps it off.
 RS_HARDENED_RUNTIME_FOR_TEAM_NONE = NO
 RS_HARDENED_RUNTIME = $(RS_HARDENED_RUNTIME_FOR_TEAM_$(DEVELOPMENT_TEAM:default=NONE):default=YES)
+
+// Development signing adds com.apple.security.get-task-allow (debugger attach). Keep it for
+// Debug only; the installed Release copy should not allow it.
+CODE_SIGN_INJECT_BASE_ENTITLEMENTS[config=Release] = NO
